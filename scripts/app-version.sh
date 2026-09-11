@@ -4,4 +4,5 @@
 # package.json or a second file.
 set -euo pipefail
 cd "$(dirname "$0")/.."
-sed -n '/^\[workspace\.package\]/,/^\[/{s/^version = "\(.*\)"$/\1/p}' Cargo.toml | head -1
+# Brace-free range so BSD sed (macOS) reads it too.
+sed -n '/^\[workspace\.package\]/,/^\[/s/^version = "\(.*\)"$/\1/p' Cargo.toml | head -1

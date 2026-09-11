@@ -1,0 +1,200 @@
+/* Typography picker: the current face reads like a small type specimen;
+   opening it turns the same row into a searchable local catalogue. */
+.settings-font-control {
+  display: grid;
+  gap: var(--sb-space-xs);
+}
+.settings-font-current {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sb-space-s);
+  width: 100%;
+  min-height: max(44px, 3rem);
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-inner-bg) 72%, transparent);
+  color: var(--sb-text);
+  text-align: left;
+}
+.settings-font-current:hover,
+.settings-font-current[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--sb-accent) 45%, var(--sb-text-faint));
+  background: color-mix(in srgb, var(--sb-accent) 9%, var(--sb-inner-bg));
+}
+.settings-font-current:focus-visible,
+.settings-font-option:focus-visible,
+.settings-font-source-tabs button:focus-visible {
+  outline: var(--sb-focus-ring-width, 2px) solid var(--sb-accent);
+  outline-offset: var(--sb-focus-ring-offset, 2px);
+}
+.settings-font-sample,
+.settings-font-option-sample {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: var(--sb-border-width, 1px) solid
+    color-mix(in srgb, var(--sb-accent) 28%, var(--sb-inner-border));
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-accent) 10%, transparent);
+  color: var(--sb-text);
+  font-size: var(--sb-fs-l);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-font-current-copy,
+.settings-font-option-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.125rem;
+}
+.settings-font-current-copy strong,
+.settings-font-option-copy strong {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.settings-font-current-copy small,
+.settings-font-option-copy small {
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-xs);
+}
+.settings-font-change {
+  justify-self: end;
+}
+.settings-font-reset {
+  justify-self: end;
+}
+.settings-font-picker {
+  display: grid;
+  grid-template-columns: auto minmax(10rem, 1fr);
+  gap: var(--sb-space-xs);
+  padding: var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-window-bg) 82%, var(--sb-inner-bg));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sb-text) 7%, transparent);
+}
+.settings-font-source-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: var(--sb-inner-bg);
+}
+.settings-font-source-tabs button {
+  min-height: max(36px, 2rem);
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+  border: 0;
+  border-radius: calc(var(--sb-radius-s) - 2px);
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+}
+.settings-font-source-tabs button.sb-active {
+  background: color-mix(in srgb, var(--sb-accent) 16%, transparent);
+  color: var(--sb-text);
+  box-shadow: inset 0 0 0 var(--sb-border-width, 1px)
+    color-mix(in srgb, var(--sb-accent) 32%, transparent);
+}
+.settings-font-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.settings-font-search > svg {
+  position: absolute;
+  left: var(--sb-space-s);
+  color: var(--sb-text-muted);
+  pointer-events: none;
+}
+.settings-font-search .sb-input {
+  width: 100%;
+  min-height: max(36px, 2rem);
+  padding-left: 2.25rem;
+}
+.settings-font-results {
+  grid-column: 1 / -1;
+  max-height: min(15rem, 42vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+.settings-font-option {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+  width: 100%;
+  min-height: max(44px, 3rem);
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border: 0;
+  border-bottom: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  color: var(--sb-text);
+  text-align: left;
+}
+.settings-font-option:hover {
+  background: var(--sb-inner-bg);
+}
+.settings-font-option[data-active] {
+  background: color-mix(in srgb, var(--sb-accent) 11%, transparent);
+}
+.settings-font-option > svg:last-child {
+  flex: none;
+  margin-left: auto;
+  color: var(--sb-accent);
+}
+.settings-font-option-sample {
+  width: 2rem;
+  height: 2rem;
+  font-size: var(--sb-fs-m);
+}
+.settings-font-message {
+  display: flex;
+  min-height: 4rem;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-xs);
+  padding: var(--sb-space-m);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-s);
+  text-align: center;
+}
+.settings-font-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sb-space-s);
+  color: var(--sb-danger);
+  font-size: var(--sb-fs-s);
+}
+.settings-font-spinner {
+  animation: sb-spin 0.7s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-font-spinner {
+    animation: none;
+  }
+}
+@media (pointer: coarse) {
+  .settings-font-source-tabs button,
+  .settings-font-search .sb-input,
+  .settings-font-option {
+    min-height: 44px;
+  }
+}
+@container settings (max-width: 32rem) {
+  .settings-font-picker {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-font-results {
+    grid-column: 1;
+  }
+  .settings-font-source-tabs button {
+    flex: 1;
+  }
+  .settings-font-change {
+    display: none;
+  }
+}

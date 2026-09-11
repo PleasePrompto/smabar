@@ -1,0 +1,52 @@
+name: Publish updates
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (e.g. v1.0.0), draft or published
+        required: true
+      staging:
+        description: Write staging/latest.json; installed apps keep seeing the production manifest
+        type: boolean
+        default: true
+
+# Draft releases are only visible with push access, and a staging run reads
+# the draft before it is published.
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-updates
+  cancel-in-progress: false
+
+jobs:
+  r2:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Download the release assets and notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --dir artifacts
+          gh release view "$TAG" --json body -q .body > body.md
+
+      # Packages are immutable under <version>/; only the manifest moves.
+      - name: Upload packages, then the manifest
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ENDPOINT_URL: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          MANIFEST_KEY: ${{ inputs.staging == true && 'staging/latest.json' || 'latest.json' }}
+        run: |
+          python3 scripts/release-r2.py --version "${TAG#v}" --directory artifacts \
+            --notes-file body.md --manifest-key "$MANIFEST_KEY"

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ensure-google-font"
+description = "Enables the ensure_google_font command without any pre-configured scope."
+commands.allow = ["ensure_google_font"]
+
+[[permission]]
+identifier = "deny-ensure-google-font"
+description = "Denies the ensure_google_font command without any pre-configured scope."
+commands.deny = ["ensure_google_font"]

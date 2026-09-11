@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-store-install-theme"
+description = "Enables the store_install_theme command without any pre-configured scope."
+commands.allow = ["store_install_theme"]
+
+[[permission]]
+identifier = "deny-store-install-theme"
+description = "Denies the store_install_theme command without any pre-configured scope."
+commands.deny = ["store_install_theme"]

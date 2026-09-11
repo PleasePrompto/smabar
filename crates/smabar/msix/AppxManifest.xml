@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+         xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+         xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+         xmlns:uap7="http://schemas.microsoft.com/appx/manifest/uap/windows10/7"
+         xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+         xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+         IgnorableNamespaces="uap uap5 uap7 uap10 rescap">
+  <Identity Name="PleasePrompto.smabar" Publisher="CN=4A2977C8-F570-4E77-92A5-37187E495435"
+            Version="__VERSION__" ProcessorArchitecture="x64" />
+  <Properties>
+    <DisplayName>smabar</DisplayName>
+    <PublisherDisplayName>PleasePrompto</PublisherDisplayName>
+    <Description>smabar — the smart taskbar</Description>
+    <Logo>Assets\StoreLogo.png</Logo>
+  </Properties>
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="de-de" />
+  </Resources>
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.19041.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+  <Capabilities>
+    <uap7:Capability Name="globalMediaControl" />
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+  <Applications>
+    <Application Id="smabar" Executable="smabar.exe" uap10:RuntimeBehavior="packagedClassicApp" uap10:TrustLevel="mediumIL">
+      <uap:VisualElements DisplayName="smabar" Description="smabar — the smart taskbar"
+                          Square44x44Logo="Assets\Square44x44Logo.png"
+                          Square150x150Logo="Assets\Square150x150Logo.png" BackgroundColor="transparent" />
+      <Extensions>
+        <uap5:Extension Category="windows.startupTask" Executable="smabar.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap5:StartupTask TaskId="smabar" Enabled="false" DisplayName="smabar" />
+        </uap5:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-notification-measure"
+description = "Enables the set_notification_measure command without any pre-configured scope."
+commands.allow = ["set_notification_measure"]
+
+[[permission]]
+identifier = "deny-set-notification-measure"
+description = "Denies the set_notification_measure command without any pre-configured scope."
+commands.deny = ["set_notification_measure"]

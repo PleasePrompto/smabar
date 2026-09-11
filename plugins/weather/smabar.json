@@ -1,0 +1,59 @@
+{
+  "id": "weather",
+  "name": "Weather",
+  "version": "0.2.1",
+  "description": "Current conditions and a 7-day forecast for any number of places from Open-Meteo (no API key), found by city name",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [
+    {
+      "id": "weather",
+      "name": "Weather",
+      "hasFlyout": true,
+      "tileScale": "l"
+    }
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "description": "Settings of the weather plugin",
+    "properties": {
+      "locations": {
+        "type": "array",
+        "description": "Places in display order; the FIRST one is shown on the bar tile. Add places by name in the flyout: coordinates and time zone are looked up automatically. An empty list shows no weather until a place is added.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Display name, e.g. \"Berlin\"" },
+            "region": { "type": "string", "description": "Optional context shown below the name, e.g. \"Berlin, Germany\"" },
+            "latitude": { "type": "number", "description": "WGS84 latitude in decimal degrees" },
+            "longitude": { "type": "number", "description": "WGS84 longitude in decimal degrees" },
+            "timezone": { "type": "string", "description": "IANA time zone of the place, e.g. \"Europe/Berlin\"; used for the ticking local time" }
+          },
+          "required": ["name", "latitude", "longitude"]
+        },
+        "default": [
+          { "name": "Berlin", "latitude": 52.52, "longitude": 13.405, "timezone": "Europe/Berlin" }
+        ]
+      },
+      "units": {
+        "type": "string",
+        "description": "Measurement units: metric (°C, km/h) or imperial (°F, mph)",
+        "enum": ["metric", "imperial"],
+        "default": "metric"
+      },
+      "coverLayout": {
+        "type": "string",
+        "description": "Tile cover: place name as a small header over the conditions, or the weather icon with the temperature",
+        "enum": ["segmentHeader", "basicPlus"],
+        "default": "segmentHeader"
+      },
+      "tileRotates": {
+        "type": "boolean",
+        "description": "Roll through every place on the bar tile instead of showing only the first one",
+        "default": false
+      }
+    },
+    "additionalProperties": false
+  }
+}

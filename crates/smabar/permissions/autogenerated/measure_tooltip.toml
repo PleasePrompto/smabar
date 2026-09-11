@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-measure-tooltip"
+description = "Enables the measure_tooltip command without any pre-configured scope."
+commands.allow = ["measure_tooltip"]
+
+[[permission]]
+identifier = "deny-measure-tooltip"
+description = "Denies the measure_tooltip command without any pre-configured scope."
+commands.deny = ["measure_tooltip"]

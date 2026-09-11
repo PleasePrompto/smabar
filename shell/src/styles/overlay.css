@@ -1,0 +1,152 @@
+/* ============================================================
+   Portaled overlay surfaces: the custom context menu (+ its one
+   submenu level) and the tooltip that replaces the native one.
+   Un-layered like bar.css on purpose — these classes own the LOOK,
+   the components own position/layout (no position/left/top here).
+   Every color, blur and shadow is a --sb-* theme token, so a theme
+   restyles both surfaces without touching the shell.
+   ============================================================ */
+
+.overlay-menu {
+  color-scheme: var(--sb-color-scheme);
+  min-width: var(--sb-menu-min-width, 11rem);
+  max-width: var(--sb-menu-max-width, 18rem);
+  padding: var(--sb-space-2xs);
+  border-radius: var(--sb-radius-m);
+  background: var(--sb-menu-bg);
+  border: var(--sb-border-width, 1px) solid var(--sb-menu-border);
+  box-shadow: var(--sb-menu-shadow);
+  color: var(--sb-menu-text);
+  font-family: var(--sb-font-sans);
+  font-size: var(--sb-fs-m);
+  outline: none;
+  animation: overlayMenuIn var(--sb-dur-fast) var(--sb-ease-out) both;
+}
+
+.overlay-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+  width: 100%;
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border: 0;
+  border-radius: var(--sb-radius-s);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  outline: none;
+  transition: background var(--sb-dur-fast) var(--sb-ease-out);
+}
+/* Focus is roving, so the focused row IS the highlighted row — hover and
+   keyboard must look identical or the menu reads as having two cursors. */
+.overlay-menu-item:hover,
+.overlay-menu-item:focus-visible,
+.overlay-menu-item[aria-expanded="true"] {
+  background: var(--sb-menu-hover-bg);
+}
+.overlay-menu-item[data-danger] {
+  color: var(--sb-menu-danger);
+}
+.overlay-menu-item[aria-disabled="true"] {
+  opacity: var(--sb-opacity-45, 0.45);
+  cursor: default;
+}
+.overlay-menu-item[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+.overlay-menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Icons render at 1em (icons.ts) — the fixed box keeps every label on the
+   same left edge whether or not its row has a glyph. */
+.overlay-menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--sb-menu-icon-size, 1em);
+  font-size: var(--sb-fs-l);
+  opacity: var(--sb-opacity-85, 0.85);
+}
+.overlay-menu-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--sb-menu-icon-size, 1em);
+  font-size: var(--sb-fs-l);
+  color: var(--sb-accent);
+}
+
+.overlay-menu-separator {
+  height: var(--sb-border-width, 1px);
+  margin: var(--sb-space-2xs) var(--sb-space-s);
+  background: var(--sb-menu-separator);
+}
+
+@keyframes overlayMenuIn {
+  0% {
+    opacity: 0;
+    transform: scale(var(--sb-menu-enter-scale, 0.97));
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---- Tooltip ------------------------------------------------------ */
+
+/* Geometry and type follow the format48 tooltip; the portal and the
+   viewport clamping stay smabar's, because a CSS-only ::after tooltip is
+   clipped by every overflow container and by the bar surfaces — which is
+   exactly how long tile descriptions were being cut off. */
+.overlay-tooltip {
+  /* max-content, so a short label stays a short pill and only a long one
+     reaches the cap and WRAPS. The old nowrap + ellipsis truncated every
+     description that did not fit on one line. */
+  width: max-content;
+  max-width: var(
+    --sb-tooltip-max-width,
+    min(16rem, calc(var(--sb-work-area-width) * 0.9))
+  );
+  padding: var(--sb-tooltip-padding, 0.4em 0.7em);
+  border-radius: var(--sb-radius-xs);
+  background: var(--sb-tooltip-bg);
+  border: var(--sb-border-width, 1px) solid var(--sb-tooltip-border);
+  box-shadow: var(--sb-tooltip-shadow);
+  color: var(--sb-tooltip-text);
+  font-family: var(--sb-font-sans);
+  font-size: var(--sb-fs-s);
+  font-weight: var(--sb-weight-medium, 500);
+  letter-spacing: var(--sb-tracking-subtle, 0.02em);
+  line-height: var(--sb-leading-help, 1.35);
+  /* Never a hit target: it must not eat clicks and must not appear in the
+     X11 input shape either. */
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay-menu {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .overlay-menu-item:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+  .overlay-menu-item[aria-disabled="true"] {
+    color: GrayText;
+    opacity: 1;
+  }
+}

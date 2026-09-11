@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-finalize-overlay-clear"
+description = "Enables the finalize_overlay_clear command without any pre-configured scope."
+commands.allow = ["finalize_overlay_clear"]
+
+[[permission]]
+identifier = "deny-finalize-overlay-clear"
+description = "Denies the finalize_overlay_clear command without any pre-configured scope."
+commands.deny = ["finalize_overlay_clear"]

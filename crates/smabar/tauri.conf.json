@@ -1,0 +1,180 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "smabar",
+  "identifier": "dev.smabar.desktop",
+  "build": {
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../../shell/dist",
+    "beforeDevCommand": "cd ../shell && bun run dev",
+    "beforeBuildCommand": "cd ../shell && bun run build"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "enableGTKAppId": true,
+    "windows": [
+      {
+        "label": "bar",
+        "title": "smabar",
+        "create": false,
+        "visible": false,
+        "transparent": true,
+        "decorations": false,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "resizable": false,
+        "shadow": false,
+        "useHttpsScheme": false
+      }
+    ],
+    "security": {
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' asset: http://asset.localhost data: blob: http: https:",
+        "font-src": "'self' asset: http://asset.localhost data:",
+        "connect-src": "ipc: http://ipc.localhost",
+        "media-src": "'self' asset: http://asset.localhost data: blob: http: https:",
+        "frame-src": "http://127.0.0.1:*",
+        "object-src": "'none'",
+        "base-uri": "'none'"
+      },
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$HOME/.smabar/data/**/*",
+          "$HOME/.smabar/cache/fonts/google/**/*"
+        ]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "deb",
+      "rpm",
+      "nsis",
+      "dmg"
+    ],
+    "externalBin": [
+      "binaries/uv"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "smabar — the smart taskbar",
+    "longDescription": "smabar is a smart, cross-platform desktop taskbar. Plugins run as separate processes, and local LLM agents can manage the whole bar through an embedded MCP server.",
+    "homepage": "https://smabar.com",
+    "publisher": "Gérôme Dexheimer",
+    "copyright": "© 2026 Gérôme Dexheimer",
+    "category": "Utility",
+    "license": "LicenseRef-PolyForm-Shield-1.0.0",
+    "licenseFile": "../../LICENSE",
+    "windows": {
+      "minimumWebview2Version": "122.0.2365.46",
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp",
+        "installerHooks": "installer/hooks.nsh",
+        "languages": [
+          "English",
+          "German"
+        ],
+        "displayLanguageSelector": true
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "13.0",
+      "dmg": {
+        "background": "installer/dmg-background.png",
+        "windowSize": {
+          "width": 660,
+          "height": 400
+        },
+        "appPosition": {
+          "x": 170,
+          "y": 250
+        },
+        "applicationFolderPosition": {
+          "x": 490,
+          "y": 250
+        }
+      }
+    },
+    "linux": {
+      "deb": {
+        "depends": [
+          "libgtk-layer-shell0",
+          "libpulse0",
+          "libasound2"
+        ],
+        "files": {
+          "/usr/share/metainfo/dev.smabar.desktop.metainfo.xml": "installer/dev.smabar.desktop.metainfo.xml"
+        }
+      },
+      "rpm": {
+        "depends": [
+          "gtk-layer-shell",
+          "libappindicator-gtk3",
+          "pulseaudio-libs",
+          "alsa-lib"
+        ],
+        "files": {
+          "/usr/share/metainfo/dev.smabar.desktop.metainfo.xml": "installer/dev.smabar.desktop.metainfo.xml"
+        }
+      }
+    },
+    "resources": {
+      "../../sdk/python/smabar_sdk/*.py": "sdk/python/smabar_sdk/",
+      "../../sdk/python/LICENSE": "sdk/python/LICENSE",
+      "../../plugins/LICENSE": "plugins/LICENSE",
+      "../../plugins/clock/smabar.json": "plugins/clock/smabar.json",
+      "../../plugins/clock/icon.png": "plugins/clock/icon.png",
+      "../../plugins/clock/plugin.py": "plugins/clock/plugin.py",
+      "../../plugins/clock/views.py": "plugins/clock/views.py",
+      "../../plugins/clock/solar.py": "plugins/clock/solar.py",
+      "../../plugins/clock/locales/*.json": "plugins/clock/locales/",
+      "../../plugins/systeminfo/smabar.json": "plugins/systeminfo/smabar.json",
+      "../../plugins/systeminfo/icon.png": "plugins/systeminfo/icon.png",
+      "../../plugins/systeminfo/plugin.py": "plugins/systeminfo/plugin.py",
+      "../../plugins/systeminfo/locales/*.json": "plugins/systeminfo/locales/",
+      "../../plugins/weather/smabar.json": "plugins/weather/smabar.json",
+      "../../plugins/weather/icon.png": "plugins/weather/icon.png",
+      "../../plugins/weather/plugin.py": "plugins/weather/plugin.py",
+      "../../plugins/weather/views.py": "plugins/weather/views.py",
+      "../../plugins/weather/locales/*.json": "plugins/weather/locales/",
+      "../../plugins/crypto/smabar.json": "plugins/crypto/smabar.json",
+      "../../plugins/crypto/icon.png": "plugins/crypto/icon.png",
+      "../../plugins/crypto/plugin.py": "plugins/crypto/plugin.py",
+      "../../plugins/crypto/locales/*.json": "plugins/crypto/locales/",
+      "../../plugins/media/smabar.json": "plugins/media/smabar.json",
+      "../../plugins/media/icon.png": "plugins/media/icon.png",
+      "../../plugins/media/plugin.py": "plugins/media/plugin.py",
+      "../../plugins/media/locales/*.json": "plugins/media/locales/",
+      "../../plugins/todos/smabar.json": "plugins/todos/smabar.json",
+      "../../plugins/todos/icon.png": "plugins/todos/icon.png",
+      "../../plugins/todos/plugin.py": "plugins/todos/plugin.py",
+      "../../plugins/todos/model.py": "plugins/todos/model.py",
+      "../../plugins/todos/views.py": "plugins/todos/views.py",
+      "../../plugins/todos/schemas.py": "plugins/todos/schemas.py",
+      "../../plugins/todos/locales/*.json": "plugins/todos/locales/",
+      "../../plugins/todos/sounds/*.wav": "plugins/todos/sounds/"
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEYxOUEyNDZEMTgxNEQ1RDcKUldUWDFSUVliU1NhOFVPN20yQUdtWXpsQUtxL0g5c3RSL0pBeEVNb2dOQlduVzFwUmtUTFhGUWcK",
+      "endpoints": [
+        "https://updates.smabar.com/latest.json"
+      ]
+    }
+  }
+}

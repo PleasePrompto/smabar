@@ -1,0 +1,23 @@
+[project]
+name = "smabar-sdk"
+version = "1.0.0"
+description = "Python SDK for smabar plugins: RPC loop, render(), log(), on_action()"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["mypy", "pytest", "ruff", "tzdata==2026.3"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true

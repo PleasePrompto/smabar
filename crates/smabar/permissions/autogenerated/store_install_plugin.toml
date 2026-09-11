@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-store-install-plugin"
+description = "Enables the store_install_plugin command without any pre-configured scope."
+commands.allow = ["store_install_plugin"]
+
+[[permission]]
+identifier = "deny-store-install-plugin"
+description = "Denies the store_install_plugin command without any pre-configured scope."
+commands.deny = ["store_install_plugin"]

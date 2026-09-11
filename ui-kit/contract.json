@@ -1,0 +1,1321 @@
+{
+  "version": 1,
+  "sections": {
+    "bestPractices": "Workflow, hierarchy, states, accessibility, theme/motion, media, verification and forms rules \u2014 the review checklist.",
+    "coverLayouts": "The nine bar-tile recipes with markup, animation and sizing; pick one by whenToUse.",
+    "snippets": "Copy-paste flyout skeletons: forms, tabs, KPI grid, tables, menus, modals, media.",
+    "behaviour": "Every data-sb-* hook the shell runs for you, with markup: tables, pickers, copy, countdown, tween, key.",
+    "conventions": "Tabs, marquee, badge, carousel, rotator, ticking clocks, context menus and tooltips; carries renderTargets, tileChrome and branding.",
+    "sanitizer": "What the HTML sanitizer keeps and drops, native interaction (details/dialog/popover) and reporting; carries media, formContract and branding.",
+    "media": "Images, audio, video, tracks, remote players and links: allowed URLs, attributes and classes.",
+    "formContract": "How data-field values reach the plugin and how the shell restores them.",
+    "branding": "Per-tile accent colors from the manifest and what they change.",
+    "renderTargets": "tile, flyout, hover and popup: what each surface is for and its limits.",
+    "tileChrome": "Global and per-plugin tile chrome (card/flat) and tileScale.",
+    "charts": "data-chart donut, sparkline and the CSS bar/row/legend charts; a 340px flyout fits six bar columns.",
+    "icons": "The data-lucide icon names and their usage.",
+    "tokens": "The active theme's resolved --sb-* tokens; the machine-readable token contract lives in theme_get.",
+    "classes": "Every sb-* class at once (300+); prefer one category.",
+    "all": "The complete contract in one reply (large); prefer sections.",
+    "actions": "Buttons, chips, tabs, pagination and other controls.",
+    "forms": "Inputs, switches, selects, sliders and field anatomy; carries formContract.",
+    "data": "Tables, badges, stats, KPIs, lists and progress; carries charts.",
+    "content": "Cards, typography, media, quotes, timelines and empty states; carries media.",
+    "layout": "Grids, containers, clusters, stacks and bento layouts.",
+    "overlays": "Modals, drawers, popovers, menus and toasts.",
+    "feedback": "Alerts, spinners, skeletons and progress feedback.",
+    "disclosure": "Accordions, carousels, collapsibles and reveal."
+  },
+  "designRules": [
+    "Flyouts are compact desktop utility panels, about 340px wide. Start with a title, the useful data and its controls. Separate groups with spacing or a divider; add a card only when the group needs its own surface. Use the available width, stack sections vertically, and keep media at max-width 100%.",
+    "Spacing is AUTOMATIC: every top-level block in your HTML, and every child of sb-card/sb-hero, already gets vertical rhythm from the kit — inside data-tabs, data-tab-panel, sb-reveal and accordion bodies too; surfaces (card, hero, KPI grid, alert, empty state, table, chart, tab panel) get a larger gap on both sides, and a field hint sits one clear step under its control. style= carries only a data value (a progress width, --sb-chart-value) or a documented token (--sb-grid-cols); spacing, type and flex come from sb-field (input+button on one line), sb-inline (horizontal cluster), sb-push (align to the end of a row), sb-grid with --sb-grid-cols, the sb-text-* steps and sb-flush/sb-tight — the shell reports any other inline style into your log.",
+    "Keep the tile calm and compact: one primary value with an optional secondary label. The shell owns its outer surface, padding and interaction states; start with sb-tile and a cover recipe instead of wrapping another card around the content. Details belong in the flyout, actions in the flyout header (sb-header-actions).",
+    "Use the sb-* kit classes and var(--sb-*) theme tokens instead of custom colors so tiles follow the active theme.",
+    "Give every tile a stable, hugging width: the shell centers the cover as a whole; stacked values and labels share a leading edge. Cover digits are tabular in the theme's font by default; choose sb-mono only when a monospace face is wanted. Use data-marquee for growing text and data-rotator for several values (see tileSizing); do not add a fixed or minimum width around short content.",
+    "The bar tile is one of the nine coverLayouts recipes; pick one by whenToUse and fill it with your data."
+  ],
+  "bestPractices": {
+    "workflow": [
+      "Make follow-up calls when the tile needs them: ui_kit(sections=[\"coverLayouts\"]) for the nine tile recipes, [\"behaviour\"] for a data-sb-* hook, [\"sanitizer\"] for the allowlist and native interaction, [\"conventions\"] for tabs, menus, tooltips and render targets, [\"charts\"] for charts, [\"icons\"] for icon names, [\"media\"] for images and players.",
+      "Compare all nine cover recipes by whenToUse and choose exactly one before writing the tile. Do not invent a tenth layout from loose classes.",
+      "When hasFlyout is true, build the compact tile and detail flyout as one design: the tile earns the click, the flyout answers it. A tile-only tile keeps its complete state glanceable without inventing an empty flyout.",
+      "Read the complete component anatomy in the relevant categories before composing a surface: forms for editors, content for cards/empty states, actions for navigation, feedback for validation. Use these components to give the user's idea a clear visual hierarchy; a row of generic controls is only a draft."
+    ],
+    "hierarchy": [
+      "The tile communicates one glanceable primary signal. Keep labels secondary and move history, controls and explanations into the flyout.",
+      "Give each flyout one clear title and primary action, then group the rest into short vertical sections. Avoid nested cards when spacing alone separates the content.",
+      "Use the smallest component that expresses the meaning: semantic text before a badge, a list before a table, and a native control before a custom interaction."
+    ],
+    "states": [
+      "Design loading, empty, error, stale and ready states. Keep the tile structure and footprint stable between them; use a placeholder such as – where the value belongs.",
+      "Keep the last useful data visible during refresh or a recoverable network error, and explain the stale/error state without turning the tile into an alert panel.",
+      "Disable actions that cannot run and explain why in nearby text or a themed title tooltip; never make a dead control look active."
+    ],
+    "accessibility": [
+      "Use semantic buttons, links, headings, lists and form labels. Icon-only controls need an aria-label AND a title with the same text — the shell turns the title into its themed tooltip; decorative icons use aria-hidden=\"true\".",
+      "Every meaningful image needs useful alt text, audio/video needs an accessible fallback, and spoken video needs captions when available.",
+      "Never communicate status by color alone. Pair sb-ok/sb-warn/sb-crit with text, an icon or another explicit cue and keep every interaction keyboard reachable."
+    ],
+    "themeAndMotion": [
+      "Use sb-* classes and var(--sb-*) tokens so every bundled and drop-in theme remains legible; do not hardcode surface, text or status colors.",
+      "Animate a meaningful state change, not decoration. Keep markup stable so media and CSS motion do not restart on each render; the shell honors reduced motion.",
+      "Use data-sb-key when one surface has several remembered values, and push new markup only when visible data or state actually changed."
+    ],
+    "media": [
+      "Local images, audio and video belong in app.data_dir and render through sb-asset:<relative path>. Copy a bundled file from app.plugin_dir once before rendering; never write runtime data into the code folder.",
+      "Keep media at max-width 100%, provide poster/alt/captions where applicable, and use the media classes instead of fixed dimensions.",
+      "For a remote player use its official HTTPS embed in the flyout, a lightweight thumbnail in tile/hover, stable HTML while the item is unchanged, and an ordinary external link as fallback.",
+      "For background playback use app.audio, which reads local files directly from the plugin or data folder, supports playback controls and does not require an HTML audio element. HTML autoplay stays muted."
+    ],
+    "verification": [
+      "Read plugin_logs(pluginId) after rendering; sanitizer removals and unknown sb-* classes are design failures, not cosmetic warnings.",
+      "Photograph every surface after the last write: the tile with bar_screenshot(target=the full tile id from bar_get_state, scale=3); for every tile with hasFlyout, bar_ui_state(action=\"open_flyout\", tileId=the full id) and then bar_screenshot(target=\"flyout\"); hover and popup when the plugin renders them.",
+      "Open and INSPECT the returned PNGs. A successful screenshot call only proves a capture exists. Check hierarchy, spacing, readable contrast, wrapping of long realistic content, clipping, touch targets and the primary action; revise and capture again until they pass.",
+      "Exercise the actual UI in empty, populated, create/edit and error states wherever applicable. For forms, verify labels, localized placeholders, optional-field hints, validation, keyboard input, submit and cancel. For actionable toasts, verify buttons and dismissal.",
+      "Check another contrasting theme and long localized text where possible. Use temporary sample records only with authorization or isolated data; remove only records you created and restore any settings changed for the review.",
+      "Before reporting completion, name the surfaces/states inspected and any remaining visual limitation. If smabar is not running or capture fails, state that visual review is pending; successful startup and passing tests alone do not establish design quality."
+    ],
+    "forms": [
+      "For every form, fetch ui_kit sections forms and snippets. Use form.sb-stack to separate fields, and sb-field-stack around each label/control/hint/error. Automatic root spacing does not space children inside a plain form.",
+      "Every text input and textarea needs a visible associated label and a localized, useful placeholder: show an example value or what to write, rather than repeating the label. Placeholders supplement labels; they never replace them.",
+      "Mark optional fields, explain formats/units/time zones and the effect of leaving a field empty with sb-field__hint and aria-describedby. Native date/time controls often ignore placeholder: provide a visible hint beside them.",
+      "Prefer input[data-sb-temporal] for a themed date, time or datetime-local field with an explicit completion path; read the behaviour hook and snippets.temporal. Its calendar closes on a day choice, its time editor has Apply time, and its clear action makes optional fields obvious. Use native inputs for sub-minute precision.",
+      "Use required, min/max/maxlength and an owned sb-field__error where applicable. Put actionable save failures near the form, preserve entered values and keep the correction path obvious.",
+      "Give the submit action a specific verb, distinguish create from edit, and keep cancellation and destructive actions visually secondary. Use a collapsed native details section for optional long editors so existing content stays easy to scan."
+    ]
+  },
+  "classes": [
+    {
+      "name": "sb-root",
+      "purpose": "Typography/color base wrapper; the shell wraps every plugin fragment in one automatically — plugins never add it themselves",
+      "example": "<div class=\"sb-root\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-scroll",
+      "purpose": "Scrollable area with themed thin scrollbars",
+      "example": "<div class=\"sb-scroll\" style=\"max-height: 200px\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-divider",
+      "purpose": "Horizontal hairline separator",
+      "example": "<hr class=\"sb-divider\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-card",
+      "purpose": "Inner card surface",
+      "example": "<div class=\"sb-card\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-hero",
+      "purpose": "Accent-gradient hero surface; text inside it (small, sb-dim/muted/faint, badges, section labels, links) is derived from --sb-on-accent automatically",
+      "example": "<div class=\"sb-hero\"><small>Bitcoin</small><h1>$64k</h1></div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-tip",
+      "purpose": "Info callout row (icon + text)",
+      "example": "<div class=\"sb-tip\"><span data-lucide=\"info\"></span>Umbrella recommended</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-header",
+      "purpose": "Flyout title row; put tile actions here (sb-header-actions)",
+      "example": "<div class=\"sb-header\"><span class=\"sb-title\">Weather</span>…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-header-actions",
+      "purpose": "Right-aligned action cluster inside sb-header",
+      "example": "<div class=\"sb-header-actions\"><button class=\"sb-btn sb-btn-icon\" data-action=\"refresh\"><span data-lucide=\"refresh-cw\"></span></button></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-title",
+      "purpose": "Flyout title text",
+      "example": "<span class=\"sb-title\">Crypto</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-section",
+      "purpose": "Uppercase section label",
+      "example": "<div class=\"sb-section\">Upcoming</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-dim",
+      "purpose": "Dimmed text (strongest of the three muted steps)",
+      "example": "<span class=\"sb-dim\">21° feels like 19°</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-muted",
+      "purpose": "Muted text",
+      "example": "<span class=\"sb-muted\">updated 5 min ago</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-faint",
+      "purpose": "Faint text (weakest step)",
+      "example": "<span class=\"sb-faint\">via Open-Meteo</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-mono",
+      "purpose": "Monospace, tabular numbers",
+      "example": "<span class=\"sb-mono\">04:13:37</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-btn",
+      "purpose": "Button base",
+      "example": "<button class=\"sb-btn\" data-action=\"more\">Details</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn-primary",
+      "purpose": "Accent-filled primary button",
+      "example": "<button class=\"sb-btn sb-btn-primary\" data-action=\"save\">Save</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn-ghost",
+      "purpose": "Borderless low-emphasis button",
+      "example": "<button class=\"sb-btn sb-btn-ghost\" data-action=\"cancel\">Cancel</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn-danger",
+      "purpose": "Destructive button",
+      "example": "<button class=\"sb-btn sb-btn-danger\" data-action=\"delete\">Delete</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn-icon",
+      "purpose": "Square icon-only button (pair with sb-btn)",
+      "example": "<button class=\"sb-btn sb-btn-icon\" data-action=\"refresh\" aria-label=\"Refresh\"><span data-lucide=\"refresh-cw\"></span></button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-input",
+      "purpose": "Text input with focus ring",
+      "example": "<input class=\"sb-input\" data-field=\"city\" placeholder=\"Berlin\">",
+      "category": "forms"
+    },
+    {
+      "name": "sb-toggle",
+      "purpose": "Checkbox styled as a switch — smabar's own, compact enough for a tile or a dense row. Prefer sb-switch when the control carries a label beside it; that one is the fuller component with its own label wrapper.",
+      "example": "<input class=\"sb-toggle\" type=\"checkbox\" data-field=\"dark\">",
+      "category": "forms"
+    },
+    {
+      "name": "sb-choice-grid",
+      "purpose": "3-column grid of radio-style tiles",
+      "example": "<div class=\"sb-choice-grid\">…sb-choice…</div>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-choice",
+      "purpose": "Radio-style tile (icon + label); mark the selected one with sb-active",
+      "example": "<button class=\"sb-choice sb-active\" data-action=\"unit:c\"><span data-lucide=\"thermometer\"></span>°C</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-tabs",
+      "purpose": "Segmented tab bar container",
+      "example": "<div class=\"sb-tabs\">…sb-tab…</div>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-tab",
+      "purpose": "One segment; mark the selected one with sb-active",
+      "example": "<button class=\"sb-tab sb-active\" data-action=\"tab:1d\">1D</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-list",
+      "purpose": "Vertical list container for sb-row items",
+      "example": "<div class=\"sb-list\">…sb-row…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-row",
+      "purpose": "List row (hover highlight; sb-active for selection)",
+      "example": "<div class=\"sb-row\"><span data-lucide=\"cpu\"></span><span>CPU</span><span class=\"sb-muted\">38%</span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-kbd",
+      "purpose": "Keyboard shortcut chip",
+      "example": "<span class=\"sb-kbd\">Ctrl+K</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge",
+      "purpose": "Neutral pill badge",
+      "example": "<span class=\"sb-badge\">beta</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge-success",
+      "purpose": "Positive badge",
+      "example": "<span class=\"sb-badge sb-badge-success\">+2.4%</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge-warning",
+      "purpose": "Warning badge",
+      "example": "<span class=\"sb-badge sb-badge-warning\">low</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge-danger",
+      "purpose": "Negative badge",
+      "example": "<span class=\"sb-badge sb-badge-danger\">-1.8%</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge-info",
+      "purpose": "Informational badge",
+      "example": "<span class=\"sb-badge sb-badge-info\">new</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge-accent",
+      "purpose": "Accent-tinted badge",
+      "example": "<span class=\"sb-badge sb-badge-accent\">pro</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-icon-badge",
+      "purpose": "Rounded accent icon tile (for a custom color set --sb-accent and --sb-on-accent together via style, not background)",
+      "example": "<span class=\"sb-icon-badge\" style=\"--sb-accent:#0ea5e9;--sb-on-accent:#04141a\"><span data-lucide=\"cloud-sun\"></span></span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-kpi-grid",
+      "purpose": "2-column grid of sb-kpi cells",
+      "example": "<div class=\"sb-kpi-grid\">…sb-kpi…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-kpi",
+      "purpose": "One KPI cell (value + label); the value fits about six characters at the xl step in the two-column grid — render a compact figure (1.2 GB, 38 %) and put the exact reading in title",
+      "example": "<div class=\"sb-kpi\"><span class=\"sb-kpi-value\">38%</span><span class=\"sb-kpi-label\">CPU</span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-kpi-value",
+      "purpose": "Large KPI number — keep it to a value and unit (about 8 characters at half width); a range or a second unit belongs in the label",
+      "example": "<span class=\"sb-kpi-value\">64%</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-kpi-label",
+      "purpose": "Uppercase KPI caption",
+      "example": "<span class=\"sb-kpi-label\">RAM</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-progress",
+      "purpose": "Progress track; set the fill via inline width on the inner element",
+      "example": "<div class=\"sb-progress\"><span style=\"width: 38%\"></span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-gauge",
+      "purpose": "Donut container (use with data-chart=donut; children become the center label)",
+      "example": "<div class=\"sb-gauge\" data-chart=\"donut\" data-value=\"62\"><span>62%</span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-spark",
+      "purpose": "Sparkline container (use with data-chart=sparkline)",
+      "example": "<div class=\"sb-spark\" data-chart=\"sparkline\" data-points=\"3,5,4,8,6\" role=\"img\" aria-label=\"Requests over five intervals: 3, 5, 4, 8, 6\"></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-tile",
+      "purpose": "Compact one-line tile content for the bar's live zone; hugs and centers its content",
+      "example": "<div class=\"sb-tile\"><span data-lucide=\"cloud-sun\"></span>21°</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-tile-stack",
+      "purpose": "Two lines with a shared leading edge and themed spacing, auto-sized to the tile's height budget (primary first, secondary last). A lone child stays primary. Add sb-center for deliberate centered text.",
+      "example": "<div class=\"sb-tile\"><div class=\"sb-tile-stack\"><span class=\"sb-mono\">09:41</span><span>Mon, 23 Aug</span></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-media",
+      "purpose": "Block media element (img/audio/video) or player wrapper with rounded, clipped corners and full width",
+      "example": "<img class=\"sb-media\" src=\"sb-asset:media/photo.jpg\" alt=\"Photo\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-media-cover",
+      "purpose": "16:9 hero media: object-fit cover inside the rounded frame (pair with sb-media)",
+      "example": "<video class=\"sb-media sb-media-cover\" src=\"sb-asset:media/clip.mp4\" controls muted></video>",
+      "category": "content"
+    },
+    {
+      "name": "sb-carousel",
+      "purpose": "Horizontal scroll-snap slide container (the data-carousel enhancer adds it automatically)",
+      "example": "<div data-carousel aria-label=\"Gallery\"><img src=\"https://example.com/1.jpg\" alt=\"Gallery slide 1\"><img src=\"https://example.com/2.jpg\" alt=\"Gallery slide 2\"></div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-active",
+      "purpose": "Modifier: the active/selected state of sb-choice, sb-tab and sb-row",
+      "example": "<button class=\"sb-tab sb-active\">1D</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-field",
+      "purpose": "Input and button on ONE line; the input takes the remaining width",
+      "example": "<div class=\"sb-field\"><input class=\"sb-input\" data-field=\"query\" placeholder=\"City\"><button class=\"sb-btn\" data-action=\"search\">Search</button></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-field-stack",
+      "purpose": "Vertical form-field anatomy for a label, control, owned hint and validation error; use sb-field for a one-row input plus action instead",
+      "example": "<label class=\"sb-field-stack\"><span>Email</span><input class=\"sb-input\" type=\"email\" data-field=\"email\" aria-describedby=\"email-hint\"><span class=\"sb-field__hint\" id=\"email-hint\">Used for alerts.</span></label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-btn-group",
+      "purpose": "Visually joined segmented actions with collapsed borders and outside corners; mark the selected segment with aria-pressed=\"true\" or is-active",
+      "example": "<div class=\"sb-btn-group\"><button class=\"sb-btn\" aria-pressed=\"true\">Day</button><button class=\"sb-btn\" aria-pressed=\"false\">Week</button></div>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-input-group",
+      "purpose": "One joined input, select, addon or button group with collapsed shared borders and only outside corners rounded",
+      "example": "<div class=\"sb-input-group\"><input class=\"sb-input\" data-field=\"query\" aria-label=\"Search query\"><button class=\"sb-btn\" data-action=\"search\">Search</button></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-select",
+      "purpose": "Single-value select enhanced by the shell into a themed top-layer listbox; the original select remains the form and data-field source, while data-sb-native explicitly keeps the native picker",
+      "example": "<select class=\"sb-select\" data-field=\"plan\"><option value=\"free\">Free</option><option value=\"pro\">Pro</option></select>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-inline",
+      "purpose": "Neutral horizontal cluster (no padding, no hover) for tile internals and value rows",
+      "example": "<div class=\"sb-inline\"><span data-lucide=\"cpu\"></span><span class=\"sb-mono\">38%</span></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-stack",
+      "purpose": "Vertical group with the standard rhythm, when the automatic one is wrong",
+      "example": "<div class=\"sb-stack\"><div class=\"sb-card\">One</div><div class=\"sb-card\">Two</div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-push",
+      "purpose": "Pushes this element to the end of a flex row (replaces margin-left:auto)",
+      "example": "<div class=\"sb-row\"><span>Free space</span><span class=\"sb-mono sb-push\">12 GB</span></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-reveal",
+      "purpose": "Smoothly expands its content when sb-active is added — search results, details",
+      "example": "<div class=\"sb-reveal sb-active\"><div class=\"sb-list\"><div class=\"sb-row\">Europe/Berlin</div></div></div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-grid",
+      "purpose": "Grid with a column count you choose via --sb-grid-cols",
+      "example": "<div class=\"sb-grid\" style=\"--sb-grid-cols:7\"><span>1</span><span>2</span><span>3</span></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-flush",
+      "purpose": "Turns the automatic spacing OFF for this container's children",
+      "example": "<div class=\"sb-flush\"><div class=\"sb-card\">Touching</div><div class=\"sb-card\">blocks</div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-tight",
+      "purpose": "Denser automatic spacing for this container's children",
+      "example": "<div class=\"sb-tight\"><p>Close</p><p>together</p></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-center",
+      "purpose": "Centers text and child items inside this element; combine with sb-card, sb-kpi, or another flex/grid container",
+      "example": "<div class=\"sb-card sb-center\"><span class=\"sb-mono\">09:41</span></div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-text-xs",
+      "purpose": "Type scale step (also: sb-text-s, sb-text-m, sb-text-l, sb-text-xl, sb-text-hero)",
+      "example": "<span class=\"sb-text-xs\">smallest step</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-ok",
+      "purpose": "Success color for a value or icon (badges use sb-badge-success)",
+      "example": "<span class=\"sb-ok\" data-lucide=\"check\"></span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-warn",
+      "purpose": "Warning color for a value or icon",
+      "example": "<span class=\"sb-warn sb-mono\">92%</span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-crit",
+      "purpose": "Danger color for a value or icon",
+      "example": "<span class=\"sb-crit sb-mono\">98%</span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-error",
+      "purpose": "Inline form error under a field",
+      "example": "<p class=\"sb-error\">No time zone found for that name.</p>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-meta",
+      "purpose": "The quiet “last updated…” line at the end of a flyout",
+      "example": "<p class=\"sb-meta\">Updated 2 minutes ago</p>",
+      "category": "content"
+    },
+    {
+      "name": "sb-eq",
+      "purpose": "Tiny animated equalizer glyph (accent bars, 1em tall) for 'currently running' states; is-paused freezes it dimmed, reduced motion shows static staggered bars. Pure CSS — push the markup once, not per tick",
+      "example": "<span class=\"sb-eq\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span></span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-tile-seg",
+      "purpose": "Segment-header tile cover: small uppercase muted header over the value line; sb-tile-seg--fill turns the header into an accent pill (card-chrome height needed)",
+      "example": "<span class=\"sb-tile-seg\"><span>Weather</span><span>18° Partly cloudy</span></span>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-tile-split",
+      "purpose": "Stat-split tile cover: children sit side by side, every child after the first gets a hairline divider — typically two sb-tile-stack columns (KPI left, trend right)",
+      "example": "<span class=\"sb-tile-split\"><span class=\"sb-tile-stack\"><span>48</span><span class=\"sb-muted\">min</span></span><span class=\"sb-tile-stack\"><span class=\"sb-stat__delta sb-stat__delta--up\">+12%</span><span class=\"sb-muted\">vs. yesterday</span></span></span>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-tile-check",
+      "purpose": "Checklist tile cover: compact ul with circle markers; li.is-done fills the circle with the accent and dims the text. Two entries fit the default bar — overflow clips",
+      "example": "<ul class=\"sb-tile-check\"><li class=\"is-done\">Workout</li><li>Send report</li></ul>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-tile-next",
+      "purpose": "Next-event tile cover: a time/title line stacked over a slim sb-progress track that marks how close the event is",
+      "example": "<span class=\"sb-tile-next\"><span class=\"sb-inline\"><span class=\"sb-mono sb-accent\">14:00</span><span>Design Review</span></span><span class=\"sb-progress\"><span style=\"width: 62%\"></span></span></span>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-wrap",
+      "purpose": "Wrap user-written titles, notes and long URLs within a narrow surface; also lets a flex or grid child shrink.",
+      "example": "<p class=\"sb-wrap\">A long user-written note or URL</p>",
+      "category": "content"
+    }
+  ],
+  "classCategories": {
+    "note": "`classes` in this reply is smabar's own core vocabulary. The harvested component classes are grouped by category and NOT included by default, because there are far too many to read in one go: include the category you are building with in `sections`, or request sections=[\"classes\"] for every class at once. Every class entry carries its category.",
+    "actions": "buttons, button groups, chips, tabs, close controls",
+    "forms": "inputs, fields with label/hint/error, checkboxes, radios, switches, sliders, selects, textareas, comboboxes, input groups",
+    "data": "tables, badges, lists, stats, KPIs, avatars, notification indicators, progress, gauges, sparklines, keyboard chips; carries charts (data-chart donut, sparkline, the CSS bars — a 340px flyout fits six bar columns)",
+    "content": "cards with header/body/footer, heros, the type and muted steps, media, quotes, timelines, empty states, prose, decorative surfaces",
+    "layout": "the spacing and alignment helpers, grids, columns, containers, bento grids, clusters, aspect ratios, the bar tile",
+    "overlays": "modals and alert dialogs (<dialog> + command), drawers, popovers ([popover] + popovertarget), hover cards",
+    "feedback": "alerts, spinners, skeletons, status colors",
+    "disclosure": "accordions and collapsibles (<details>), carousels, scroll areas, sb-reveal"
+  },
+  "icons": [
+    "activity",
+    "alarm-clock",
+    "archive",
+    "arrow-down",
+    "arrow-left",
+    "arrow-right",
+    "arrow-up",
+    "battery",
+    "battery-charging",
+    "bell",
+    "bell-off",
+    "bitcoin",
+    "bookmark",
+    "box",
+    "bug",
+    "calendar",
+    "calendar-days",
+    "chart-column",
+    "chart-line",
+    "chart-pie",
+    "check",
+    "chevron-down",
+    "chevron-left",
+    "chevron-right",
+    "chevron-up",
+    "circle",
+    "circle-alert",
+    "circle-check",
+    "circle-question-mark",
+    "circle-x",
+    "clock",
+    "cloud",
+    "cloud-drizzle",
+    "cloud-fog",
+    "cloud-lightning",
+    "cloud-moon",
+    "cloud-rain",
+    "cloud-snow",
+    "cloud-sun",
+    "copy",
+    "cpu",
+    "credit-card",
+    "database",
+    "dollar-sign",
+    "download",
+    "droplets",
+    "ellipsis",
+    "external-link",
+    "eye",
+    "eye-off",
+    "file",
+    "file-text",
+    "flame",
+    "folder",
+    "folder-open",
+    "funnel",
+    "gauge",
+    "globe",
+    "hard-drive",
+    "heart",
+    "house",
+    "image",
+    "info",
+    "layers",
+    "layout-grid",
+    "link",
+    "list",
+    "loader-circle",
+    "lock",
+    "mail",
+    "map-pin",
+    "memory-stick",
+    "menu",
+    "message-circle",
+    "message-square",
+    "minus",
+    "monitor",
+    "moon",
+    "music",
+    "network",
+    "package",
+    "pause",
+    "pencil",
+    "pin",
+    "play",
+    "plug",
+    "plus",
+    "power",
+    "refresh-cw",
+    "repeat",
+    "rotate-cw",
+    "save",
+    "search",
+    "send",
+    "settings",
+    "settings-2",
+    "share-2",
+    "shield",
+    "shield-check",
+    "skip-back",
+    "skip-forward",
+    "sliders-horizontal",
+    "snowflake",
+    "sparkles",
+    "square",
+    "star",
+    "sun",
+    "sunrise",
+    "sunset",
+    "tag",
+    "terminal",
+    "thermometer",
+    "timer",
+    "trash-2",
+    "trending-down",
+    "trending-up",
+    "triangle-alert",
+    "truck",
+    "umbrella",
+    "upload",
+    "user",
+    "users",
+    "volume-2",
+    "volume-x",
+    "wallet",
+    "wifi",
+    "wifi-off",
+    "wind",
+    "wrench",
+    "x",
+    "zap"
+  ],
+  "iconsUsage": "Reference icons as <span data-lucide=\"name\"></span>; the shell inserts a trusted SVG (currentColor stroke, 1em). Unknown names fall back to a circle.",
+  "charts": {
+    "generatedDonut": "Element with data-chart=\"donut\" data-value=\"62\" (optional positive data-max, default 100): the shell prepends an SVG ring from zero to value/max; the element's own children stay as the visible value/unit label. Broken numbers render nothing.",
+    "sparkline": "Element with data-chart=\"sparkline\" data-points=\"3,5,4,8,6\": the shell replaces the content with a normalized currentColor polyline. Supply at least two finite points and an aria-label naming the series, units and range; broken input renders nothing.",
+    "donut": "CSS-only sb-chart-donut: set --sb-chart-v1..v4 to non-negative percentages whose total is at most 100; unused remainder is the track. Put the formatted total/unit in sb-chart-donut__value, its meaning in sb-chart-donut__caption, and give the root role=\"img\" plus an aria-label that names every segment. Use sb-chart-legend when colors represent multiple series.",
+    "bars": "CSS-only sb-chart-bars: columns are at least 2.25rem wide, so a 340px flyout fits SIX — thin a 24-hour series to every fourth hour; more columns scroll sideways. Put one sb-chart-bars__item per category, set one positive shared --sb-chart-max on the root and each finite --sb-chart-value between 0 and max on its item. Every bar starts at the common zero baseline; put the formatted number/unit in sb-chart-bars__value and the category in sb-chart-bars__label, and give each item a title with its complete reading (\"14:00: 30 % rain chance\") — the shell shows it as a tooltip when the pointer rests on the column. Do not choose a different max per item or encode values only by height. Give the root role=\"img\" and an aria-label containing the complete labelled series.",
+    "rows": "CSS-only sb-chart-rows: set one positive shared --sb-chart-max on the root; each sb-chart-rows__bar gets a finite --sb-chart-value from 0 to max and sits between a visible sb-chart-rows__label and formatted sb-chart-rows__value (include units). All tracks share the zero baseline and scale. Give the root role=\"img\" and an aria-label containing the complete labelled series.",
+    "legend": "sb-chart-legend pairs each series name with a swatch and optional tabular sb-chart-legend__value. Set --sb-chart-color per item when it differs from --sb-chart-1; legend order must match chart/aria-label order and color must never be the only distinction.",
+    "states": "No data is not a zero-valued chart: add is-empty to the chart root and pair it with a visible sb-empty message. While data is pending, add is-loading and aria-busy=\"true\" to the chart root, then render sb-skeleton placeholders plus a textual status. Replace the state only after max, values, labels and units are all known; charts are responsive to their container, so do not set pixel widths on bars."
+  },
+  "conventions": {
+    "marquee": {
+      "attribute": "data-marquee",
+      "usage": "Put data-marquee on a width-constrained element. The shell scrolls its content smoothly only while it overflows horizontally, pauses on hover, and disables motion for prefers-reduced-motion.",
+      "example": "<span data-marquee style=\"max-width: 12rem\">A status text that may be too long</span>"
+    },
+    "badge": {
+      "attribute": "data-badge",
+      "usage": "Put data-badge=\"text\" on a tile root or any element for a top-right accent badge. An empty value renders a dot.",
+      "example": "<div class=\"sb-tile\" data-badge=\"3\">Inbox</div>"
+    },
+    "carousel": {
+      "attribute": "data-carousel",
+      "usage": "Put data-carousel on a container; every direct child becomes one full-width scroll-snap slide. Touch, pen and mouse drag use pointer capture, trackpads scroll natively, and ArrowLeft/ArrowRight work when the carousel is focused. Optional data-carousel-interval=\"5000\" auto-advances and wraps every N ms (minimum 1500), pauses for pointer, drag or keyboard focus, and stays off under prefers-reduced-motion. Give the container an aria-label and every media slide useful alt text or visible text.",
+      "example": "<div class=\"sb-media\" data-carousel data-carousel-interval=\"5000\" aria-label=\"Gallery\"><img src=\"https://example.com/1.jpg\" alt=\"Gallery slide 1\"><img src=\"https://example.com/2.jpg\" alt=\"Gallery slide 2\"></div>"
+    },
+    "tabs": {
+      "attribute": "data-tabs",
+      "usage": "Container with data-tabs: any element carrying data-tab=\"<id>\" (a sb-tab button, or a whole sb-row so a list of items doubles as the tab strip) switches the panels carrying data-tab-panel=\"<id>\" locally in the shell — no plugin round-trip. The first tab starts active unless one already carries sb-active; the shell toggles sb-active and panel visibility. data-action on the same element still fires: give the tab data-action=\"select\" and mark the chosen one sb-active on the next render, otherwise your next push resets the view to the first tab. Put the hidden attribute on every panel that is not active, so the markup is honest before the shell runs.",
+      "example": "<div data-tabs><div class=\"sb-tabs\"><button class=\"sb-tab\" data-tab=\"now\">Now</button><button class=\"sb-tab\" data-tab=\"week\">Week</button></div><div data-tab-panel=\"now\">Now content</div><div data-tab-panel=\"week\">Week content</div></div>"
+    },
+    "contextMenu": {
+      "attribute": "data-context-items",
+      "usage": "Custom right-click menus. Put data-context-items='<JSON array>' (single quotes outside, JSON inside) on ANY element of your HTML — tile, flyout or popup. The bar suppresses the webview's native menu everywhere, so this is the only menu the user sees. Selecting an entry reaches your plugin as a NORMAL action: the same plugin_action call a data-action click makes, with {action, value} — there is nothing new to implement, your existing action handler receives it. Entry fields: label (REQUIRED, plain TEXT inserted as text — you own your i18n; longer than 64 chars is truncated with an ellipsis), action (REQUIRED for a selectable entry, at most 64 chars), value (optional string payload, at most 512 chars), icon (optional, MUST be one of the ui_kit icon names — unknown names simply render no icon), danger (true = destructive/red styling), disabled (true = shown greyed out and not selectable), checked (true or false = a leading check-mark column, for toggles and radio groups; the PLUGIN owns that state — re-render your HTML after handling the action), separator (true = a hairline instead of an entry; leading, trailing and doubled separators are dropped), items (an array of entries = EXACTLY ONE submenu level: such an entry carries label + items INSTEAD of action, and its children must be plain entries — a nested items array is dropped, deeper menus do not exist). Limits: at most 12 entries per level, the whole attribute at most 4096 characters; entries that break a rule are dropped individually. An attribute that is not a JSON array of usable entries is ignored entirely and the tile's own menu opens instead. Elements WITHOUT the attribute always fall back to that tile menu (Hide plugin / Plugin settings…), so you only annotate what needs its own menu.",
+      "example": "<img class=\"sb-media\" src=\"https://example.com/photo.jpg\" alt=\"Photo\" data-context-items='[{\"action\":\"download\",\"value\":\"https://example.com/photo.jpg\",\"label\":\"Download image\",\"icon\":\"download\"},{\"separator\":true},{\"label\":\"Sort by\",\"icon\":\"list\",\"items\":[{\"action\":\"sort\",\"value\":\"name\",\"label\":\"Name\",\"checked\":true},{\"action\":\"sort\",\"value\":\"date\",\"label\":\"Date\",\"checked\":false}]},{\"action\":\"remove\",\"label\":\"Remove from album\",\"icon\":\"trash-2\",\"danger\":true}]'>"
+    },
+    "tooltip": {
+      "attribute": "title",
+      "usage": "Put title=\"text\" on any element. The shell REPLACES the webview's native tooltip with its own themed surface (theme tokens --sb-tooltip-bg / --sb-tooltip-text / --sb-tooltip-border / --sb-tooltip-shadow): it opens after 400 ms of pointer hover or keyboard focus, sits on the side away from the docked bar edge and is clamped to the screen; inside an open flyout — the hover preview included — it is drawn within the flyout window, above the trigger when there is room and otherwise below. If a live render changes the hovered title, the visible surface updates in place without another delay. Escape dismisses it. The shell keeps existing aria-describedby references and appends a hidden description for controls that already have a name; when an element has no text, label or ARIA name it copies the title into aria-label instead.",
+      "example": "<button class=\"sb-btn sb-btn-icon\" data-action=\"refresh\" title=\"Refresh now\" aria-label=\"Refresh now\"><span data-lucide=\"refresh-cw\"></span></button>"
+    },
+    "rotator": {
+      "attribute": "data-rotator",
+      "usage": "Put data-rotator=\"up|down|left|right\" on a container; every direct child is one view, all stacked in place (the container sizes to the tallest view). The shell shows one view at a time and rolls to the next every data-rotator-interval ms (default 4000, minimum 1500) in the given direction, pausing while hovered; under prefers-reduced-motion views switch instantly. Use it to cycle tickers, rotating titles, or KPI views inside a tile.",
+      "example": "<div data-rotator=\"up\" data-rotator-interval=\"4000\"><div><span data-lucide=\"bitcoin\"></span> BTC $109,412</div><div><span data-lucide=\"trending-up\"></span> ETH $4,102</div></div>"
+    },
+    "clock": {
+      "attribute": "data-clock / data-clock-text",
+      "usage": "The shell keeps time so your plugin does not have to re-render every second — which would throw away form state, carousel position and focus. data-clock=\"<IANA zone>\" turns an element into an animated analog clock (its hands are CSS animations, zero JS ticking). data-clock-text=\"<IANA zone>\" fills an element with a ticking string; data-clock-format picks time (default), date, weekday, week (ISO week number), offset (UTC offset) or unix (seconds since the epoch — pair it with a data-sb-copy button). data-clock-lang sets the locale, data-clock-seconds=\"false\" hides seconds. An empty zone means the system time zone. Inside a bar tile the analog face sizes itself to the tile height, so data-clock works as an analog cover. Render ONCE and let these tick.",
+      "example": "<div class=\"sb-card sb-center\"><div data-clock=\"Europe/Berlin\"></div><div class=\"sb-mono sb-text-xl\"><span data-clock-text=\"Europe/Berlin\"></span></div><div class=\"sb-dim\">Berlin · <span data-clock-text=\"Europe/Berlin\" data-clock-format=\"offset\"></span></div></div>"
+    }
+  },
+  "renderTargets": {
+    "tile": "Persistent compact bar content. Uses the configured tile chrome unless the tile manifest overrides it.",
+    "flyout": "Persistent detail content opened by click (and shown as the hover preview while no hover content exists).",
+    "hover": "Optional persistent hover-preview content. Once pushed, hovering the tile shows THIS content after the user's hoverPeek delay instead of the click flyout — even when the user disabled the generic hover preview (the tile's hover content overrides that setting for this tile). A click pins the normal flyout target. Identical preview and flyout HTML is promoted in place with its DOM and scroll preserved; different compact previews are replaced. Remote iframe players still load only when pinned. Cached and replayed like tile/flyout.",
+    "popup": "Transient toast content. Send ui.render with target=\"popup\". ttlMs omitted or null makes the popup STICKY — it stays until the user clicks its X button; an unsigned 32-bit integer ttlMs auto-dismisses after that many ms, clamped to 1000–120000. Any other ttlMs falls back to 5000 ms and is logged once instead of becoming sticky. Popups stack at a user-configured screen position (popups.position, up to 5 visible and 45 queued) — the plugin cannot choose the position. When the bounded queue is full, the oldest waiting popup is discarded and reported in the plugin log. Auto-dismiss pauses while the user hovers a popup or keeps keyboard focus inside it. Popups may be disabled globally (do-not-disturb). Buttons with data-action are interactive and reach the normal plugin handler. For stable IDs, updates, explicit closing, delivery events and an optional local sound use app.popups.show(tile_id,popup_id,html,...) and app.popups.dismiss(...); see plugin_guide sdk.popups. Keep the task state in plugin storage and dismiss only after a successful write."
+  },
+  "sanitizer": {
+    "allowedTags": [
+      "a",
+      "abbr",
+      "article",
+      "aside",
+      "audio",
+      "b",
+      "blockquote",
+      "br",
+      "button",
+      "caption",
+      "code",
+      "col",
+      "colgroup",
+      "datalist",
+      "dd",
+      "details",
+      "dialog",
+      "div",
+      "dl",
+      "dt",
+      "em",
+      "fieldset",
+      "figcaption",
+      "figure",
+      "footer",
+      "form",
+      "h1",
+      "h2",
+      "h3",
+      "h4",
+      "h5",
+      "h6",
+      "header",
+      "hr",
+      "i",
+      "iframe",
+      "img",
+      "input",
+      "kbd",
+      "label",
+      "legend",
+      "li",
+      "main",
+      "mark",
+      "meter",
+      "nav",
+      "ol",
+      "optgroup",
+      "option",
+      "output",
+      "p",
+      "picture",
+      "pre",
+      "progress",
+      "s",
+      "samp",
+      "section",
+      "select",
+      "small",
+      "source",
+      "span",
+      "strong",
+      "sub",
+      "summary",
+      "sup",
+      "table",
+      "tbody",
+      "td",
+      "textarea",
+      "tfoot",
+      "th",
+      "thead",
+      "time",
+      "track",
+      "tr",
+      "u",
+      "ul",
+      "var",
+      "video",
+      "wbr"
+    ],
+    "droppedTags": [
+      "embed",
+      "link",
+      "meta",
+      "object",
+      "script",
+      "style",
+      "template"
+    ],
+    "allowedAttrs": [
+      "alt",
+      "aria-busy",
+      "aria-controls",
+      "aria-current",
+      "aria-describedby",
+      "aria-disabled",
+      "aria-expanded",
+      "aria-haspopup",
+      "aria-hidden",
+      "aria-label",
+      "aria-labelledby",
+      "aria-live",
+      "aria-modal",
+      "aria-pressed",
+      "aria-roledescription",
+      "aria-selected",
+      "class",
+      "colspan",
+      "datetime",
+      "dir",
+      "for",
+      "headers",
+      "hidden",
+      "id",
+      "lang",
+      "placeholder",
+      "role",
+      "rowspan",
+      "scope",
+      "span",
+      "style",
+      "tabindex",
+      "title"
+    ],
+    "dataAttrPattern": "^data-[a-z0-9-]+$",
+    "inputTypes": [
+      "checkbox",
+      "color",
+      "date",
+      "datetime-local",
+      "email",
+      "month",
+      "number",
+      "password",
+      "radio",
+      "range",
+      "search",
+      "tel",
+      "text",
+      "time",
+      "url",
+      "week"
+    ],
+    "inputAttrs": [
+      "checked",
+      "cols",
+      "disabled",
+      "inputmode",
+      "list",
+      "max",
+      "maxlength",
+      "min",
+      "minlength",
+      "multiple",
+      "name",
+      "readonly",
+      "required",
+      "rows",
+      "selected",
+      "size",
+      "step",
+      "value"
+    ],
+    "unwrappedNote": "A tag that is neither allowed nor dropped is UNWRAPPED: the tag goes, its sanitized children stay. Every removal is reported into your plugin's log with the reason — see sanitizer.reporting.",
+    "imgSrcRule": "img src must start with http://, https://, data:image/ or sb-asset: — anything else is stripped.",
+    "reporting": "Nothing here fails loudly in the UI — a removed element is simply not there. Every removal IS reported into the plugin's own log as a \"shell\" entry naming what was removed, how often, and the supported alternative; read it with plugin_logs(<your plugin id>). It is logged once per distinct problem per surface, not once per render, and a clean render re-arms it, so a problem that comes back is reported again; the write reply summarises this start's reports under reload.warnings. If a tile renders but an element is missing, look there FIRST.",
+    "svgTags": [
+      "circle",
+      "defs",
+      "ellipse",
+      "g",
+      "line",
+      "linearGradient",
+      "path",
+      "polygon",
+      "polyline",
+      "radialGradient",
+      "rect",
+      "stop",
+      "svg",
+      "text",
+      "tspan"
+    ],
+    "nativeInteractionAttrs": [
+      "command",
+      "commandfor",
+      "open",
+      "popover",
+      "popovertarget",
+      "popovertargetaction"
+    ],
+    "commandValues": [
+      "close",
+      "hide-popover",
+      "request-close",
+      "show-modal",
+      "show-popover",
+      "toggle-popover"
+    ],
+    "nativeInteraction": "You cannot ship JavaScript, and you do not need to for the common interactions. <details>/<summary> is an accordion. <dialog> plus a button with commandfor=\"<dialog id>\" command=\"show-modal\" is a modal, and command=\"close\" closes it; request-close preserves the dialog's cancellable cancel path. Any element with the popover attribute plus a button with popovertarget is a menu or a popup. The shell uses native activation when present and the matching showModal/close/showPopover/hidePopover API only when declarative invokers are absent, so the markup works without double activation. Give several <details> the SAME name attribute and they become an exclusive accordion: opening one closes its siblings. Only the built-in command values are honoured: close, hide-popover, request-close, show-modal, show-popover, toggle-popover.",
+    "svg": "Inline <svg> is allowed for shapes, text and gradients (circle, defs, ellipse, g, line, linearGradient, path, polygon, polyline, radialGradient, rect, stop, svg, text, tspan). <use>, <script>, <foreignObject>, <animate> and <set> are not — those leave the SVG subtree. For icons prefer data-lucide and for charts data-chart; they are smaller and follow the theme.",
+    "forms": "<form> supports <label for> and native validation; action, method, target and enctype are stripped. A valid submit (click or Enter) sends the chosen submit button's data-action exactly once, with data-value or the collected data-field values. Invalid forms send nothing and never navigate. Give non-submit actions type=button.",
+    "svgAttrs": [
+      "aria-hidden",
+      "aria-label",
+      "aria-labelledby",
+      "class",
+      "cx",
+      "cy",
+      "d",
+      "dx",
+      "dy",
+      "fill",
+      "fill-opacity",
+      "fill-rule",
+      "gradientUnits",
+      "height",
+      "id",
+      "offset",
+      "opacity",
+      "points",
+      "r",
+      "role",
+      "rx",
+      "ry",
+      "stop-color",
+      "stop-opacity",
+      "stroke",
+      "stroke-dasharray",
+      "stroke-dashoffset",
+      "stroke-linecap",
+      "stroke-linejoin",
+      "stroke-opacity",
+      "stroke-width",
+      "style",
+      "text-anchor",
+      "transform",
+      "viewBox",
+      "width",
+      "x",
+      "x1",
+      "x2",
+      "y",
+      "y1",
+      "y2"
+    ],
+    "buttonTypes": ["button", "reset", "submit"],
+    "perTagAttrs": {
+      "iframe/img/video/canvas width, height": "plain pixel counts, so the box is reserved before the file loads and the flyout does not jump",
+      "autofocus": "kept only on a control inside a <dialog>; elsewhere it would steal focus on every re-render",
+      "a href inside [data-sb-lightbox]": "may carry an sb-asset: path — it is the full image the viewer opens, not a destination"
+    }
+  },
+  "media": {
+    "images": "img is allowed; src must start with http://, https://, data:image/ or sb-asset:. Always provide alt text. Default styling: max-width 100% with rounded corners; add sb-media for a full-width, corner-clipped block.",
+    "videos": "video (with optional nested source and track elements) is allowed; video/source src must start with http://, https://, data:video/ or sb-asset:. poster must start with http://, https://, data:image/ or sb-asset:. Allowed video attributes are listed in videoAttrs. autoplay only works muted, always gets native controls, and is removed when prefers-reduced-motion is active. Use crossorigin=\"anonymous\" when a nested track is cross-origin, including a data: track.",
+    "audio": "audio (with optional nested source and track elements) is allowed; audio/source src must start with http://, https://, data:audio/ or sb-asset:. Allowed audio attributes are listed in audioAttrs. autoplay is forced muted, just like video. Use crossorigin=\"anonymous\" when a nested track is cross-origin, including a data: track.",
+    "tracks": "track adds WebVTT captions, subtitles, descriptions, chapters or metadata to audio/video. track src accepts http://, https:// or data:text/vtt. Use srclang and label for subtitles/captions; kind must be one of trackKinds. The Tauri asset transport does not label local .vtt files as text/vtt, so read a local WebVTT file, URL-percent-encode its complete text (Python: urllib.parse.quote(text, safe=\"\")), prefix data:text/vtt;charset=utf-8,, then HTML-escape the complete attribute value. Set crossorigin=\"anonymous\" on the media element.",
+    "embeds": "iframe is the generic remote-player surface for providers with an official HTTPS embed URL. A non-empty title is required. The shell never frames that provider directly: it rewrites src through an unlisted, random-path 127.0.0.1 wrapper, fixes the sandbox, permissions and Referrer-Policy, and grants that remote document NO Tauri capability. Players are kept ONLY in a pinned flyout, whose full-window input region makes controls and fullscreen safe; render a thumbnail in tile/popup and push separate thumbnail HTML to hover so a peek does not preload the player. Keep the exact flyout HTML unchanged while the media id is unchanged so playback is not restarted. Always include an ordinary https link as fallback. A provider may still refuse framing, login, DRM, a codec, a region or embedding for that item; smabar cannot override provider policy.",
+    "providerIdentity": "The loopback wrapper supplies technical isolation. On its first HTTPS provider-document request, bundled native WebKitGTK/WebView2 hooks replace only that exact private wrapper origin with smabar's registered HTTPS app identity; arbitrary provider URLs need no smabar allowlist and are never rewritten. Provider-specific query parameters belong to the Plugin. Always keep an ordinary external link: a provider may still reject an item because of its own framing, account, DRM, codec or regional policy.",
+    "appIdentity": "https://dev.smabar.desktop/",
+    "videoAttrs": [
+      "autoplay",
+      "controls",
+      "crossorigin",
+      "loop",
+      "muted",
+      "playsinline",
+      "poster",
+      "preload"
+    ],
+    "audioAttrs": [
+      "autoplay",
+      "controls",
+      "crossorigin",
+      "loop",
+      "muted",
+      "preload"
+    ],
+    "sourceAttrs": ["media", "type"],
+    "trackAttrs": ["default", "kind", "label", "srclang"],
+    "trackKinds": [
+      "captions",
+      "chapters",
+      "descriptions",
+      "metadata",
+      "subtitles"
+    ],
+    "embedAllow": "autoplay; encrypted-media; fullscreen; picture-in-picture",
+    "embedSandbox": "allow-same-origin allow-scripts",
+    "embedReferrerPolicy": "strict-origin-when-cross-origin",
+    "links": "a[href] is allowed for http(s) URLs only. Clicking a link NEVER navigates the bar — the shell opens it in the user's system browser. Other href schemes are stripped.",
+    "classes": "sb-media = block-level media with rounded, clipped corners at full width; sb-media-cover = 16:9 object-fit cover hero (pair with sb-media); sb-ratio wraps img/video/iframe at 16:9, or set the documented --sb-ratio data value. For rotating image feeds use data-carousel (see conventions.carousel).",
+    "sizing": "Media must stay inside the ~340px flyout: keep max-width 100% and never hardcode wider pixel sizes. YouTube requires at least 200×200 CSS pixels; use a 3/2 sb-ratio player (about 308×205 after flyout padding) rather than a 16/9 player that is too short.",
+    "assetScheme": "sb-asset:<relative path> shows a file your plugin wrote into app.data_dir — e.g. <img src=\"sb-asset:icons/sun.png\" alt=\"Sunny\">, <video src=\"sb-asset:media/clip.mp4\" poster=\"sb-asset:media/poster.jpg\"> or <audio src=\"sb-asset:media/song.ogg\" controls>. It works for img/audio/video/source src, video poster, and lightbox image href. Prefer it over a data: URI for binary media you downloaded or generated: a data URI travels through the render pipe on EVERY render, an sb-asset: URL is a few bytes and the file is read once. WebVTT is the exception: render local caption text as data:text/vtt because the asset transport cannot provide its required MIME type. An sb-asset path is relative to your own data directory; that scheme refuses absolute paths and .., so it cannot address another plugin's files. Inline CSS is not part of this path helper, and plugin markup is not a file-access security boundary because the plugin already runs as the user. A bundled file in app.plugin_dir is code: copy it once to app.data_dir before rendering it. Write the file first, then render the tag.",
+    "examples": {
+      "youtube": "<div class=\"sb-ratio\" style=\"--sb-ratio:3/2\"><iframe src=\"https://www.youtube-nocookie.com/embed/M7lc1UVf-VE\" title=\"YouTube video player\"></iframe></div><p><a href=\"https://www.youtube.com/watch?v=M7lc1UVf-VE\">Open on YouTube</a></p>",
+      "vimeo": "<div class=\"sb-ratio\"><iframe src=\"https://player.vimeo.com/video/76979871\" title=\"Vimeo video player\"></iframe></div><p><a href=\"https://vimeo.com/76979871\">Open on Vimeo</a></p>",
+      "localVideo": "<video class=\"sb-media\" src=\"sb-asset:media/clip.mp4\" poster=\"sb-asset:media/poster.jpg\" controls crossorigin=\"anonymous\"><track src=\"data:text/vtt;charset=utf-8,WEBVTT%0A%0A00%3A00.000%20--%3E%2000%3A02.000%0ALocal%20caption\" kind=\"captions\" srclang=\"en\" label=\"English\"></video>",
+      "localAudio": "<audio class=\"sb-media\" src=\"sb-asset:media/song.ogg\" controls preload=\"metadata\"></audio>"
+    }
+  },
+  "formContract": {
+    "fields": "Give an input, select or textarea data-field=\"name\". Any element can carry data-action; the payload rules (data-value as a string, nested actions, the {name: value} dict) are plugin_guide section sdk, on_action. Clicking a [data-action] element without data-value sends all field values to the plugin as {name: value}: checkboxes send \"true\"/\"false\", only the checked radio contributes its value, and selects/textareas send their current value. A range input may itself carry data-action; after pointer release or a keyboard change it sends its current value as a string, without flooding actions while the thumb is dragged. During an active pointer or range-key gesture, only the newest queued live render is applied afterward. A merely hovered range keeps its own DOM block across live renders while the rest of the plugin updates, so its visible thumb and value bubble do not flicker. Its committed value remains optimistic until matching provider markup acknowledges it or the five-second action timeout after the interaction ends restores provider state. These values and focus survive a plugin re-render unless the new markup explicitly supplies a value/checked/selected state.",
+    "checkbox": "type=\"checkbox\" inputs report their checked state as the strings \"true\"/\"false\". On re-render, a plugin-set checked attribute wins over the user's restored toggle.",
+    "restore": "User-edited input, select and textarea values plus focus survive plugin re-renders; explicit value, checked and selected state in fresh plugin markup wins.",
+    "design": "Use form.sb-stack with one sb-field-stack per control. Read bestPractices.forms for localized placeholders, visible labels, optional-field hints, native date/time guidance and validation; snippets.form is the complete reference composition."
+  },
+  "branding": {
+    "fields": "Per tile in smabar.json: iconSvg (optional inline custom SVG, prepended to tile HTML), usePluginIcon (boolean, false by default; opt in to the folder icon in the cover), accent (CSS color), accent2 (optional, falls back to accent), accentFg (optional text color on accent surfaces).",
+    "effect": "The shell sanitizes iconSvg and prepends it to the tile, using the plugin-folder icon as fallback only when usePluginIcon is true. With neither choice the shell adds no cover icon. With an icon selected, an empty tile render makes an intentional compact icon-only tile. It also sets --sb-accent, --sb-accent-2, --sb-on-accent, --sb-accent-gradient and --sb-accent-glow on the plugin's tile, flyout and popup hosts, so kit classes and any var(--sb-accent*) usage brand automatically. --sb-on-accent is DERIVED from your accent when you omit accentFg, and is also corrected when a declared accentFg would be unreadable on it (below a 4.5:1 contrast ratio) — a light brand color never ends up with white text.",
+    "validation": "accent, accent2 and accentFg must be simple CSS color values of at most 128 chars: no ';', '{', '}', control characters, or url() other than data:/https:. iconSvg is limited to one sanitized <svg> root and 8192 UTF-8 bytes; scripts, event handlers, styles, classes and external URLs are removed and reported once in the plugin log.",
+    "inline": "Any element can re-brand its own subtree by setting the tokens in its style attribute: --sb-accent, --sb-accent-2, --sb-accent-gradient and --sb-on-accent. Accent surfaces (sb-hero, sb-btn-primary, sb-icon-badge) derive every text step from --sb-on-accent, so when you write style=\"background:…\" on one of them, set --sb-on-accent in the SAME style attribute — otherwise the background changes while the text stays tuned for the old one. Automatic correction only covers the manifest accent, not backgrounds you paint yourself. Put the tokens on a wrapper to brand a whole section.",
+    "folderIcon": "Plugin-wide raster icons use the icon.* file convention documented by plugin_guide(section=\"manifest\").folderIcon, including all three cover examples. Settings and the sort list use these icons automatically; covers opt in through usePluginIcon. These files do not add asset access to plugin markup."
+  },
+  "tileChrome": {
+    "globalConfig": "appearance.tileChrome is flat (default) or card.",
+    "manifestOverride": "A tile may set tile to card or flat in smabar.json; the manifest value wins over appearance.tileChrome.",
+    "behavior": "card uses the standard tile surface; flat paints no background at rest. Both use themed hover, press, keyboard-focus and open states without changing their footprint. A tile without a manifest override follows the global value.",
+    "tileScale": "A tile may set tileScale to s, m (default) or l in smabar.json. It selects the same primary/secondary type steps for sb-tile-stack and sb-tile-seg against the tile's height budget — a step, not a pixel size."
+  },
+  "snippets": {
+    "temporal": "<form class=\"sb-stack\"><div class=\"sb-field-stack\"><label class=\"sb-label\" for=\"day\">Date</label><input class=\"sb-input\" id=\"day\" type=\"date\" data-sb-temporal data-field=\"day\" required></div><div class=\"sb-field-stack\"><label class=\"sb-label\" for=\"time\">Time</label><input class=\"sb-input\" id=\"time\" type=\"time\" data-sb-temporal data-field=\"time\" required></div><div class=\"sb-field-stack\"><label class=\"sb-label\" for=\"start\">Starts at</label><input class=\"sb-input\" id=\"start\" type=\"datetime-local\" data-sb-temporal data-field=\"start\" aria-describedby=\"start-hint\"><p class=\"sb-field__hint\" id=\"start-hint\">Your local date and time; leave unset if optional.</p></div><button type=\"submit\" class=\"sb-btn sb-btn-primary\" data-action=\"save\">Save schedule</button></form>",
+    "accordion": "<div class=\"sb-accordion\"><details class=\"sb-accordion-item\" open><summary>Today</summary><div class=\"sb-accordion-item__body\"><div class=\"sb-inline\"><span>Partly cloudy</span><span class=\"sb-push sb-mono\">21°</span></div></div></details><details class=\"sb-accordion-item\"><summary>Tomorrow</summary><div class=\"sb-accordion-item__body\"><div class=\"sb-inline\"><span>Rain</span><span class=\"sb-push sb-mono\">17°</span></div></div></details></div>",
+    "cardFlyout": "<div class=\"sb-header\"><span class=\"sb-icon-badge\"><span data-lucide=\"cloud-sun\"></span></span><span class=\"sb-title\">Weather</span><div class=\"sb-header-actions\"><button class=\"sb-btn sb-btn-icon\" data-action=\"refresh\" aria-label=\"Refresh\"><span data-lucide=\"refresh-cw\"></span></button></div></div><div class=\"sb-card\"><p class=\"sb-dim\">Partly cloudy, 21°</p></div>",
+    "contextMenu": "<div class=\"sb-header\"><span class=\"sb-title\">Gallery</span></div><img class=\"sb-media\" src=\"https://example.com/photo.jpg\" alt=\"Beach\" title=\"Beach, July 2026\" data-context-items='[{\"action\":\"download\",\"value\":\"https://example.com/photo.jpg\",\"label\":\"Download image\",\"icon\":\"download\"},{\"separator\":true},{\"label\":\"Sort by\",\"icon\":\"list\",\"items\":[{\"action\":\"sort\",\"value\":\"name\",\"label\":\"Name\",\"checked\":true},{\"action\":\"sort\",\"value\":\"date\",\"label\":\"Date\",\"checked\":false}]},{\"action\":\"remove\",\"label\":\"Remove from album\",\"icon\":\"trash-2\",\"danger\":true}]'><p class=\"sb-muted\">Right-click a photo for its menu.</p>",
+    "dataTable": "<div class=\"sb-table-wrap\"><table class=\"sb-table sb-table--hover\"><thead><tr><th scope=\"col\">Coin</th><th scope=\"col\" class=\"sb-table__num\">Price</th><th scope=\"col\" class=\"sb-table__num\">24h</th></tr></thead><tbody><tr><td>BTC</td><td class=\"sb-table__num\">$64,120</td><td class=\"sb-table__num sb-ok\">+2.4%</td></tr><tr><td>ETH</td><td class=\"sb-table__num\">$3,180</td><td class=\"sb-table__num sb-crit\">-1.1%</td></tr></tbody></table></div>",
+    "form": "<div class=\"sb-header\"><h2 class=\"sb-title\">Location</h2></div><form class=\"sb-stack\"><div class=\"sb-field-stack\"><label class=\"sb-field__label\" for=\"city\">City</label><input id=\"city\" class=\"sb-input\" data-field=\"city\" placeholder=\"e.g. Berlin\" required aria-describedby=\"city-hint city-error\"><p class=\"sb-field__hint\" id=\"city-hint\">Used for local forecasts.</p><p class=\"sb-field__error\" id=\"city-error\">Enter a city.</p></div><div class=\"sb-field-stack\"><label class=\"sb-field__label\" for=\"note\">Note <span class=\"sb-meta\">· optional</span></label><textarea id=\"note\" class=\"sb-textarea\" data-field=\"note\" placeholder=\"Add context for this location…\" rows=\"3\"></textarea></div><div class=\"sb-cluster\"><button type=\"submit\" class=\"sb-btn sb-btn-primary\" data-action=\"save\">Save location</button><button type=\"button\" class=\"sb-btn sb-btn-ghost\" data-action=\"cancel\">Cancel</button></div></form>",
+    "heroTabs": "<div class=\"sb-header\"><span class=\"sb-title\">Crypto</span><div class=\"sb-header-actions\"><button class=\"sb-btn sb-btn-icon\" data-action=\"refresh\" aria-label=\"Refresh\"><span data-lucide=\"refresh-cw\"></span></button></div></div><div class=\"sb-hero\"><small>Bitcoin</small><h1>$64,120</h1><span class=\"sb-badge sb-badge-success\">+2.4%</span></div><div class=\"sb-tabs\"><button class=\"sb-tab sb-active\" data-action=\"range:1d\">1D</button><button class=\"sb-tab\" data-action=\"range:7d\">7D</button></div>",
+    "heroTint": "<div class=\"sb-hero\" style=\"--sb-accent-gradient:linear-gradient(135deg,#0ea5e9,#22c1a7);--sb-on-accent:#04141a\"><small>Frankfurt</small><h1>18°</h1><span class=\"sb-badge sb-badge-info\">rain</span></div>",
+    "kpiGrid": "<div class=\"sb-header\"><span class=\"sb-title\">System</span><div class=\"sb-header-actions\"><button class=\"sb-btn sb-btn-icon\" data-action=\"details\" aria-label=\"Details\"><span data-lucide=\"settings\"></span></button></div></div><div class=\"sb-kpi-grid\"><div class=\"sb-kpi\"><span class=\"sb-kpi-value\">38%</span><span class=\"sb-kpi-label\">CPU</span></div><div class=\"sb-kpi\"><div class=\"sb-gauge\" data-chart=\"donut\" data-value=\"62\"><span>62%</span></div><span class=\"sb-kpi-label\">RAM</span></div></div><div class=\"sb-progress\"><span style=\"width: 38%\"></span></div>",
+    "listWithActions": "<div class=\"sb-header\"><span class=\"sb-title\">Tracked</span></div><div class=\"sb-list\"><div class=\"sb-row\"><span data-lucide=\"bitcoin\"></span><span>Bitcoin</span><span class=\"sb-mono sb-push\">$64,120</span><button class=\"sb-btn sb-btn-icon sb-btn-danger\" data-action=\"remove\" data-value=\"bitcoin\" aria-label=\"Remove\"><span data-lucide=\"trash-2\"></span></button></div></div><p class=\"sb-meta\">Updated 2 minutes ago</p>",
+    "marqueeBadgeTile": "<div class=\"sb-tile\" data-badge=\"2\"><span data-marquee style=\"max-width: 10rem\">Two new notifications with a long title</span></div>",
+    "mediaCarousel": "<div class=\"sb-header\"><span class=\"sb-title\">Gallery</span></div><div class=\"sb-media\" data-carousel data-carousel-interval=\"6000\" aria-label=\"Gallery\"><img src=\"sb-asset:media/1.jpg\" alt=\"Gallery slide 1\"><img src=\"sb-asset:media/2.jpg\" alt=\"Gallery slide 2\"><img src=\"sb-asset:media/3.jpg\" alt=\"Gallery slide 3\"></div><p class=\"sb-muted\"><a href=\"https://example.com/gallery\">Open the full gallery</a></p>",
+    "modal": "<button class=\"sb-btn sb-btn-danger\" commandfor=\"confirm-clear\" command=\"show-modal\">Clear history</button><dialog class=\"sb-modal sb-modal--sm\" id=\"confirm-clear\" aria-labelledby=\"confirm-clear-title\"><div class=\"sb-modal__header\"><h3 class=\"sb-modal__title\" id=\"confirm-clear-title\">Clear history?</h3></div><div class=\"sb-modal__body\"><p>All 128 entries are removed. This cannot be undone.</p></div><div class=\"sb-modal__footer\"><button class=\"sb-btn\" commandfor=\"confirm-clear\" command=\"close\">Cancel</button><button class=\"sb-btn sb-btn-danger\" commandfor=\"confirm-clear\" command=\"close\" data-action=\"clear-history\">Clear</button></div></dialog>",
+    "popoverMenu": "<div class=\"sb-popover\"><button class=\"sb-btn sb-btn-ghost sb-btn-icon\" popovertarget=\"feed-menu\" aria-label=\"Menu\"><span data-lucide=\"ellipsis\"></span></button><div class=\"sb-popover__card sb-popover__card--right\" popover id=\"feed-menu\" role=\"menu\"><button class=\"sb-btn sb-btn-ghost\" data-action=\"refresh\" popovertarget=\"feed-menu\" popovertargetaction=\"hide\">Refresh now</button><button class=\"sb-btn sb-btn-ghost\" data-action=\"mark-read\" popovertarget=\"feed-menu\" popovertargetaction=\"hide\">Mark all read</button></div></div>",
+    "searchWithResults": "<div class=\"sb-section\">Add a world clock</div><div class=\"sb-field\"><input class=\"sb-input\" data-field=\"query\" placeholder=\"City or country\"><button class=\"sb-btn\" data-action=\"search\">Search</button></div><div class=\"sb-reveal sb-active\"><div class=\"sb-list\"><div class=\"sb-row\"><span>Tokyo</span><button class=\"sb-btn sb-btn-icon sb-push\" data-action=\"add\" data-value=\"Asia/Tokyo\" aria-label=\"Add\"><span data-lucide=\"plus\"></span></button></div></div></div>",
+    "tabbedFlyout": "<div class=\"sb-header\"><span class=\"sb-icon-badge\"><span data-lucide=\"cloud-sun\"></span></span><span class=\"sb-title\">Weather</span></div><div data-tabs><div class=\"sb-tabs\"><button class=\"sb-tab sb-active\" data-tab=\"today\">Today</button><button class=\"sb-tab\" data-tab=\"week\">Week</button></div><div data-tab-panel=\"today\"><div class=\"sb-hero\"><small>Berlin</small><h1>21°</h1></div></div><div data-tab-panel=\"week\"><div class=\"sb-list\"><div class=\"sb-row\"><span>Monday</span><span class=\"sb-muted\">19°</span></div></div></div></div>",
+    "twoLineTile": "<div class=\"sb-tile\"><span class=\"sb-tile-stack\"><span class=\"sb-mono\">09:41</span><span>Mon, 23 Aug</span></span></div>",
+    "videoCard": "<div class=\"sb-card\"><video class=\"sb-media sb-media-cover\" src=\"sb-asset:media/clip.mp4\" controls muted preload=\"metadata\"></video><p class=\"sb-muted\">Latest clip</p></div>"
+  },
+  "tileSizing": {
+    "rule": "The tile hugs its content and centers it. Stability comes from the technique that fits your content, not from a width you set.",
+    "scenarios": [
+      {
+        "content": "Icon plus a short value, e.g. an icon and \"51%\"",
+        "do": "Nothing. The tile is already exactly as wide as its content."
+      },
+      {
+        "content": "A ticking number: price, clock, countdown, counter",
+        "do": "Cover text inherits tabular digits in the theme's font. Use sb-mono only for an intentional monospace face. Equal-length readings stay stable when the chosen font supports tabular digits; changes in the number of digits may still resize the tile."
+      },
+      {
+        "content": "Text whose length you do not control (a title, a status line)",
+        "do": "Give it a max-width plus data-marquee. It scrolls only while it overflows, instead of stretching the tile."
+      },
+      {
+        "content": "Several values that should all be visible over time",
+        "do": "Wrap them in data-rotator. It stacks the views in one cell, so the footprint is constant and equals the widest view — no width of your own needed."
+      },
+      {
+        "content": "The tile switches between loading, error and data",
+        "do": "Render the SAME structure in every state (a placeholder like \"–\" where the value goes). A tile that changes shape per state is what looks broken; a one-time loading-to-loaded resize is normal."
+      },
+      {
+        "content": "You genuinely need a fixed width (rare)",
+        "do": "Set min-width inline as a deliberate exception, knowing the tile will be wider than its content in every other state."
+      },
+      {
+        "content": "Two lines, e.g. a clock with the time over the date, or a value over its label",
+        "do": "Wrap them in class sb-tile-stack: first child is the primary line, last child the secondary one. Both are sized from var(--sb-tile-content-h), so the text scales with the bar height instead of overflowing it. Pick the base size with tileScale (s|m|l) in smabar.json."
+      }
+    ],
+    "height": "The shell publishes the available content height after bar and tile padding/borders as var(--sb-tile-content-h). Cover primitives size against this budget and the theme's type steps; the row grows to fit the tallest measured cover. Keep content compact instead of turning a tile into a panel. Roomy surfaces get tighter padding inside a tile, and sb-hero loses its glow."
+  },
+  "coverLayouts": {
+    "what": "Nine named cover recipes for the bar tile — the tile's face inside the bar. Pick ONE per tile and fill it with your data; every recipe fits the hard height budget (var(--sb-tile-content-h), see tileSizing.height) and scales with the bar on its own.",
+    "settingsConvention": "Let the USER pick the cover: declare a settingsSchema property named coverLayout as a string enum of the layout ids you implement (with a default). The settings UI renders enums as a choice grid automatically; the value arrives via on_settings_changed — branch your tile render on it.",
+    "animationNote": "The tile DOM is rebuilt whenever your pushed HTML string changes, which restarts CSS animations and transitions. Keep the tile HTML stable per state — no per-second data in the markup — and push only on real changes; the shell's value memory (donut fill, progress width, data-sb-tween numbers) then animates the differences for you. When one surface contains multiple remembered values, put the same unique data-sb-key on each logical value across renders (on the data-chart element, data-sb-tween element, or sb-progress fill child). Without stable keys, multiple values deliberately update without cross-render animation so insert/reorder cannot borrow a neighbor's state.",
+    "layouts": [
+      {
+        "id": "basic",
+        "name": "Basis",
+        "purpose": "One icon and one core value — the calm default.",
+        "whenToUse": "A single fact that speaks for itself: a state, a temperature, a count.",
+        "markup": "<div class=\"sb-tile\"><span data-lucide=\"zap\" aria-hidden=\"true\"></span><span>Energy high</span></div>",
+        "animation": "None needed. For a live status accent, color the icon (sb-ok/sb-warn/sb-crit) or add an sb-badge.",
+        "sizing": "One line, fits every bar. The icon reads at 1.4em automatically; any tileScale."
+      },
+      {
+        "id": "basicPlus",
+        "name": "Basis Plus",
+        "purpose": "Icon plus a title with one sub line.",
+        "whenToUse": "A fact that needs a label or context line: next meeting, current song, city + condition.",
+        "markup": "<div class=\"sb-tile\"><span data-lucide=\"calendar\" aria-hidden=\"true\"></span><span class=\"sb-tile-stack\"><span>Team Sync</span><span class=\"sb-accent\">in 18 min</span></span></div>",
+        "animation": "None. Growing text belongs on data-marquee with a max-width, not in a wider tile.",
+        "sizing": "The stack's hero/sub lines follow the bar height; tileScale m or l for a roomier hero."
+      },
+      {
+        "id": "dualText",
+        "name": "Dual Text",
+        "purpose": "Two stacked texts with strong hierarchy — big value over small context, no icon.",
+        "whenToUse": "Time over date, value over unit, headline over source.",
+        "markup": "<div class=\"sb-tile\"><span class=\"sb-tile-stack\"><span class=\"sb-mono\">09:42</span><span class=\"sb-accent\">Fri, Aug 30</span></span></div>",
+        "animation": "For clocks let the shell tick via data-clock-text (see conventions) — never re-render per second. A changing hero number can carry data-sb-tween to count instead of jump.",
+        "sizing": "Exactly the sb-tile-stack budget: hero ~60%, sub ~25% of the tile height, clamped into the type scale — tileScale picks the steps."
+      },
+      {
+        "id": "headlineMotion",
+        "name": "Headline + Motion",
+        "purpose": "Compact info on the left, a living signal on the right: a tiny CSS equalizer.",
+        "whenToUse": "Anything 'currently running': playback, focus session, recording, an active job.",
+        "markup": "<div class=\"sb-tile\"><span class=\"sb-tile-stack\"><span>48 min</span><span class=\"sb-accent\">Focus</span></span><span class=\"sb-eq\" aria-hidden=\"true\"><span></span><span></span><span></span><span></span><span></span></span></div>",
+        "animation": "The equalizer runs purely in CSS — push the tile ONCE per state change, never per tick: a changed HTML string rebuilds the DOM and restarts the loop. Add is-paused on sb-eq to freeze it dimmed (paused playback); reduced motion falls back to the static staggered bars.",
+        "sizing": "The glyph is 1em tall and sits inline. Keep the text side stable (sb-mono numbers, data-marquee titles with a max-width)."
+      },
+      {
+        "id": "segmentHeader",
+        "name": "Segment Header",
+        "purpose": "A secondary label in the muted step, the primary value beneath it; the same hierarchy as a stack with the label first.",
+        "whenToUse": "Categorized values where the label matters: WEATHER / 18° cloudy, CPU / 51%, FOCUS / 48 min.",
+        "markup": "<div class=\"sb-tile\"><span class=\"sb-tile-seg\"><span>Weather</span><span>18° Partly cloudy</span></span></div>",
+        "animation": "The header is static; a changing value line can carry data-sb-tween.",
+        "sizing": "The label and value use the same themed type steps and spacing as sb-tile-stack, including tileScale. The optional sb-tile-seg--fill accent pill adds padding; prefer the plain label in a compact bar."
+      },
+      {
+        "id": "progressRing",
+        "name": "Progress Ring",
+        "purpose": "Title and current value on the left, a circular progress indicator on the right.",
+        "whenToUse": "One bounded 0-100 metric: battery, hydration goal, download, storage, timer progress. Not for unbounded numbers — use statSplit for those.",
+        "markup": "<div class=\"sb-tile\" title=\"Hydration 1.8 of 2.5 L\"><span class=\"sb-tile-stack\"><span>1.8 L</span><span class=\"sb-muted\">Hydration</span></span><span class=\"sb-gauge\" data-chart=\"donut\" data-value=\"72\" data-max=\"100\"><span class=\"sb-mono\" data-sb-tween>72</span></span></div>",
+        "animation": "Value changes glide: the shell remembers the previous value per tile and transitions the ring fill (--sb-dur-slow, honors prefers-reduced-motion). Pair the center number with data-sb-tween so it counts along. Push a render only when the value actually changed.",
+        "sizing": "The ring fills the tile height automatically and grows with the bar. The center label fits ~3 characters at default bar height — render the bare number in sb-mono, put the unit in title. tileScale: any."
+      },
+      {
+        "id": "statSplit",
+        "name": "Stat Split",
+        "purpose": "A main KPI on the left, its comparison/trend on the right, divided by a hairline.",
+        "whenToUse": "Statistics with context: value vs. yesterday, price + change, count + trend — fitness, productivity, finance, system numbers.",
+        "markup": "<div class=\"sb-tile\"><span class=\"sb-tile-split\"><span class=\"sb-tile-stack\"><span class=\"sb-mono\" data-sb-tween>48 min</span><span class=\"sb-muted\">Focus</span></span><span class=\"sb-tile-stack\"><span class=\"sb-stat__delta sb-stat__delta--up\">+12%</span><span class=\"sb-spark sb-accent\" data-chart=\"sparkline\" data-points=\"30,34,31,40,44,42,48\"></span></span></span></div>",
+        "animation": "data-sb-tween counts the KPI to its new value; the sparkline redraws statically (no morphing). sb-stat__delta--up/--down color the trend.",
+        "sizing": "Two sb-tile-stack columns with a hairline divider — keep each side to two short lines. The sparkline renders as a small 3.5em inline glyph inside tiles."
+      },
+      {
+        "id": "checklist",
+        "name": "Checklist",
+        "purpose": "A very compact task list with done markers.",
+        "whenToUse": "Routines, daily goals, short todo snapshots — the tile shows the state, the flyout manages it.",
+        "markup": "<div class=\"sb-tile\"><ul class=\"sb-tile-check\"><li class=\"is-done\">Workout</li><li>Send report</li></ul></div>",
+        "animation": "The done circle fills via is-done; the swap is instant on re-render (the DOM is replaced) — treat the fill as the signal, not a transition.",
+        "sizing": "TWO entries fit every bar. Three need ~38px content height, four ~50px (taller bar or labels below icons) — overflow clips silently, so render only what fits and keep the full list in the flyout."
+      },
+      {
+        "id": "nextEvent",
+        "name": "Timeline / Next Event",
+        "purpose": "The next time-based thing: time and title over a slim progress track.",
+        "whenToUse": "Calendar, timers, deadlines, travel, downloads, workflows — anything approaching on a time axis.",
+        "markup": "<div class=\"sb-tile\"><span class=\"sb-tile-next\"><span class=\"sb-inline\"><span class=\"sb-mono sb-accent\">14:00</span><span data-marquee style=\"max-width: 7rem\">Design Review</span></span><span class=\"sb-progress\" role=\"progressbar\" aria-label=\"Time until the event\"><span style=\"width: 62%\"></span></span></span></div>",
+        "animation": "The track is the plain sb-progress bar: its width glides between renders (shell value memory). For live remaining time render data-sb-countdown parts in the text line — the shell ticks every second, you push once.",
+        "sizing": "One text line plus the 4px track (~21px) — fits every bar. Give the title data-marquee with a max-width so the tile keeps a stable width."
+      }
+    ]
+  },
+  "behaviour": {
+    "what": "Markup hooks the SHELL implements for you. A plugin never ships JavaScript — its HTML is rendered inside the bar's own privileged origin, so a <script> is refused. These attributes are how you get behaviour anyway: write the markup, the shell runs the code. Everything below works in a flyout, a popup and a tile.",
+    "stateNote": "The hooks are stateless: the state lives in the DOM. A re-render replaces your markup, so a sort order or an open menu is lost when the HTML you render CHANGES. Render identical HTML and it is kept; input, select and textarea controls with data-field keep their user-edited value and focus, and derived behavior such as filtering is re-applied.",
+    "hooks": [
+      {
+        "hook": "data-sb-temporal",
+        "what": "Opt-in themed date/time field on an input of type date, time, or datetime-local. Keeps its native ISO value, data-field, required/min/max/step validation and label. Date selection closes the calendar immediately; combined fields keep their time. The separate 24-hour time editor commits with Apply time or Enter. Escape or clicking outside cancels the time draft; Clear removes the value. Empty combined fields use today/current local time for the other part when first selected. Inline panels expand inside the flyout (no OS popup or JavaScript). Minute precision; use native time/datetime-local for sub-minute input. Use a visible label, an optional/required cue and a timezone hint for local datetimes. All internal buttons are type=button, so choosing a date/time never submits the plugin form.",
+        "example": "<div class=\"sb-field-stack\"><label class=\"sb-label\" for=\"appointment\">Appointment <span class=\"sb-muted\">optional</span></label><input class=\"sb-input\" id=\"appointment\" data-field=\"appointment\" data-sb-temporal type=\"datetime-local\" aria-describedby=\"appointment-hint\"><p class=\"sb-field__hint\" id=\"appointment-hint\">Your local date and time. Clear to leave unset.</p></div>"
+      },
+      {
+        "hook": "data-sb-copy",
+        "what": "Button copies the text of the element its CSS selector names (scoped to your own tile). data-sb-copy-text copies the literal attribute value instead. Adds .is-copied for 1.5s and announces the result.",
+        "example": "<button class=\"sb-btn sb-btn--sm\" data-sb-copy=\"#addr\">Copy</button>"
+      },
+      {
+        "hook": "data-sb-number",
+        "what": "Wrapper around an <input type=\"number\"> plus [data-sb-number-down] / [data-sb-number-up] buttons; they step the value, respect min/max/step and disable themselves at the bounds.",
+        "example": "<div class=\"sb-number\" data-sb-number><button class=\"sb-number__btn\" data-sb-number-down>−</button><input class=\"sb-input\" type=\"number\" value=\"1\" min=\"0\" max=\"9\" data-field=\"n\"><button class=\"sb-number__btn\" data-sb-number-up>+</button></div>"
+      },
+      {
+        "hook": "data-sb-password-toggle",
+        "what": "Button inside .sb-password flips its input between password and text and mirrors the state into aria-pressed.",
+        "example": "<div class=\"sb-password\"><input class=\"sb-input\" type=\"password\" data-field=\"pw\"><button class=\"sb-password__toggle\" data-sb-password-toggle aria-pressed=\"false\" aria-label=\"Show\"></button></div>"
+      },
+      {
+        "hook": "data-sb-range",
+        "what": "Wrapper around an <input type=\"range\">: paints the accent fill up to the thumb and writes the value into .sb-range-wrap__bubble. data-sb-range-unit appends a unit.",
+        "example": "<div class=\"sb-range-wrap\" data-sb-range data-sb-range-unit=\"%\"><input class=\"sb-range\" type=\"range\" value=\"40\" data-field=\"level\"><output class=\"sb-range-wrap__bubble\"></output></div>"
+      },
+      {
+        "hook": "data-sb-dualrange",
+        "what": "Wrapper around TWO range inputs (from, to): cross-clamps so from ≤ to, paints the band between them and mirrors both into .sb-dualrange__value. data-sb-dualrange-unit appends a unit.",
+        "example": "<div class=\"sb-dualrange\" data-sb-dualrange><input type=\"range\" value=\"20\" data-field=\"from\"><input type=\"range\" value=\"80\" data-field=\"to\"><span class=\"sb-dualrange__value\"></span><span class=\"sb-dualrange__value\"></span></div>"
+      },
+      {
+        "hook": "data-sb-compare",
+        "what": "Before/after image slider: the range input inside drives the clip position.",
+        "example": "<div class=\"sb-compare\" data-sb-compare><img class=\"sb-compare__img sb-compare__img--before\" src=\"sb-asset:a.png\" alt=\"before\"><img class=\"sb-compare__img\" src=\"sb-asset:b.png\" alt=\"after\"><input type=\"range\" value=\"50\" aria-label=\"Compare\"></div>"
+      },
+      {
+        "hook": "data-sb-sort",
+        "what": "On a <th>: makes the column sortable. Put a real <button> inside for keyboard support. data-sb-sort=\"number\" compares numerically (currency and separators are stripped). Sorting reorders the first <tbody> and keeps aria-sort on exactly one column.",
+        "example": "<div class=\"sb-table-wrap\"><table class=\"sb-table\" id=\"rows\"><thead><tr><th data-sb-sort><button type=\"button\" class=\"sb-table__sort\">Name</button></th><th data-sb-sort=\"number\"><button type=\"button\" class=\"sb-table__sort\">Amount</button></th></tr></thead><tbody><tr><td>Acme</td><td>$1,250.00</td></tr></tbody></table></div>"
+      },
+      {
+        "hook": "data-sb-filter",
+        "what": "On a search input: hides the rows of the table its selector names that do not contain the query. Give the input a data-field so the query survives your re-render — the filter is then re-applied automatically. An optional [data-sb-filter-count] with the SAME selector receives \"3 of 12 rows\"; a .sb-table-filter__empty inside the table's wrapper is unhidden when nothing matches.",
+        "example": "<input class=\"sb-input\" type=\"search\" data-field=\"q\" data-sb-filter=\"#rows\" placeholder=\"Filter…\"><p class=\"sb-table-filter__count\" data-sb-filter-count=\"#rows\" role=\"status\"></p>"
+      },
+      {
+        "hook": "data-sb-dropdown",
+        "what": "Wrapper holding a [data-sb-dropdown-toggle] button and a .sb-dropdown__menu: the toggle opens it, any other click or Escape closes it, aria-expanded follows.",
+        "example": "<div class=\"sb-dropdown\" data-sb-dropdown><button class=\"sb-btn\" data-sb-dropdown-toggle aria-expanded=\"false\">Actions</button><div class=\"sb-dropdown__menu\"><button class=\"sb-dropdown__item\" role=\"menuitem\" data-action=\"a\">Refresh</button></div></div>"
+      },
+      {
+        "hook": "data-sb-menubar",
+        "what": "Around several [data-sb-dropdown] entries: hovering another trigger moves an open menu there, Arrow keys walk triggers and items (APG menubar).",
+        "example": "<div class=\"sb-menubar\" data-sb-menubar><div data-sb-dropdown><button class=\"sb-menubar__trigger\" data-sb-dropdown-toggle>File</button><div class=\"sb-dropdown__menu\"><button role=\"menuitem\" data-action=\"new\">New</button></div></div></div>"
+      },
+      {
+        "hook": "data-sb-context",
+        "what": "Wrapper whose right-click opens the .sb-context-menu inside it at the cursor, clamped to the window. Arrows/Home/End walk the items, Escape closes and restores focus.",
+        "example": "<div data-sb-context><p>Right-click me</p><div class=\"sb-context-menu sb-dropdown__menu\" role=\"menu\"><button class=\"sb-dropdown__item\" role=\"menuitem\" data-action=\"copy\">Copy</button></div></div>"
+      },
+      {
+        "hook": "data-sb-command",
+        "what": "On a <dialog>: turns it into a filtering command palette. .sb-command__input filters .sb-command__item entries, arrows move the active one, Enter activates it and closes. Open it with commandfor/command — there is no global shortcut.",
+        "example": "<button class=\"sb-btn\" commandfor=\"pal\" command=\"show-modal\">Search</button><dialog id=\"pal\" class=\"sb-modal sb-command\" data-sb-command><input class=\"sb-command__input\" autofocus placeholder=\"Type…\"><div class=\"sb-command__list\"><button class=\"sb-command__item\" data-action=\"open\" data-value=\"1\">Open report</button></div><p class=\"sb-command__empty\" hidden>No matches</p></dialog>"
+      },
+      {
+        "hook": "data-sb-lightbox",
+        "what": "Around a gallery: every <a href> wrapping an <img> opens the full image in a dialog with prev/next, a counter and arrow-key navigation.",
+        "example": "<div class=\"sb-lightbox-grid\" data-sb-lightbox><a class=\"sb-lightbox-grid__item\" href=\"sb-asset:full.png\"><img src=\"sb-asset:thumb.png\" alt=\"Chart\"></a></div>"
+      },
+      {
+        "hook": "data-sb-multiselect",
+        "what": "Field wrapping a .sb-multiselect__toggle and a .sb-multiselect__panel of native checkboxes: checked boxes become removable pills, the toggle opens the panel and keeps an accessible name. The checkboxes stay the state — read them like any other field.",
+        "example": "<div class=\"sb-multiselect\" data-sb-multiselect><span class=\"sb-multiselect__placeholder\">Tags</span><button class=\"sb-multiselect__toggle\" aria-expanded=\"false\"></button><div class=\"sb-multiselect__panel\"><label class=\"sb-check\"><input type=\"checkbox\" data-field=\"tag_a\" checked> Alpha</label></div></div>"
+      },
+      {
+        "hook": "data-sb-taginput",
+        "what": "Chips plus an inline text input. Enter or a comma adds a chip (duplicates ignored), Backspace on an empty input removes the last. The attribute value names a hidden field that carries the comma-separated list — read it under that data-field name.",
+        "example": "<div class=\"sb-taginput\" data-sb-taginput=\"tags\"><input class=\"sb-taginput__input\" placeholder=\"Add tag…\"></div>"
+      },
+      {
+        "hook": "data-sb-otp",
+        "what": "Around several single-character inputs: typing advances, Backspace walks back, a paste fills the whole group.",
+        "example": "<div class=\"sb-otp\" data-sb-otp><input class=\"sb-otp__slot\" maxlength=\"1\" inputmode=\"numeric\" data-field=\"c1\"><input class=\"sb-otp__slot\" maxlength=\"1\" inputmode=\"numeric\" data-field=\"c2\"></div>"
+      },
+      {
+        "hook": "data-sb-combobox",
+        "what": "Field holding an <input list> and its <datalist>: replaces the OS datalist popup with a themed, filtering listbox. Free text stays allowed.",
+        "example": "<div class=\"sb-combobox-field\" data-sb-combobox><input class=\"sb-input\" list=\"cities\" data-field=\"city\"><datalist id=\"cities\"><option value=\"Berlin\"></option><option value=\"Bern\"></option></datalist></div>"
+      },
+      {
+        "hook": "data-sb-native",
+        "what": "Explicit opt-out for a <select>. Every select uses the shell's themed top-layer listbox by default while the original select remains the form, validation and data-field state source; keyboard focus stays on the combobox trigger and aria-activedescendant tracks the active option. Multiple selects retain open toggling and aria-multiselectable, optgroups become labelled groups, and hidden options stay omitted without changing source indexes. Add data-sb-native only when you deliberately want the operating system's native picker.",
+        "example": "<select class=\"sb-select\" data-field=\"city\" data-sb-native><option value=\"berlin\">Berlin</option><option value=\"oslo\">Oslo</option></select>"
+      },
+      {
+        "hook": "data-sb-datepicker",
+        "what": "Field around an <input>: opens a themed calendar and writes YYYY-MM-DD. An optional [data-sb-datepicker-toggle] button opens it too. <input type=\"date\"> also works and needs none of this — use the picker when you want the bar's own look.",
+        "example": "<div class=\"sb-datepicker-field\" data-sb-datepicker><input class=\"sb-input\" data-field=\"day\" placeholder=\"YYYY-MM-DD\"></div>"
+      },
+      {
+        "hook": "data-sb-daterange",
+        "what": "Field around TWO inputs: two picks fill start and end (ordered automatically) and the calendar marks the whole span.",
+        "example": "<div class=\"sb-daterange\" data-sb-daterange><input class=\"sb-input\" data-field=\"from\"><span class=\"sb-daterange__sep\">–</span><input class=\"sb-input\" data-field=\"to\"></div>"
+      },
+      {
+        "hook": "data-sb-countdown",
+        "what": "Counts down to the ISO date-time in the attribute, once per second, without a re-render from you. [data-sb-countdown-part=\"days|hours|minutes|seconds\"] slots receive the zero-padded numbers; an optional [data-sb-countdown-done] element (authored hidden) is revealed at zero and the root gets .is-done.",
+        "example": "<div class=\"sb-countdown\" data-sb-countdown=\"2027-01-01T00:00\"><span class=\"sb-countdown__segment\"><span class=\"sb-countdown__value\" data-sb-countdown-part=\"hours\"></span></span><p data-sb-countdown-done hidden>Done</p></div>"
+      },
+      {
+        "hook": "data-sb-tween",
+        "what": "Counts a changed number instead of jumping: the shell remembers the last shown value per tile surface and animates the FIRST plain number in the element's text to the new one over --sb-dur-slow (prefix, suffix and decimal format preserved; honors prefers-reduced-motion; first render shows the value directly). Keep thousands grouping out of a tweened value.",
+        "example": "<span class=\"sb-mono\" data-sb-tween>48 min</span>"
+      },
+      {
+        "hook": "data-sb-key",
+        "what": "Stable identity for remembered values when one surface has multiple donuts, progress fills or data-sb-tween numbers. Give each logical value its own key and keep it unchanged across reorders; a single remembered value needs no key.",
+        "example": "<span class=\"sb-mono\" data-sb-tween data-sb-key=\"cpu\">48%</span>"
+      }
+    ]
+  }
+}

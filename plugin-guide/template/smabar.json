@@ -1,0 +1,38 @@
+{
+  "id": "folder-watch",
+  "name": "Folder watch",
+  "version": "0.1.0",
+  "description": "Size of one folder on this computer — the template plugin",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [
+    {
+      "id": "folder",
+      "name": "Folder watch",
+      "hasFlyout": true,
+      "usePluginIcon": false
+    }
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "folder": {
+        "type": "string",
+        "description": "The folder to measure; ~ is your home folder",
+        "default": "~/Downloads"
+      },
+      "limitGb": {
+        "type": "number",
+        "description": "A popup warns when the folder grows past this many gigabytes",
+        "default": 5
+      },
+      "coverLayout": {
+        "type": "string",
+        "description": "How the bar tile shows the folder",
+        "enum": ["progressRing", "statSplit", "basic"],
+        "default": "progressRing"
+      }
+    }
+  }
+}

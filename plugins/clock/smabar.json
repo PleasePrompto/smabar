@@ -1,0 +1,56 @@
+{
+  "id": "clock",
+  "name": "Clock",
+  "version": "1.1.2",
+  "description": "Digital or analog clock on the bar; world clocks by city name with day phase, time zone facts, sunrise and a calendar in the flyout",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [
+    {
+      "id": "clock",
+      "name": "Clock",
+      "hasFlyout": true,
+      "tileScale": "l"
+    }
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "description": "Settings of the clock plugin",
+    "properties": {
+      "clocks": {
+        "type": "array",
+        "description": "Clocks in display order. The FIRST one is shown on the bar tile, the rest are world clocks in the flyout. An empty list means the system time zone. Add places by name in the flyout: the time zone and coordinates are looked up automatically.",
+        "items": {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string", "description": "Display name, e.g. \"Tokyo\". Empty means the system clock." },
+            "zone": { "type": "string", "description": "IANA time zone id, e.g. \"Asia/Tokyo\". Empty means the system time zone." },
+            "region": { "type": "string", "description": "Optional context shown below the name, e.g. \"Tokyo, Japan\"." },
+            "latitude": { "type": "number", "description": "Optional WGS84 latitude; with longitude it enables the sunrise/sunset row." },
+            "longitude": { "type": "number", "description": "Optional WGS84 longitude." }
+          },
+          "required": ["label", "zone"]
+        },
+        "default": []
+      },
+      "face": {
+        "type": "string",
+        "description": "Bar tile: the digital time over the date, or an analog face beside weekday and date.",
+        "enum": ["digital", "analog"],
+        "default": "digital"
+      },
+      "showSeconds": {
+        "type": "boolean",
+        "description": "Show seconds on the digital tile and in the flyout.",
+        "default": true
+      },
+      "showCalendar": {
+        "type": "boolean",
+        "description": "Show the month grid with ISO weeks and today marked in the flyout.",
+        "default": true
+      }
+    },
+    "additionalProperties": false
+  }
+}

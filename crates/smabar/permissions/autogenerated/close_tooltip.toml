@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-close-tooltip"
+description = "Enables the close_tooltip command without any pre-configured scope."
+commands.allow = ["close_tooltip"]
+
+[[permission]]
+identifier = "deny-close-tooltip"
+description = "Denies the close_tooltip command without any pre-configured scope."
+commands.deny = ["close_tooltip"]

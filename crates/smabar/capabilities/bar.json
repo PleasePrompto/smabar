@@ -1,0 +1,43 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "bar",
+  "description": "Interactive bar surface",
+  "windows": [
+    "bar"
+  ],
+  "permissions": [
+    "core:default",
+    "allow-set-input-shape",
+    "allow-get-ui-state",
+    "allow-plugin-action",
+    "allow-get-plugins",
+    "allow-get-plugin-ui",
+    "allow-get-shortcuts",
+    "allow-update-config",
+    "allow-pin-shortcut",
+    "allow-launch-shortcut",
+    "allow-set-bar-geometry",
+    "allow-set-bar-revealed",
+    "allow-focus-bar",
+    "allow-open-url",
+    "allow-ui-log",
+    "allow-get-runtime-status",
+    "allow-get-system-settings",
+    "allow-check-update",
+    "allow-get-surface-context",
+    "allow-surface-ready",
+    "allow-open-settings",
+    "allow-toggle-settings",
+    "allow-close-settings",
+    "allow-show-notice",
+    "allow-open-flyout",
+    "allow-close-flyout",
+    "allow-open-context-menu",
+    "allow-close-context-menu",
+    "allow-open-tooltip",
+    "allow-close-tooltip",
+    "allow-bar-reply",
+    "allow-store-overview",
+    "allow-ensure-google-font"
+  ]
+}

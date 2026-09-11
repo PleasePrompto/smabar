@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.smabar.desktop</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary=https://polyformproject.org/licenses/shield/1.0.0</project_license>
+  <name>smabar</name>
+  <summary>The smart taskbar</summary>
+  <summary xml:lang="de">Die smarte Taskleiste</summary>
+  <description>
+    <p>
+      smabar is a smart desktop taskbar with plugins that run in their
+      own processes, and local LLM agents can manage the whole bar through an embedded MCP
+      server.
+    </p>
+    <p xml:lang="de">
+      smabar ist eine smarte Desktop-Taskleiste mit Plugins, die
+      in eigenen Prozessen laufen. Lokale LLM-Agenten steuern die gesamte Leiste über einen
+      eingebauten MCP-Server.
+    </p>
+  </description>
+  <launchable type="desktop-id">smabar.desktop</launchable>
+  <url type="homepage">https://smabar.com</url>
+  <developer id="dev.smabar">
+    <name>Gérôme Dexheimer</name>
+  </developer>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+</component>

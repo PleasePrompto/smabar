@@ -1,0 +1,18 @@
+{
+  "id": "hello",
+  "name": "Hello",
+  "version": "0.1.0",
+  "description": "Greets you from the bar. The smallest complete smabar plugin, used to test the Community Store.",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [{ "id": "hello", "name": "Hello", "hasFlyout": true }],
+  "settingsSchema": {
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "description": "Who to greet", "default": "world" }
+    },
+    "additionalProperties": false
+  },
+  "store": { "keywords": ["example", "greeting"], "os": ["linux", "windows"] }
+}

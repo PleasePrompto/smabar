@@ -1,0 +1,20 @@
+{
+  "systeminfo.cores": "Kerne",
+  "systeminfo.memory": "Speicher",
+  "systeminfo.battery": "Akku",
+  "systeminfo.battery.state.charging": "Wird geladen",
+  "systeminfo.battery.state.discharging": "Wird entladen",
+  "systeminfo.battery.state.full": "Voll",
+  "systeminfo.battery.state.empty": "Leer",
+  "systeminfo.battery.state.unknown": "Unbekannt",
+  "systeminfo.disks": "Laufwerke",
+  "systeminfo.network": "Netzwerk",
+  "systeminfo.audio": "Audio",
+  "systeminfo.audio.volume": "Lautstärke",
+  "systeminfo.audio.mute": "Stummschalten",
+  "systeminfo.audio.unmute": "Stummschaltung aufheben",
+  "systeminfo.audio.no_output": "Keine Audioausgabe verfügbar",
+  "systeminfo.down": "Empfangen",
+  "systeminfo.up": "Gesendet",
+  "systeminfo.waiting": "Warte auf Daten…"
+}

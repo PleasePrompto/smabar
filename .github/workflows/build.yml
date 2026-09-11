@@ -1,0 +1,170 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+
+jobs:
+  check:
+    uses: ./.github/workflows/ci.yml
+
+  bundle:
+    needs: check
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Oldest supported glibc baseline — the deb runs on anything newer.
+          # (ubuntu-22.04 runners retire 2027-04; bump to 24.04 then.)
+          - os: ubuntu-22.04
+            triple: x86_64-unknown-linux-gnu
+            bundles: |
+              target/release/bundle/deb/*.deb
+              target/release/bundle/rpm/*.rpm
+          - os: windows-2025
+            triple: x86_64-pc-windows-msvc
+            bundles: target/release/bundle/nsis/*.exe
+          - os: macos-15
+            triple: aarch64-apple-darwin
+            bundles: |
+              target/release/bundle/dmg/*.dmg
+              target/release/bundle/macos/*.app.tar.gz
+          # GitHub is phasing Intel macOS runners out; when this label goes,
+          # build x86_64 as a cross target on the arm64 runner instead.
+          - os: macos-15-intel
+            triple: x86_64-apple-darwin
+            bundles: |
+              target/release/bundle/dmg/*.dmg
+              target/release/bundle/macos/*.app.tar.gz
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      # The packages carry the Cargo workspace version; a tag that disagrees
+      # would publish a release under the wrong name. Fail before the build.
+      - name: Check the tag against the workspace version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          version="v$(scripts/app-version.sh)"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "tag $GITHUB_REF_NAME does not match Cargo.toml ($version)" >&2
+            exit 1
+          fi
+
+      - name: Install Tauri system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev libgtk-layer-shell-dev libwayland-dev libwayland-bin libpulse-dev libasound2-dev librsvg2-dev
+
+      - name: Read repository Rust toolchain
+        id: rust
+        shell: bash
+        run: sed -n 's/^channel = "\(.*\)"/toolchain=\1/p' rust-toolchain.toml >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@d1031067263f94b142dd6c0ce24c5eb9d02d52a0 # master (rust-toolchain.toml)
+        with:
+          toolchain: ${{ steps.rust.outputs.toolchain }}
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+
+      - name: Fetch pinned uv sidecar
+        shell: bash
+        run: scripts/fetch-uv.sh "${{ matrix.triple }}"
+
+      - name: Install shell dependencies
+        working-directory: shell
+        run: bun install --frozen-lockfile
+
+      # deb/rpm on Linux, NSIS on Windows (bundle.targets in tauri.conf.json);
+      # --ci keeps the runner from ever hanging on a prompt.
+      - name: Build bundles
+        if: runner.os != 'macOS'
+        working-directory: shell
+        run: bun run build:app -- --ci -- --locked
+
+      # The DMG bundler needs the .app first; naming both keeps the Linux and
+      # Windows targets of the config out of the picture here.
+      - name: Build bundles (macOS)
+        if: runner.os == 'macOS'
+        working-directory: shell
+        run: bun run build:app -- --ci --bundles app,dmg -- --locked
+      - name: Pack the macOS updater archive
+        if: runner.os == 'macOS'
+        run: scripts/app-archive-macos.sh
+
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: smabar-${{ matrix.os }}
+          path: ${{ matrix.bundles }}
+          if-no-files-found: error
+
+      - name: Build Store MSIX
+        if: runner.os == 'Windows'
+        run: ./scripts/msix-pack.ps1
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        if: runner.os == 'Windows'
+        with:
+          name: store-msix
+          path: target/msix/*.msix
+          if-no-files-found: error
+
+  release:
+    needs: bundle
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          pattern: smabar-*
+          path: artifacts
+          merge-multiple: true
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - working-directory: shell
+        run: bun install --frozen-lockfile
+
+      - name: Sign every package and write the update manifest
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          scripts/release.py --version "$(scripts/app-version.sh)" --artifacts artifacts \
+            --out dist --base-url https://updates.smabar.com --require-all
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        with:
+          name: release
+          path: dist
+          if-no-files-found: error
+
+      # A manual run ends here and proves the pipeline without touching any
+      # release. A tag fills the draft release it names; publishing that draft
+      # is the one manual step, and it triggers publish.yml.
+      - name: Create or complete the draft release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(scripts/app-version.sh)"
+          tag="v$version"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            if [ "$(gh release view "$tag" --json isDraft -q .isDraft)" != "true" ]; then
+              echo "$tag is already published; release a new version instead" >&2
+              exit 1
+            fi
+            gh release upload "$tag" --clobber dist/"$version"/* dist/latest.json
+          else
+            gh release create "$tag" --draft --verify-tag --title "smabar $version" \
+              --notes "Draft. Write the release notes, then publish." \
+              dist/"$version"/* dist/latest.json
+          fi

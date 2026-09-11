@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-font-list"
+description = "Enables the font_list command without any pre-configured scope."
+commands.allow = ["font_list"]
+
+[[permission]]
+identifier = "deny-font-list"
+description = "Denies the font_list command without any pre-configured scope."
+commands.deny = ["font_list"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-bar-reply"
+description = "Enables the bar_reply command without any pre-configured scope."
+commands.allow = ["bar_reply"]
+
+[[permission]]
+identifier = "deny-bar-reply"
+description = "Denies the bar_reply command without any pre-configured scope."
+commands.deny = ["bar_reply"]

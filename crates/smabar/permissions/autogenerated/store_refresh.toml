@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-store-refresh"
+description = "Enables the store_refresh command without any pre-configured scope."
+commands.allow = ["store_refresh"]
+
+[[permission]]
+identifier = "deny-store-refresh"
+description = "Denies the store_refresh command without any pre-configured scope."
+commands.deny = ["store_refresh"]

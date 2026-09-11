@@ -1,0 +1,10 @@
+{
+  "id": "media",
+  "name": "Media",
+  "version": "0.2.1",
+  "description": "Now-playing and system volume controls from smabar core providers",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [{ "id": "media", "name": "Media", "hasFlyout": true }]
+}

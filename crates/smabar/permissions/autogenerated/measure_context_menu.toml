@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-measure-context-menu"
+description = "Enables the measure_context_menu command without any pre-configured scope."
+commands.allow = ["measure_context_menu"]
+
+[[permission]]
+identifier = "deny-measure-context-menu"
+description = "Denies the measure_context_menu command without any pre-configured scope."
+commands.deny = ["measure_context_menu"]

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-show-notice"
+description = "Enables the show_notice command without any pre-configured scope."
+commands.allow = ["show_notice"]
+
+[[permission]]
+identifier = "deny-show-notice"
+description = "Denies the show_notice command without any pre-configured scope."
+commands.deny = ["show_notice"]

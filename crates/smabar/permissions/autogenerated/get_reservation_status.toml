@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-reservation-status"
+description = "Enables the get_reservation_status command without any pre-configured scope."
+commands.allow = ["get_reservation_status"]
+
+[[permission]]
+identifier = "deny-get-reservation-status"
+description = "Denies the get_reservation_status command without any pre-configured scope."
+commands.deny = ["get_reservation_status"]

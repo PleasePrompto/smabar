@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-store-overview"
+description = "Enables the store_overview command without any pre-configured scope."
+commands.allow = ["store_overview"]
+
+[[permission]]
+identifier = "deny-store-overview"
+description = "Denies the store_overview command without any pre-configured scope."
+commands.deny = ["store_overview"]

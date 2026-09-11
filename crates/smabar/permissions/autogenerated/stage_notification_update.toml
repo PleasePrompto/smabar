@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-stage-notification-update"
+description = "Enables the stage_notification_update command without any pre-configured scope."
+commands.allow = ["stage_notification_update"]
+
+[[permission]]
+identifier = "deny-stage-notification-update"
+description = "Denies the stage_notification_update command without any pre-configured scope."
+commands.deny = ["stage_notification_update"]

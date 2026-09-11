@@ -1,0 +1,917 @@
+/* Settings controls. Window composition lives in settings-window.css. */
+.settings-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sb-space-s);
+  margin-bottom: var(--sb-space-m);
+}
+.settings-group-header h2 {
+  font-size: var(--sb-fs-l);
+}
+/* === One block of related settings ===========================
+   The BOX is the grouping signal, so it goes around a GROUP and never around
+   a single setting: forty identical borders carry no information at all. The
+   settings inside are separated by a hairline, not by a gap plus a border. */
+.settings-block {
+  /* The sub-navigation scrolls a block to the top of
+     .settings-group-content, whose .surface-scroll mask fades exactly that
+     much of it out — without this the block it just jumped to would arrive
+     inside the gradient. */
+  scroll-margin-top: var(--sb-space-l);
+}
+.settings-block + .settings-block {
+  margin-top: var(--sb-space-l);
+}
+.settings-group + .settings-group {
+  margin-top: var(--sb-space-xl);
+}
+.settings-block-title {
+  margin-bottom: var(--sb-space-xs);
+  padding-left: var(--sb-space-2xs);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-semibold, 600);
+  letter-spacing: var(--sb-tracking-wide, 0.04em);
+  text-transform: uppercase;
+}
+/* A short explanation ahead of a run of blocks; not a block itself, so the
+   sub-navigation does not list it. */
+.settings-intro {
+  margin-top: var(--sb-space-xl);
+  padding-left: var(--sb-space-2xs);
+}
+.settings-intro h3 {
+  margin: 0;
+  color: var(--sb-text);
+  font-size: var(--sb-fs-m);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-intro p {
+  margin: var(--sb-space-2xs) 0 0;
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+}
+.settings-intro + .settings-block {
+  margin-top: var(--sb-space-m);
+}
+/* A collapsible block: the title is the toggle, the chevron turns when open. */
+summary.settings-block-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+summary.settings-block-title::-webkit-details-marker {
+  display: none;
+}
+summary.settings-block-title:hover {
+  color: var(--sb-text);
+}
+summary.settings-block-title:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: 2px;
+  border-radius: var(--sb-radius-xs, 0.1875rem);
+}
+summary.settings-block-title > svg {
+  transition: transform var(--sb-dur-fast) var(--sb-ease-out);
+}
+details[open] > summary.settings-block-title > svg {
+  transform: rotate(90deg);
+}
+/* The sub-navigation's answer when its target was already in view: the box
+   lights up in the accent and fades, so the click is seen to land. */
+.settings-block[data-highlight] > .settings-box {
+  animation-name: settings-highlight;
+  animation-duration: 1.4s;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+/* Fades in, holds, fades out: long enough to be seen after a scroll. */
+@keyframes settings-highlight {
+  0% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  10%,
+  40% {
+    box-shadow: 0 0 0 2px var(--sb-accent);
+    border-color: var(--sb-accent);
+    background: color-mix(in srgb, var(--sb-accent) 10%, var(--sb-inner-bg));
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .settings-block[data-highlight] > .settings-box {
+    animation: none;
+    box-shadow: 0 0 0 2px var(--sb-accent);
+  }
+}
+.settings-box {
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: var(
+    --sb-settings-box-bg,
+    color-mix(in srgb, var(--sb-inner-bg) 55%, transparent)
+  );
+}
+/* === Free-form box content ===================================
+   A box is a stack of rows, and rows bring their own inset. Anything else
+   placed directly in a box (a notice, a rendered document, an alert) gets
+   the same inset here, so no component has to remember it. .settings-info
+   sizes its own hero and stays out. */
+.settings-box > :not(.settings-row, .settings-reveal, .settings-info) {
+  padding-inline: var(--sb-space-m);
+}
+.settings-box
+  > :not(.settings-row, .settings-reveal, .settings-info):first-child {
+  padding-top: var(--sb-space-s);
+}
+.settings-box
+  > :not(.settings-row, .settings-reveal, .settings-info):last-child {
+  padding-bottom: var(--sb-space-s);
+}
+/* === One setting =============================================
+   A two-column form row, the shape every desktop settings window uses: the
+   name and its help on the left, the control on the right. A suffix control
+   (switch, button) sits on the name's line; the main control takes the right
+   column, below the suffix when both exist. `data-wide` hands the main
+   control the whole row instead: lists, searches, colour and font panels. */
+.settings-block {
+  container: settings-block / inline-size;
+}
+.settings-row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) minmax(0, 3fr);
+  grid-template-rows: auto auto;
+  column-gap: var(--sb-space-m);
+  align-items: center;
+  padding: var(--sb-space-s) var(--sb-space-m);
+}
+.settings-row + .settings-row,
+.settings-row + .settings-reveal .settings-row,
+.settings-reveal + .settings-row,
+.settings-reveal + .settings-reveal .settings-row {
+  border-top: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+.settings-row-head {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  min-width: 0;
+}
+.settings-row-label {
+  color: var(--sb-text);
+  font-size: var(--sb-fs-m);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-row-suffix {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-items: center;
+}
+.settings-row-control {
+  display: grid;
+  grid-column: 2;
+  grid-row: 2;
+  justify-items: end;
+  justify-self: end;
+  gap: var(--sb-space-xs);
+  width: 100%;
+  min-width: 0;
+  max-width: 22rem;
+}
+.settings-row-control > * {
+  width: 100%;
+  min-width: 0;
+}
+.settings-row-control > :is(.sb-choice-grid, .sb-btn) {
+  width: auto;
+}
+.settings-row-suffix + .settings-row-control {
+  margin-top: var(--sb-space-xs);
+}
+/* === Action rows =============================================
+   A button is not a switch: it belongs to the copy that explains it, so a
+   row whose suffix is a button stacks — name and help, then the button at
+   the start, then the row's detail across the full width. Any button in a
+   row is a real button, never bare text: the ghost variant gets the box
+   chrome here so nobody has to pick a class per row. */
+.settings-row:has(> .settings-row-suffix > .sb-btn) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.settings-row:has(> .settings-row-suffix > .sb-btn) .settings-row-head {
+  grid-row: 1;
+}
+.settings-row:has(> .settings-row-suffix > .sb-btn) .settings-row-suffix {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: start;
+  margin-top: var(--sb-space-s);
+}
+.settings-row:has(> .settings-row-suffix > .sb-btn) .settings-row-control {
+  grid-column: 1;
+  grid-row: 3;
+  justify-items: start;
+  justify-self: stretch;
+  max-width: none;
+  margin-top: var(--sb-space-s);
+}
+.settings-row .sb-btn-ghost {
+  border-color: var(--sb-inner-border);
+  background: var(
+    --sb-settings-box-bg,
+    color-mix(in srgb, var(--sb-inner-bg) 55%, transparent)
+  );
+  color: var(--sb-text);
+}
+/* Wide rows, and every row once its block is too narrow for two columns. */
+.settings-row[data-wide] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.settings-row[data-wide] .settings-row-head {
+  grid-row: 1;
+}
+.settings-row[data-wide] .settings-row-control {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-items: start;
+  justify-self: stretch;
+  max-width: none;
+  margin-top: var(--sb-space-s);
+}
+@container settings-block (max-width: 30rem) {
+  .settings-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .settings-row .settings-row-head {
+    grid-row: 1;
+  }
+  .settings-row .settings-row-control {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-items: start;
+    justify-self: stretch;
+    max-width: none;
+    margin-top: var(--sb-space-s);
+  }
+}
+
+/* === Two short groups side by side =========================== */
+.settings-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sb-space-l);
+}
+/* Side by side, the two boxes end on the same line: the block becomes a
+   column and its box takes whatever height the taller neighbour sets. */
+.settings-columns > .settings-block {
+  display: flex;
+  flex-direction: column;
+}
+.settings-columns > .settings-block > .settings-box {
+  flex: 1;
+}
+.settings-block + .settings-columns,
+.settings-columns + .settings-block,
+.settings-columns + .settings-columns {
+  margin-top: var(--sb-space-l);
+}
+.settings-columns > .settings-block + .settings-block {
+  margin-top: 0;
+}
+@container settings (max-width: 52rem) {
+  .settings-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .settings-columns > .settings-block + .settings-block {
+    margin-top: var(--sb-space-l);
+  }
+}
+
+/* === Choices as a segmented control ========================== */
+/* Two classes each, so they beat the un-layered ui-kit.css tiles whatever the
+   import order. The pictogram shrinks to an inline glyph in front of the
+   label; `data-layout="grid"` keeps the one choice whose options are screen
+   corners in a fixed three-column grid. */
+.settings-panel .sb-choice-grid {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-width: 100%;
+  padding: 2px;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-inner-bg) 55%, transparent);
+}
+.settings-panel .sb-choice-grid[data-layout="grid"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.settings-panel .sb-choice-grid[data-layout="grid"] .sb-choice {
+  padding-inline: var(--sb-space-xs);
+  font-size: var(--sb-fs-xs);
+  text-align: center;
+  white-space: normal;
+}
+.settings-panel .sb-choice {
+  --sb-settings-pictogram-width: 1.25rem;
+  --sb-settings-pictogram-height: 0.875rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-xs);
+  min-height: 2rem;
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+  border-color: transparent;
+  background: transparent;
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-s);
+  text-align: start;
+  white-space: nowrap;
+}
+.settings-panel .sb-choice:hover {
+  color: var(--sb-text);
+  background: var(--sb-inner-bg);
+}
+.settings-panel .sb-choice.sb-active {
+  border-color: var(
+    --sb-settings-nav-active-border,
+    color-mix(in srgb, var(--sb-accent) 35%, transparent)
+  );
+  background: var(
+    --sb-settings-nav-active-bg,
+    color-mix(in srgb, var(--sb-accent) 14%, transparent)
+  );
+  color: var(--sb-text);
+}
+.settings-panel .sb-choice:disabled {
+  opacity: var(--sb-opacity-45, 0.45);
+  cursor: default;
+}
+
+.settings-monitor-control {
+  display: grid;
+  gap: var(--sb-space-xs);
+}
+
+.settings-monitor-control > .sb-warn {
+  font-size: var(--sb-fs-xs);
+}
+.settings-help {
+  margin-top: var(--sb-space-2xs);
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+  line-height: 1.45;
+}
+
+.settings-reveal {
+  opacity: 0;
+}
+.sb-reveal.settings-reveal {
+  transition:
+    grid-template-rows var(--sb-dur-normal) var(--sb-ease-out),
+    opacity var(--sb-dur-fast) var(--sb-ease-out);
+}
+.settings-reveal.sb-active {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-reveal.settings-reveal {
+    transition: none;
+  }
+}
+
+/* A setting that another setting has switched off. Dimming the whole row
+   would hide the one line that now HAS to be read, so the reason gains
+   contrast while the name and the control lose it. */
+.settings-row[data-disabled] .settings-row-label {
+  color: var(--sb-text-muted);
+}
+.settings-row[data-disabled] .settings-help {
+  color: var(--sb-text-dim);
+}
+.settings-row[data-disabled] .settings-row-control,
+.settings-row[data-disabled] .settings-row-suffix {
+  /* Grayscale, not just opacity: a switch and a slider carry the accent
+     colour, and 45 % of a saturated accent on a dark surface still reads as
+     "on and clickable". Draining the colour is what says otherwise. */
+  opacity: var(--sb-opacity-45, 0.45);
+  filter: grayscale(1);
+}
+
+/* List rows in the panel are compact: the icon buttons already set the
+   height, the row itself adds no more than a hairline of padding. */
+.settings-panel .sb-list > .sb-row {
+  min-height: 2.25rem;
+  padding-block: var(--sb-space-2xs);
+}
+
+/* Truncation for the list rows of every settings list. Was three identical
+   inline style objects in three files. */
+.settings-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.settings-slider {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+}
+.settings-slider input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--sb-accent);
+}
+/* Two classes, so it beats the un-layered .sb-mono ui-kit.css imports after. */
+.settings-slider > .sb-mono {
+  min-width: 4ch;
+  text-align: right;
+}
+/* The eye and power buttons of the tile list say on/off with `sb-active`
+   and nothing else — the power icon is identical either way. ui-kit.css
+   defines .sb-active for choices, tabs and rows, never for buttons, so the
+   power button had no visible state at all. Three classes, so source order
+   against that un-layered file does not matter. */
+.settings-panel .sb-btn.sb-active {
+  color: var(--sb-accent);
+}
+
+.settings-pictogram {
+  display: block;
+  width: var(--sb-settings-pictogram-width, 2rem);
+  height: var(--sb-settings-pictogram-height, 1.375rem);
+}
+
+/* Theme preview swatch: a mini bar surface with two accent dots and a text
+   line. The layout lives HERE, never in utility classes — this file is
+   un-layered and overrides them on the same element (see CLAUDE.md); reusing
+   .settings-pictogram collapsed every child to 0x0. The TSX only supplies
+   the previewed theme's colors. */
+.settings-swatch {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-settings-swatch-gap, 0.1875rem);
+  width: var(--sb-settings-swatch-width, 2.75rem);
+  height: var(--sb-settings-swatch-height, 1.5rem);
+  padding: var(--sb-settings-swatch-padding, 0.1875rem);
+  border: var(--sb-border-width, 1px) solid;
+  border-radius: var(--sb-radius-s);
+}
+.settings-swatch span {
+  height: var(--sb-settings-swatch-dot-size, 0.5rem);
+  border-radius: var(--sb-radius-full);
+}
+.settings-swatch span:nth-child(-n + 2) {
+  width: var(--sb-settings-swatch-dot-size, 0.5rem);
+  flex: none;
+}
+.settings-swatch span:last-child {
+  height: var(--sb-settings-swatch-line-height, 0.1875rem);
+  flex: 1;
+  min-width: 0;
+  opacity: var(--sb-opacity-55, 0.55);
+}
+
+/* Colour picker: one legible colour well, its source/value, then explicit
+   choices. The native picker is visually hidden because older webviews turn
+   unsupported CSS colours black; the summary always paints the real CSS. */
+.settings-color-control {
+  display: grid;
+  gap: var(--sb-space-xs);
+  min-width: 0;
+}
+.settings-color-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-xs);
+  min-width: 0;
+  padding: var(--sb-space-xs);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-inner-bg) 72%, transparent);
+}
+.settings-color-preview {
+  width: max(var(--sb-settings-color-size, 1.375rem), 2.5rem);
+  height: max(var(--sb-settings-color-size, 1.375rem), 2.5rem);
+  flex: none;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-settings-custom-color-radius, 0.5rem);
+  box-shadow:
+    inset 0 0 0 var(--sb-settings-custom-color-inset, 2px)
+      color-mix(in srgb, var(--sb-text) 13%, transparent),
+    var(--sb-shadow-sm);
+}
+.settings-color-meta {
+  display: grid;
+  gap: 0.125rem;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+.settings-color-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--sb-space-2xs);
+  color: var(--sb-text);
+  font-size: var(--sb-fs-s);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-color-source > span {
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-normal, 400);
+}
+.settings-color-value {
+  overflow: hidden;
+  min-width: 0;
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.settings-color-hex {
+  display: grid;
+  gap: var(--sb-settings-custom-color-inset, 2px);
+  flex: 0 1 7.5rem;
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+  letter-spacing: var(--sb-tracking-wide, 0.04em);
+  text-transform: uppercase;
+}
+.settings-color-hex > .sb-input {
+  width: 100%;
+  min-width: 6.75rem;
+  min-height: 2rem;
+  padding-block: var(--sb-space-2xs);
+  border-radius: var(--sb-settings-custom-color-radius, 0.3125rem);
+  font-family: var(--sb-font-mono);
+  font-size: var(--sb-fs-s);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.settings-color-hex > .sb-input[aria-invalid="true"] {
+  border-color: var(--sb-danger);
+}
+.settings-color-contrast {
+  flex: none;
+  padding: 0.2rem 0.45rem;
+  border: var(--sb-border-width, 1px) solid var(--sb-success-border);
+  border-radius: var(--sb-radius-full);
+  color: var(--sb-text);
+  background: var(--sb-success-bg);
+  font-family: var(--sb-font-mono);
+  font-size: var(--sb-fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+.settings-color-contrast.is-warning {
+  border-color: var(--sb-warning-border);
+  color: var(--sb-text);
+  background: var(--sb-warning-bg);
+}
+.settings-color-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+}
+.settings-color-option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-2xs);
+  min-height: 2.25rem;
+  padding: var(--sb-space-2xs) var(--sb-space-xs);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-full);
+  color: var(--sb-text-dim);
+  background: var(--sb-inner-bg);
+  font: inherit;
+  font-size: var(--sb-fs-xs);
+  cursor: pointer;
+}
+.settings-color-option:hover {
+  border-color: var(--sb-tile-hover-border);
+  color: var(--sb-text);
+  background: var(--sb-tile-hover-bg);
+}
+.settings-color-option.sb-active {
+  border-color: var(--sb-text);
+  color: var(--sb-text);
+  box-shadow: var(
+    --sb-settings-selection-shadow,
+    0 0 0 2px var(--sb-window-bg),
+    0 0 0 3.5px var(--sb-text)
+  );
+}
+.settings-color-option[data-auto] {
+  border-style: dashed;
+}
+.settings-color-option-swatch {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-settings-custom-color-inner-radius, 0.1875rem);
+}
+.settings-color-check {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex: none;
+}
+.settings-color-native {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.settings-color-warning,
+.settings-color-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sb-space-2xs);
+  margin: 0;
+  color: var(--sb-warning);
+  font-size: var(--sb-fs-xs);
+  line-height: 1.4;
+}
+.settings-color-warning svg {
+  flex: none;
+  margin-top: 0.15em;
+}
+.settings-color-error {
+  color: var(--sb-danger);
+}
+
+@media (pointer: coarse) {
+  .settings-color-option,
+  .settings-color-hex > .sb-input {
+    min-height: 2.75rem;
+  }
+}
+
+@container settings (max-width: 30rem) {
+  .settings-color-meta {
+    flex-basis: calc(100% - 3rem);
+  }
+  .settings-color-hex {
+    flex: 1 1 8rem;
+  }
+  .settings-color-contrast {
+    margin-inline-start: auto;
+  }
+}
+
+@media (forced-colors: active) {
+  .settings-color-option.sb-active {
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+  .settings-color-preview,
+  .settings-color-option-swatch {
+    forced-color-adjust: none;
+  }
+}
+
+/* === Reorderable list ======================================== */
+/* The handle is the ONLY drag surface. touch-action must sit exactly here:
+   on the whole row it would kill touch-scrolling of the panel wherever the
+   list is, on a 20px grip it costs nothing. */
+.settings-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sb-settings-drag-handle-size, 1.25rem);
+  min-width: var(--sb-settings-drag-handle-size, 1.25rem);
+  color: var(--sb-text-faint);
+  cursor: grab;
+  touch-action: none;
+}
+.settings-drag-handle:empty {
+  cursor: default;
+}
+.sb-row:hover .settings-drag-handle {
+  color: var(--sb-text-muted);
+}
+
+/* While a row is being dragged the hover wash would chase the pointer down
+   the list and read as flicker. */
+.sb-list[data-reordering] .sb-row:hover {
+  background: none;
+}
+.sb-list[data-reordering] {
+  user-select: none;
+  cursor: grabbing;
+}
+.sb-list[data-reordering] .settings-drag-handle {
+  cursor: grabbing;
+}
+.settings-drag-source {
+  position: relative;
+  z-index: var(--sb-z-control);
+  opacity: var(--sb-opacity-85, 0.85);
+  /* A hairline ring, not a blurred shadow: the shadow was rasterised again on
+     every frame of the drag. */
+  box-shadow: 0 0 0 1px var(--sb-inner-border);
+  background: var(--sb-overlay-bg);
+  border-radius: var(--sb-radius-s);
+  will-change: translate;
+}
+
+/* The rows a dragged one passes step aside, so the hole that opens is the
+   drop target — the insertion line only confirms it.
+
+   ui-kit.css is imported AFTER this file and gives every .sb-row a 140 ms
+   transition naming `transform`. The shift is written as `translate`, a
+   separate property that transition cannot reach, so the timing below is
+   this file's alone. It also means clearing a shift outside a drag is always
+   instant: no rule anywhere transitions `translate` without the attribute. */
+.sb-list[data-reordering] .sb-row {
+  transition: translate var(--sb-dur-fast) var(--sb-ease-out);
+}
+/* The row under the pointer is the exception — an animated translate makes it
+   trail the cursor by the whole duration. Two classes plus the attribute, so
+   it outranks the rule above whatever the source order. */
+.sb-list[data-reordering] .sb-row.settings-drag-source {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The rows still step aside — that IS the drop indicator — they just stop
+     sliding. Suppressing the shift itself would leave the drag with nothing
+     but a 2px line to say where the row lands. */
+  .sb-list[data-reordering] .sb-row {
+    transition: none;
+  }
+}
+
+/* Portalled to <body> because .settings-group-content clips at its scroll
+   edge. The hook writes height, width, translate AND z-index inline;
+   nothing here may set them or the two owners would fight. The z-index in
+   particular: this rule used to hardcode 90 while the panel portals at 100,
+   so the line was painted behind the opaque window and never once seen.
+
+   No transition: the hook places the line on every frame, and an animated
+   translate made it trail the pointer by the whole duration. */
+.settings-drop-marker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: var(--sb-accent);
+  box-shadow: var(--sb-settings-drop-shadow, 0 0 6px var(--sb-accent));
+  border-radius: var(--sb-radius-full);
+  pointer-events: none;
+  will-change: translate;
+}
+
+/* Installed tile cards keep identity and actions visible while forms fold. */
+.settings-plugin-card .settings-box {
+  overflow: hidden;
+}
+.settings-plugin-card .settings-plugin-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-m);
+  padding-top: var(--sb-space-m);
+}
+.settings-plugin-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  color: var(--sb-accent);
+  background: color-mix(in srgb, var(--sb-accent) 8%, var(--sb-inner-bg));
+}
+.settings-plugin-identity {
+  min-width: 0;
+}
+.settings-plugin-card .settings-block-title {
+  margin: 0 0 var(--sb-space-xs);
+  padding: 0;
+  color: var(--sb-text);
+  font-size: var(--sb-fs-l);
+  letter-spacing: normal;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+.settings-plugin-facts,
+.settings-plugin-actions,
+.settings-audio-controls,
+.settings-audio-volume,
+.settings-audio-mute {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sb-space-xs);
+}
+.settings-plugin-facts {
+  font-size: var(--sb-fs-xs);
+}
+.settings-plugin-description {
+  margin: var(--sb-space-s) 0 0;
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.settings-plugin-toolbar {
+  padding-block: var(--sb-space-m);
+}
+.settings-plugin-toolbar > .settings-help {
+  margin-bottom: var(--sb-space-s);
+}
+.settings-plugin-actions {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.settings-plugin-actions .sb-btn {
+  white-space: normal;
+  text-align: start;
+}
+.settings-plugin-actions:not(.settings-plugin-actions-compact) .sb-btn {
+  border-color: var(--sb-inner-border);
+  background: color-mix(in srgb, var(--sb-inner-bg) 55%, transparent);
+}
+.settings-plugin-actions .settings-plugin-delete {
+  margin-inline-start: auto;
+  color: var(--sb-text-muted);
+}
+.settings-plugin-actions .settings-plugin-delete:hover {
+  color: var(--sb-danger);
+}
+.settings-plugin-actions .settings-plugin-delete[hidden] {
+  display: none;
+}
+.settings-plugin-actions > .sb-error,
+.settings-plugin-actions > [data-confirm-row] {
+  width: 100%;
+}
+.settings-plugin-actions-compact {
+  flex: none;
+}
+.settings-plugin-card .settings-box > .settings-plugin-details {
+  padding: 0;
+  border-top: 1px solid var(--sb-inner-border);
+}
+.settings-plugin-details > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-xs);
+  padding: var(--sb-space-s) var(--sb-space-m);
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+  font-weight: var(--sb-weight-semibold, 600);
+  list-style: none;
+  cursor: pointer;
+}
+.settings-plugin-details > summary::-webkit-details-marker {
+  display: none;
+}
+.settings-plugin-details > summary:hover {
+  background: color-mix(in srgb, var(--sb-accent) 5%, transparent);
+  color: var(--sb-text);
+}
+.settings-plugin-details > summary:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -3px;
+}
+.settings-plugin-details[open] > summary {
+  border-bottom: 1px solid var(--sb-inner-border);
+}
+.settings-plugin-details[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.settings-plugin-error {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sb-space-s);
+  color: var(--sb-danger);
+  font-size: var(--sb-fs-s);
+}
+.settings-audio-controls {
+  gap: var(--sb-space-m);
+}
+.settings-audio-volume,
+.settings-audio-mute {
+  gap: var(--sb-space-s);
+  font-size: var(--sb-fs-s);
+}
+.settings-audio-volume > .sb-input {
+  width: 5rem;
+}

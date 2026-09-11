@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-retry-provisioning"
+description = "Enables the retry_provisioning command without any pre-configured scope."
+commands.allow = ["retry_provisioning"]
+
+[[permission]]
+identifier = "deny-retry-provisioning"
+description = "Denies the retry_provisioning command without any pre-configured scope."
+commands.deny = ["retry_provisioning"]

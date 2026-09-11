@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-open-context-menu"
+description = "Enables the open_context_menu command without any pre-configured scope."
+commands.allow = ["open_context_menu"]
+
+[[permission]]
+identifier = "deny-open-context-menu"
+description = "Denies the open_context_menu command without any pre-configured scope."
+commands.deny = ["open_context_menu"]

@@ -1,0 +1,312 @@
+/* Settings window composition. Plugin shadow roots do not consume this file. */
+.settings-panel {
+  --sb-fs-xs: max(12px, 0.75rem);
+  --sb-fs-s: max(13px, 0.8125rem);
+  --sb-fs-m: max(14px, 0.875rem);
+  --sb-fs-l: max(16px, 1rem);
+  --sb-fs-xl: max(18px, 1.125rem);
+
+  container: settings / inline-size;
+  min-width: min(35rem, calc(100vw - 0.5rem));
+  min-height: min(27.5rem, calc(100vh - 0.5rem));
+  max-width: calc(100vw - 0.5rem);
+  max-height: calc(100vh - 0.5rem);
+  overflow: clip;
+  overscroll-behavior: contain;
+}
+:root[data-sb-surface="settings"] .settings-panel {
+  min-width: 100%;
+  min-height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+}
+/* === Window frame ============================================
+   The native window is opaque and undecorated; the strips below are its
+   resize handles and hand the gesture to the window manager. Six pixels on
+   the edges, twelve on the corners — the same reach a decorated frame has.
+   The keyboard target sits in the bottom-right corner, visible only when it
+   has focus. */
+.settings-resize-edge {
+  position: absolute;
+  z-index: var(--sb-z-control-active);
+  touch-action: none;
+}
+.settings-resize-edge[data-direction="North"],
+.settings-resize-edge[data-direction="South"] {
+  right: 0.75rem;
+  left: 0.75rem;
+  height: 0.375rem;
+}
+.settings-resize-edge[data-direction="East"],
+.settings-resize-edge[data-direction="West"] {
+  top: 0.75rem;
+  bottom: 0.75rem;
+  width: 0.375rem;
+}
+.settings-resize-edge[data-direction="North"] {
+  top: 0;
+  cursor: n-resize;
+}
+.settings-resize-edge[data-direction="South"] {
+  bottom: 0;
+  cursor: s-resize;
+}
+.settings-resize-edge[data-direction="East"] {
+  right: 0;
+  cursor: e-resize;
+}
+.settings-resize-edge[data-direction="West"] {
+  left: 0;
+  cursor: w-resize;
+}
+.settings-resize-edge[data-direction="NorthEast"],
+.settings-resize-edge[data-direction="NorthWest"],
+.settings-resize-edge[data-direction="SouthEast"],
+.settings-resize-edge[data-direction="SouthWest"] {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+.settings-resize-edge[data-direction="NorthEast"] {
+  top: 0;
+  right: 0;
+  cursor: ne-resize;
+}
+.settings-resize-edge[data-direction="NorthWest"] {
+  top: 0;
+  left: 0;
+  cursor: nw-resize;
+}
+.settings-resize-edge[data-direction="SouthEast"] {
+  right: 0;
+  bottom: 0;
+  cursor: se-resize;
+}
+.settings-resize-edge[data-direction="SouthWest"] {
+  bottom: 0;
+  left: 0;
+  cursor: sw-resize;
+}
+.settings-resize-control {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0.75rem;
+  height: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.settings-resize-control:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -2px;
+}
+.settings-panel-surface {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Opaque and square: a normal top-level window. Undecorated windows get no
+   frame from the window manager, so a hairline keeps the edge readable
+   against a dark desktop. */
+.settings-window {
+  color-scheme: var(--sb-color-scheme);
+  background: var(--sb-window-bg);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+/* The title bar: the drag region of the window. Two classes, so it beats
+   the un-layered .sb-header rules imported after this file. */
+.settings-panel .settings-panel-header {
+  min-height: 2.5rem;
+  margin: 0;
+  padding: 0 var(--sb-space-xs) 0 var(--sb-space-m);
+  border-bottom: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  user-select: none;
+}
+.settings-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-xs);
+}
+.settings-brand-mark {
+  width: 0.9rem;
+  height: 1.1rem;
+  background: var(--sb-text);
+  -webkit-mask: url("../assets/smabar-icon.svg") center / contain no-repeat;
+  mask: url("../assets/smabar-icon.svg") center / contain no-repeat;
+}
+
+.settings-workspace {
+  display: grid;
+  grid-template-columns: var(--sb-settings-nav-width, 11rem) minmax(0, 1fr);
+  gap: var(--sb-space-m);
+  min-height: 0;
+  padding: var(--sb-space-m) var(--sb-space-m) 0;
+}
+.settings-group-nav {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  overflow-y: auto;
+}
+.settings-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+}
+.settings-group-nav .settings-nav-section > button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: var(--sb-space-xs);
+  min-height: 2.25rem;
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid transparent;
+  border-radius: var(--sb-radius-s);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-m);
+  text-align: left;
+  transition:
+    color var(--sb-dur-fast) var(--sb-ease-out),
+    background var(--sb-dur-fast) var(--sb-ease-out),
+    border-color var(--sb-dur-fast) var(--sb-ease-out);
+}
+.settings-nav-icon {
+  flex: none;
+}
+.settings-group-nav .settings-nav-section > button:hover {
+  color: var(--sb-text);
+  background: var(--sb-inner-bg);
+}
+.settings-group-nav .settings-nav-section > button.sb-active {
+  color: var(--sb-text);
+  background: var(
+    --sb-settings-nav-active-bg,
+    color-mix(in srgb, var(--sb-accent) 14%, transparent)
+  );
+  border-color: var(
+    --sb-settings-nav-active-border,
+    color-mix(in srgb, var(--sb-accent) 35%, transparent)
+  );
+}
+.settings-group-nav .settings-subnav {
+  margin: 0 0 var(--sb-space-2xs) var(--sb-space-xs);
+  padding-left: var(--sb-space-xs);
+  border-left: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  list-style: none;
+}
+.settings-group-nav .settings-subnav button {
+  width: 100%;
+  min-height: max(24px, 1.75rem);
+  padding: var(--sb-space-2xs);
+  border: none;
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-xs);
+  text-align: left;
+}
+.settings-group-nav .settings-subnav button:hover {
+  color: var(--sb-text);
+  text-decoration: underline;
+}
+.settings-group-content {
+  min-width: 0;
+  min-height: 0;
+  padding: 0 var(--sb-space-xs) var(--sb-space-l) 0;
+  overflow-y: auto;
+}
+.settings-group {
+  width: 100%;
+  max-width: 56rem;
+  margin-inline: auto;
+}
+
+/* Compact product identity inside System. The settings box already supplies
+   the surface, so this is a quiet two-column lockup rather than another card. */
+.settings-info {
+  display: grid;
+  grid-template-columns: minmax(11rem, 0.8fr) minmax(0, 1.4fr);
+  align-items: center;
+  gap: var(--sb-space-l);
+  padding: var(--sb-space-l);
+}
+.settings-info-hero {
+  display: grid;
+  justify-items: start;
+  gap: var(--sb-space-s);
+  min-width: 0;
+}
+.settings-info-logo {
+  width: min(15rem, 100%);
+  aspect-ratio: 922.85 / 274.886;
+  background: var(--sb-text);
+  -webkit-mask: url("../assets/smabar-logo.svg") center / contain no-repeat;
+  mask: url("../assets/smabar-logo.svg") center / contain no-repeat;
+}
+.settings-info-version {
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-inner-bg);
+  color: var(--sb-text-muted);
+  font-family: var(--sb-font-mono);
+  font-size: var(--sb-fs-xs);
+}
+.settings-info-card {
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-s);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.settings-info-principle {
+  margin-top: var(--sb-space-s);
+  color: var(--sb-text);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+
+@container settings (max-width: 44rem) {
+  .settings-workspace {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: var(--sb-space-s);
+  }
+  .settings-group-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: var(--sb-space-2xs);
+  }
+  .settings-nav-section {
+    flex: none;
+  }
+  .settings-group-nav .settings-nav-section > button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .settings-subnav {
+    display: none;
+  }
+}
+
+@container settings (max-width: 38rem) {
+  .settings-info {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--sb-space-m);
+    text-align: center;
+  }
+  .settings-info-hero {
+    justify-items: center;
+  }
+}
+
+@container settings (max-width: 30rem) {
+  .settings-nav-label {
+    display: none;
+  }
+  .settings-group-nav .settings-nav-section > button {
+    min-width: var(--sb-control-min-height, 2.25em);
+    justify-content: center;
+  }
+}

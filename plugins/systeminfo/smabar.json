@@ -1,0 +1,10 @@
+{
+  "id": "systeminfo",
+  "name": "System",
+  "version": "0.3.1",
+  "description": "Live system status and audio controls from smabar core providers",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [{ "id": "system", "name": "System", "hasFlyout": true }]
+}

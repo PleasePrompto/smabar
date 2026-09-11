@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-legal-decline"
+description = "Enables the legal_decline command without any pre-configured scope."
+commands.allow = ["legal_decline"]
+
+[[permission]]
+identifier = "deny-legal-decline"
+description = "Denies the legal_decline command without any pre-configured scope."
+commands.deny = ["legal_decline"]

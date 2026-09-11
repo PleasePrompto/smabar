@@ -1,0 +1,40 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "overlay",
+  "description": "Plugin flyouts, menus and tooltips",
+  "windows": [
+    "overlay"
+  ],
+  "permissions": [
+    "core:default",
+    "allow-get-ui-state",
+    "allow-plugin-action",
+    "allow-get-plugins",
+    "allow-get-plugin-ui",
+    "allow-get-shortcuts",
+    "allow-unpin-shortcut",
+    "allow-launch-shortcut",
+    "allow-update-config",
+    "allow-remove-plugin",
+    "allow-focus-bar",
+    "allow-open-url",
+    "allow-ui-log",
+    "allow-get-runtime-status",
+    "allow-get-surface-context",
+    "allow-surface-ready",
+    "allow-open-settings",
+    "allow-measure-flyout",
+    "allow-pin-flyout",
+    "allow-close-flyout",
+    "allow-finalize-overlay-clear",
+    "allow-open-flyout",
+    "allow-set-overlay-pointer",
+    "allow-open-context-menu",
+    "allow-measure-context-menu",
+    "allow-close-context-menu",
+    "allow-measure-tooltip",
+    "allow-open-tooltip",
+    "allow-bar-reply",
+    "allow-ensure-google-font"
+  ]
+}

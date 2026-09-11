@@ -1,0 +1,107 @@
+[package]
+name = "smabar-core"
+description = "Tauri-free core library for smabar: config, i18n, logging, providers, plugin supervisor, MCP"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[dependencies]
+axum = { version = "0.8.9", default-features = false, features = ["http1", "tokio"] }
+base64 = "0.23.1"
+dirs = "6.0.0"
+fontdb = "0.24.0"
+getrandom = "0.4.3"
+# Local plugin icons: bounded decoding and one transparent 128px PNG for every webview.
+image = { version = "0.25.10", default-features = false, features = ["png", "jpeg", "ico", "webp"] }
+# Verifies the Community Catalog signature (minisign, pre-hashed Ed25519) —
+# the same crate tauri-plugin-updater already locks for app updates.
+minisign-verify = "0.2.5"
+notify = "8.2.0"
+# Renders Community Store READMEs (store/readme.rs). Only the `html` writer;
+# the default `getopts` feature serves the crate's CLI binary.
+pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }
+rmcp = { version = "3.1.4", features = ["server", "macros", "transport-streamable-http-server", "schemars"] }
+schemars = { version = "1.2.2", features = ["derive"] }
+# Catalog versions and `requires.smabar` (precedence comparison only).
+semver = "1.0.28"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+# Git tree oids (SHA-1) and content digests (SHA-256) of store installs.
+# sha1 stays on the 0.10 digest generation to match the sha2 already in the tree.
+sha1 = "0.10.6"
+sha2 = "0.10.9"
+starship-battery = "0.11.1"
+sysinfo = "0.38.4"
+thiserror = "2.0.20"
+# rt-multi-thread: config/watcher_tests.rs runs on the multi-thread flavor; Linux
+# inherited the feature from zbus, a standalone Windows test build did not.
+tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "process", "io-util", "net"] }
+tokio-util = "0.7.19"
+tracing = "0.1.44"
+tracing-appender = "0.2.5"
+# "tracing-log" captures the `log` crate: Tauri, WebKit glue and every
+# dependency that logs through `log` would otherwise be invisible — that
+# hid an "asset protocol not configured to allow the path" error once.
+tracing-subscriber = { version = "0.3.23", features = ["json", "env-filter", "tracing-log"] }
+url = "2.5.8"
+# GitHub commit archives are deflate-only; the default feature set would pull
+# aes, bzip2, zstd and xz for nothing. `deflate-flate2` names no backend, so
+# flate2 is listed with the pure-Rust one the rest of the workspace already
+# compiles — a core-only build gets the same single backend.
+flate2 = { version = "1.1.9", default-features = false, features = ["rust_backend"] }
+zip = { version = "4.6.1", default-features = false, features = ["deflate-flate2"] }
+
+[target.'cfg(unix)'.dependencies]
+# Only for killpg: a plugin's grandchildren survive a plain child kill.
+libc = "0.2.189"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Reuse Tauri's locked Objective-C bindings for native app names, icons and opening.
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["std", "NSWorkspace", "NSImage", "NSImageRep", "NSBitmapImageRep", "NSGraphicsContext", "objc2-core-graphics"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSArray", "NSBundle", "NSData", "NSDictionary", "NSFileManager", "NSGeometry", "NSValue", "NSString", "NSURL"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# File and folder pins use the desktop's ordered system-icon names. Keep this
+# on gtk-rs 0.18, matching the GTK stack Tauri links into the app.
+gio = "0.18.4"
+# Linux media sessions use the MPRIS 2.2 D-Bus contract. Other targets do not
+# compile or advertise the provider until they have a native implementation.
+libpulse-binding = "2.30.1"
+zbus = { version = "5.19.0", default-features = false, features = ["tokio"] }
+
+[target.'cfg(windows)'.dependencies]
+png = "0.18.1"
+# Media sessions: GlobalSystemMediaTransportControls (WinRT) plus AppInfo for
+# player display names; windows-future names the IAsyncOperation types the
+# `windows` crate itself no longer re-exports.
+windows = { version = "0.62.2", features = [
+  "ApplicationModel",
+  "Foundation",
+  "Foundation_Collections",
+  "Media_Control",
+  "Win32_Devices_FunctionDiscovery",
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_Storage_FileSystem",
+  "Win32_System_Com",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
+  "Win32_UI_Shell",
+  "Win32_UI_Shell_PropertiesSystem",
+  "Win32_UI_WindowsAndMessaging",
+] }
+windows-future = "0.3.2"
+
+[dev-dependencies]
+# Store tests sign their own catalogs (minisign = Ed25519 over BLAKE2b-512):
+# the deployed store's secret key never leaves the store. blake2 stays on the
+# 0.10 digest generation to match the sha2 in the tree.
+blake2 = "0.10.6"
+ed25519-dalek = "3.0.0"
+# Only to PROVE the `log` -> `tracing` bridge in tests/logging.rs; smabar
+# itself never logs through `log`.
+log = "0.4.30"
+tempfile = "3.27.0"

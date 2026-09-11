@@ -1,0 +1,476 @@
+{
+  "version": 1,
+  "terms": {
+    "golden path": "The six numbered steps; a build is complete when every step's done holds.",
+    "surface": "One render target of a tile: tile, flyout, hover, popup. bar_screenshot photographs each.",
+    "sibling": "Every plugin file except smabar.json: the entry script, views.py, locales/*.json. Siblings first, smabar.json LAST.",
+    "clean start": "A smabar.json write whose reply has status running, settled true and warnings.count 0.",
+    "photograph": "A bar_screenshot of one surface, taken after the last write and inspected as an image.",
+    "cover": "The tile recipe chosen from the nine ui_kit coverLayouts; a coverLayout enum in settingsSchema lets the user switch it."
+  },
+  "goldenPath": [
+    {
+      "step": 1,
+      "do": "Map the idea. Read bar_get_state and plugin_list, find the idea's topics in capabilities.topics and make their read calls; plugin_guide(section=\"template\") is the plugin shape you will copy. External services: current official documentation for authentication, quotas and formats.",
+      "done": "You can write down the plugin id (the folder name, [a-z0-9-]), every tile (id, hasFlyout), every surface it renders (tile, flyout, hover, popup), every data source and every setting the user may change — and every read call of the touched topics has been made.",
+      "read": [
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "template"
+          }
+        }
+      ]
+    },
+    {
+      "step": 2,
+      "do": "Read the kit before any HTML, in one call: ui_kit(sections=[\"coverLayouts\",\"bestPractices\",\"<the class category you build with>\",\"snippets\"]). Compare the nine covers by whenToUse and choose one; decide what each surface shows in its empty, populated and error state.",
+      "done": "One cover chosen. Every sb-* class and data-sb-* hook you are about to write appeared in a ui_kit reply you read; a tile with a form has read the forms category and snippets.form; a tile with tabs, a menu or a tooltip has read conventions.",
+      "read": [
+        {
+          "tool": "ui_kit",
+          "arguments": {
+            "sections": ["coverLayouts", "bestPractices", "forms", "snippets"]
+          }
+        }
+      ]
+    },
+    {
+      "step": 3,
+      "do": "Write the siblings with plugin_write_file in the template's shape: views.py (markup only; its action() helper names every icon-only button), locales/en.json and locales/de.json (flat maps, placeholders in braces), then plugin.py — the first render in @app.on_ready from the cached state, slow work on a thread, state in app.data_dir written through os.replace, app.set_settings({**app.settings, ...}), a bad settings value falls back with app.log(\"warn\"). The API: plugin_guide(section=\"sdk\"); files and network: storage; the handler lock and restarts: lifecycle.",
+      "done": "Every file the entry script imports or app.t() reads has a write reply. The entry script starts with the PEP 723 header and ends in app.run() behind a __main__ guard. Every app.render targets a tile id the manifest will declare. Every icon-only control carries title and aria-label.",
+      "read": [
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "sdk"
+          }
+        },
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "storage"
+          }
+        },
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "lifecycle"
+          }
+        }
+      ]
+    },
+    {
+      "step": 4,
+      "do": "Write smabar.json LAST: id equals the folder, unique tile ids, settingsSchema inside the renderable subset (string, number, boolean, string enum, string array) with a coverLayout enum when the tile has variants. That write starts the plugin; its reply is the test result.",
+      "done": "Clean start: reload.status is \"running\", reload.settled is true and reload.warnings.count is 0. Otherwise fix the first warning (the shell's markup report, the core's rejection or the stderr cause), write again, check again; plugin_logs(id) has the complete entries.",
+      "read": [
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "manifest"
+          }
+        },
+        {
+          "tool": "plugin_guide",
+          "arguments": {
+            "section": "debugging"
+          }
+        }
+      ]
+    },
+    {
+      "step": 5,
+      "do": "Exercise the plugin: every data-action once (plugin_action or the UI), one settings change through settings_set, the empty state and the error state.",
+      "done": "plugin_logs(id, level=\"warn\") shows no entry with a ts newer than the smabar.json write, and every state keeps the tile's structure with a placeholder where the value belongs.",
+      "read": [
+        {
+          "tool": "plugin_logs",
+          "arguments": {
+            "id": "<plugin id>",
+            "level": "warn"
+          }
+        }
+      ]
+    },
+    {
+      "step": 6,
+      "do": "Photograph every surface after the last write; reload.designReview lists the calls: bar_screenshot(target=\"plugin:<id>:<tile>\", scale=3) for the tile, and for a tile with hasFlyout bar_ui_state(\"open_flyout\", tileId) followed by bar_screenshot(target=\"flyout\"); hover and popup when you render them. Inspect each PNG against ui_kit bestPractices: hierarchy, clipping, contrast, raw locale keys, placeholder text, control size.",
+      "done": "Every surface the plugin renders has a photograph taken after the final write, each inspected and passing; the report names the surfaces photographed and any you could not.",
+      "read": [
+        {
+          "tool": "ui_kit",
+          "arguments": {
+            "sections": ["bestPractices", "snippets"]
+          }
+        }
+      ]
+    }
+  ],
+  "style": {
+    "rule": "Layout, spacing, type and color come from the kit: sb-* classes plus the data-sb-* hooks the shell runs. style= carries only a data value (a progress width, --sb-chart-value) or a documented token (--sb-grid-cols, --sb-accent); the shell reports every other inline style into your log.",
+    "layout": "sb-field = input + button on one line; sb-inline = horizontal cluster; sb-stack = vertical group; sb-push = align to the end of a row; sb-grid with style=\"--sb-grid-cols:N\" = N columns; sb-text-xs/-s/-m/-l/-xl/-hero = the type scale; sb-ok/-warn/-crit = status colors; sb-meta = a quiet trailing line; sb-reveal + sb-active = smooth expand; sb-tile-stack = two lines in a tile. Rhythm between blocks, inside cards, tabs and reveals, is automatic.",
+    "tile": "The tile is one of nine covers: ui_kit(sections=[\"coverLayouts\"]) — pick by whenToUse and fill it with your data; tileSizing explains the height budget and stable widths. Details belong in the flyout, actions in its header (sb-header-actions).",
+    "interaction": "HTML only — a <script> is refused. Native elements carry interaction: <details class=\"sb-accordion-item\"><summary> is an accordion, <dialog class=\"sb-modal\"> plus button[commandfor][command=\"show-modal\"] a modal, [popover] plus button[popovertarget] a menu; only the built-in command values work, ui_kit(sections=[\"sanitizer\"]) lists them. Anything that reaches your process is a data-action. Shell hooks (data-sb-*: tables, pickers, copy, countdown, tween, key): ui_kit(sections=[\"behaviour\"]).",
+    "read": "Before HTML, one call: ui_kit(sections=[\"coverLayouts\",\"bestPractices\",\"<category>\",\"snippets\"]); categories: actions, forms, data, content, layout, overlays, feedback, disclosure. Tabs, menus, tooltips, render targets: [\"conventions\"]; charts: [\"charts\"]; a bare ui_kit() is the index."
+  },
+  "sections": {
+    "start": "The START document: terms, the golden path with completion criteria, the style rules in brief, the capabilities index. The default.",
+    "capabilities": "The capabilities index alone: topics with their read calls, live host services and providers.",
+    "manifest": "smabar.json: fields, optional app/cover icons, validation, the settings panel's renderable subset, multi-file plugins, the generated JSON Schema.",
+    "sdk": "Every public member of smabar_sdk.Plugin: render, on_ready, every, on_action, providers, settings, t, log, commands, audio, popups.",
+    "storage": "app.data_dir, SQLite, atomic writes, stale-while-refresh, sb-asset, network in a thread, media polling.",
+    "lifecycle": "Startup order, the ONE handler lock, errors and restarts, hot reload, no shutdown hook.",
+    "debugging": "plugin_list, plugin_logs, plugin_data, the markup report and the common failures.",
+    "template": "A complete multi-file plugin (views.py, locales, plugin.py, smabar.json) in write order, with a note on copying it."
+  },
+  "capabilities": {
+    "scope": "smabar supplies reusable host primitives; the user supplies the product idea. Bundled and custom plugins are optional. Discover installed IDs with plugin_list before reusing anything. The bundled plugins are worked examples you can read in full with plugin_read(id): weather (list-plus-detail flyout on data-tabs, place search, one request for many places, cached forecast), clock (shell-ticked clocks, analog tile cover, context menus, sibling modules), crypto (name search, persisted cache), todos (SQLite, forms, popups, agent commands).",
+    "runtimeNote": "runtime.services and runtime.availableProviders reflect this running host, independent of installed tiles. They use the same advertisement as plugin initialize. provider_snapshot is cached data, not a list of capabilities.",
+    "topics": [
+      {
+        "id": "surfaces",
+        "what": "Bar tiles, pinned flyouts, hover previews, tooltips, context menus and proactive toasts. Read target-specific constraints before selecting surfaces.",
+        "read": [
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["conventions", "snippets"]
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "manifest"
+            }
+          }
+        ]
+      },
+      {
+        "id": "design",
+        "what": "Cover recipes, responsive flyout hierarchy, theme-aware components, charts, optional app/cover icons, forms and accessible loading/empty/error states.",
+        "read": [
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["coverLayouts", "bestPractices", "forms", "snippets"]
+            }
+          },
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["icons", "data", "branding"]
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "manifest"
+            }
+          }
+        ]
+      },
+      {
+        "id": "interactions",
+        "what": "Declarative data-action/data-field events and shell-owned data-sb-* behaviour: tables, menus, dialogs, filters, pickers, copy and countdowns.",
+        "read": [
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["behaviour", "forms"]
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "sdk"
+            }
+          }
+        ]
+      },
+      {
+        "id": "notifications",
+        "what": "Addressable toasts with arbitrary plugin action buttons, expiry, delivery callbacks and optional sounds. Host acceptance and visible delivery are separate.",
+        "read": [
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "sdk"
+            }
+          },
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["conventions"]
+            }
+          }
+        ]
+      },
+      {
+        "id": "audioPlayback",
+        "what": "Native local-file playback independent of visible HTML: play, pause, resume, stop, loop, volume, seek and status; master and per-plugin levels.",
+        "read": [
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "sdk"
+            }
+          },
+          {
+            "tool": "settings_get",
+            "arguments": {
+              "path": "audio"
+            }
+          }
+        ]
+      },
+      {
+        "id": "mediaPipeline",
+        "what": "Local media through sb-asset and remote HTTPS players through the isolated wrapper in pinned flyouts. Keep media identity stable, cache metadata, and provide external-link fallbacks.",
+        "read": [
+          {
+            "tool": "ui_kit",
+            "arguments": {
+              "sections": ["sanitizer", "bestPractices"]
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "storage"
+            }
+          }
+        ]
+      },
+      {
+        "id": "systemData",
+        "what": "CPU, memory, disk, network, battery, media sessions and system output audio, where advertised. Subscribe through on_provider; provider_action controls supported media/system volume. This differs from plugin audio playback.",
+        "read": [
+          {
+            "tool": "provider_snapshot",
+            "arguments": {}
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "sdk"
+            }
+          }
+        ]
+      },
+      {
+        "id": "persistenceAndScheduling",
+        "what": "Plugin-owned files/SQLite, atomic writes, cached display, background work and periodic callbacks. Persist deadlines/state and reconcile after restart or wake; timers do not run while smabar is stopped.",
+        "read": [
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "storage"
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "lifecycle"
+            }
+          }
+        ]
+      },
+      {
+        "id": "agentCommands",
+        "what": "Discoverable plugin-owned command schemas and confirmed results. Use plugin_list, then plugin_commands(id) and plugin_call with the discovered contract; writes need their own validation and retry semantics.",
+        "read": [
+          {
+            "tool": "plugin_list",
+            "arguments": {}
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "sdk"
+            }
+          }
+        ]
+      },
+      {
+        "id": "integrations",
+        "what": "Language-agnostic subprocesses with JSON-RPC; bundled Python/uv supports standard libraries and declared dependencies. Plugins fetch external APIs or run programs, with bounded work off the handler thread.",
+        "read": [
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "manifest"
+            }
+          },
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "storage"
+            }
+          }
+        ]
+      },
+      {
+        "id": "configurationAndDistribution",
+        "what": "Plugin settings/locales, themes, fonts, visibility and lifecycle, shortcuts and the Community Store have their own MCP tools. Discover current state and tool schemas before changing them.",
+        "read": [
+          {
+            "tool": "bar_get_state",
+            "arguments": {}
+          },
+          {
+            "tool": "theme_get",
+            "arguments": {}
+          },
+          {
+            "tool": "font_list",
+            "arguments": {
+              "limit": 10
+            }
+          }
+        ]
+      },
+      {
+        "id": "shortcutsAndStore",
+        "what": "Find and launch installed applications, manage shortcuts, and inspect the signed Community Store catalog and requirements before installing optional plugins or themes.",
+        "read": [
+          {
+            "tool": "shortcut_list",
+            "arguments": {}
+          },
+          {
+            "tool": "store_overview",
+            "arguments": {}
+          }
+        ]
+      },
+      {
+        "id": "verification",
+        "what": "Inspect real process status, structured logs and live screenshots of every surface. Exercise actions and recovery before declaring the plugin complete.",
+        "read": [
+          {
+            "tool": "plugin_guide",
+            "arguments": {
+              "section": "debugging"
+            }
+          }
+        ]
+      }
+    ],
+    "research": [
+      "Map the idea to topics and make every read call before writing. External services: current official documentation. A missing plugin or an empty provider snapshot is not a missing capability; distinguish a missing host primitive from what a plugin implements in its own process, and state a remaining limitation with its evidence and a supported fallback."
+    ]
+  },
+  "manifest": {
+    "file": "smabar.json",
+    "forwardCompatibility": "Unknown fields and invalid optional values are ignored instead of stopping the plugin, and one source=\"core\" warning names the supported fields or values. Essential identity, protocol, runtime and launch fields remain required. If an edited manifest cannot be parsed, smabar keeps the last running instance until you save a valid replacement.",
+    "validation": [
+      "id: non-empty, [a-z0-9-] only, identical to the folder name.",
+      "protocolVersion: must be 1.",
+      "tiles: at least one usable tile. Keep ids unique; if an id is repeated, the first tile is kept and later duplicates are ignored with one source=\"core\" warning.",
+      "runtime \"python\": needs `entry` (a script file in the plugin folder).",
+      "runtime \"exec\": needs a non-empty `command` array (program plus arguments).",
+      "iconSvg: optional per-tile branding icon, at most 8192 UTF-8 bytes. The shell requires exactly one <svg> root and sanitizes it: scripts, event handlers, styles, classes and external URLs never render.",
+      "accent / accent2 / accentFg: simple CSS color values, at most 128 chars, no ';', '{', '}' or url() other than data:/https:.",
+      "settingsSchema: optional JSON Schema, read by the plugin through app.settings and rendered by the settings panel — what it can render, and the coverLayout convention: manifest.settingsSchema below."
+    ],
+    "pythonHeader": "A python plugin runs through `uv run --script`, so its entry file MUST start with a PEP 723 header:\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = []\n# ///\nDeclare third-party packages in `dependencies`; uv resolves them on first start (which is why a first start can take a minute).",
+    "tileFields": {
+      "id": "Stable tile id. Referenced by every app.render call and by plugin_order_set as plugin:<pluginId>:<tileId>.",
+      "name": "Human-readable name, shown in settings and menus.",
+      "hasFlyout": "true when clicking the tile opens flyout content.",
+      "tile": "\"card\" or \"flat\" — overrides the global appearance.tileChrome for this tile.",
+      "iconSvg": "Optional custom branding icon as inline SVG code. It is set by writing smabar.json through plugin_write_file, works for bundled and community plugins, and the shell prepends it to your tile HTML independently of usePluginIcon. A usable SVG takes precedence if both are set. Render empty tile HTML for an intentional compact icon-only tile. Keep it to one <svg> root and at most 8 KiB; scripts, on* handlers, styles/classes and external URLs are stripped before rendering.",
+      "usePluginIcon": "Optional boolean, false by default. Set true to prepend the plugin-folder app icon to this tile's cover HTML; a usable iconSvg takes precedence. A missing or invalid image adds no cover icon. Omit both usePluginIcon and iconSvg for no extra icon, such as a clock cover. Icons you render inside tile HTML remain your own layout choice. Settings cards and the sort list use the app icon independently of this flag. See folderIcon for files and examples.",
+      "accent": "Branding color; overrides --sb-accent inside this plugin's tile and flyout.",
+      "accent2": "Second branding color (--sb-accent-2); falls back to accent.",
+      "accentFg": "Optional text color on accent surfaces (--sb-on-accent). You can leave it out: the shell derives a readable one from your accent, and overrides yours if it would be unreadable on it. Set it only to pick a specific brand color that already has enough contrast."
+    },
+    "modules": "A plugin may be several files: the process runs inside its own folder, so `import views` finds a sibling views.py — split markup (views.py), storage (model.py) and glue (plugin.py) the way the template does. Write every sibling with plugin_write_file BEFORE smabar.json: the manifest write is refused while the entry script is missing, and an imported sibling that is missing fails the start with \"ModuleNotFoundError: No module named 'views'\" as the reply's error.",
+    "settingsSchema": "optional JSON Schema; the settings UI and MCP render it, and the plugin reads the values through app.settings. The Settings › Plugins panel renders exactly: string (text), number/integer (number), boolean (switch), a string enum (choice grid) and an array of strings (one comma-separated field). Anything structured — an array of objects such as places with coordinates — shows only \"edit in the plugin\": your flyout is its editor (search + add/remove rows), persisted with app.set_settings. Convention for the tile's look: a string property named coverLayout whose enum lists the cover layout ids you implement (with a default) renders as a choice grid — branch your tile render on it in on_settings_changed. Layout ids and markup: ui_kit(sections=[\"coverLayouts\"]).",
+    "folderIcon": {
+      "files": "Optional icon file directly beside smabar.json. No manifest field is needed for settings; covers opt in separately with usePluginIcon. The first usable file wins in this order: icon.png, icon.jpg, icon.jpeg, icon.ico, icon.webp (lowercase filenames).",
+      "image": "Design at 128x128 pixels. The core decodes PNG, JPEG, ICO and WebP, fits the image proportionally into a centered 128x128 PNG, and preserves existing alpha; unused space is transparent. Opaque app icons are fully supported. JPEG itself has no alpha. Icons are static.",
+      "limits": "Regular files only, no symlinks. Maximum source size: 524288 bytes (512 KiB); maximum decoded width and height: 2048 pixels each; decoder allocation budget: 32 MiB. Invalid or excessive images are skipped with the existing deduplicated core diagnostic and the next format is tried; the plugin remains usable.",
+      "usage": "Plugin settings and the sort list use the normalized image automatically, after a usable per-tile iconSvg and before the generic settings symbol. Bar covers only use it when the tile sets usePluginIcon: true; iconSvg still takes precedence. Without either choice, the shell adds no cover icon. Folder changes trigger the existing plugin reload, including icon replacement or removal; deactivated plugins keep their settings icon without starting a process. The source file is never rewritten and no plugin-code asset access is granted to the webview.",
+      "writing": "Store actual image bytes beside smabar.json using filesystem/image tools, or ship the image in the plugin bundle. The installed folder is plugin_list.dir. plugin_write_file writes UTF-8 text only; passing base64 text as icon.png does not create a PNG.",
+      "coverExamples": {
+        "none": {
+          "id": "clock",
+          "name": "Clock"
+        },
+        "pluginImage": {
+          "id": "status",
+          "name": "Status",
+          "usePluginIcon": true
+        },
+        "customSvg": {
+          "id": "custom",
+          "name": "Custom",
+          "iconSvg": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"m4 12 5 5L20 6\"/></svg>"
+        }
+      }
+    }
+  },
+  "sdk": {
+    "import": "from smabar_sdk import Plugin — the SDK is on the path automatically; never vendor or pip-install it.",
+    "render": "app.render(tile_id, target, html, ttl_ms=None) — target is \"tile\", \"flyout\", \"hover\" or \"popup\". Rendering into a tile id your manifest does not declare is DROPPED and logged. For popup, ttl_ms=None is intentionally sticky; an invalid ttlMs that is not an unsigned 32-bit integer falls back to 5000 ms and is logged once instead of creating a sticky popup. Thread-safe: call app.render directly from a worker thread after protecting any shared state of your own.",
+    "on_ready": "@app.on_ready — handler() that runs ONCE, right after initialize. Put your FIRST render here. Rendering at import time (before app.run()) is the classic mistake: locales and settings do not exist yet, so t() emits raw keys and app.settings is empty — the tile then shows untranslated text and default values forever. The SDK warns in the plugin log when you do it.",
+    "every": "@app.every(seconds) — periodic handler. Starts right after initialize, so the first run happens immediately. Use @app.on_ready when you only need the first render, not a schedule.",
+    "on_action": "@app.on_action(tile_id, action=None) — handler(action, value) for clicks on [data-action] elements, context-menu entries and form submits. action=None matches every action of that tile. value is the element's data-value string when it has one, otherwise a dict of every data-field control in that surface ({name: value}, checkboxes as \"true\"/\"false\"). For a structured payload put JSON into data-value (html-escaped) and json.loads it in the handler. Nested [data-action] elements are fine: the innermost one under the pointer wins, so a row with data-action=\"select\" can hold its own remove button.",
+    "on_provider": "@app.on_provider(kind, interval_ms=0) — subscribe to advertised core data: \"cpu\", \"memory\", \"disk\", \"network\", \"battery\", \"media\", or \"audio\". A provider unavailable on this platform is skipped and logged once; render an empty/unavailable state from @app.on_ready. The handler gets a dict; no polling code of your own. Battery data is {\"batteries\": [...]} and may contain multiple entries. An empty batteries list means no battery is currently present; this is normal data, not an error, so hide battery UI without inferring the operating system. For each entry, chargePercent and healthPercent are percentages; cycleCount is an integer count or null; state is one of \"charging\", \"discharging\", \"full\", \"empty\", or \"unknown\"; isCharging is a boolean; timeTillEmpty and timeTillFull are milliseconds (ms) or null; powerConsumption is watts; voltage is volts. Media data is {currentSessionId, sessions}; each session has id, identity, desktopEntry, playbackState, title, artists, album, artUrl, positionMs, durationMs and canControl/canPlay/canPause/canGoNext/canGoPrevious. Audio data is {defaultOutput: {name, volumePercent, muted} | null}; null means no output device is currently available. These bounded strings are plain external data: html.escape() them before interpolation.",
+    "provider_action": "app.provider_action(kind, action, **args) — blocking provider command. Media actions are exactly \"play\", \"pause\", \"playPause\", \"next\", and \"previous\"; pass sessionId=<session id from media data> to target one player, or omit it to act on currentSessionId. Audio actions are \"setVolume\" with integer volumePercent=0..100 and \"setMuted\" with boolean muted. Call this from a data-action handler; failures raise RpcError and are also caught/logged by the normal handler boundary.",
+    "on_settings_changed": "@app.on_settings_changed — handler(settings) after every settings change, from the settings UI or MCP.",
+    "settings": "app.settings — the current settings dict, kept up to date after every change.",
+    "get_settings": "app.get_settings() — re-read the settings from the core (blocking request); app.settings is normally enough.",
+    "set_settings": "app.set_settings(dict) — persist new settings, e.g. after the user submits a form in your flyout. It REPLACES the whole settings object, so always write app.set_settings({**app.settings, \"key\": value}); a bare {\"key\": value} silently erases every other setting. The core answers with settings.changed, so your @app.on_settings_changed handler runs once afterwards — render there instead of also rendering after the call, and compare the new settings with what you just wrote when that handler fetches network data, or you fetch twice.",
+    "data_dir": "app.data_dir — the writable directory your plugin owns (~/.smabar/data/<plugin-id>/). Caches, SQLite files, downloads and state go HERE, never in ~/.cache, /tmp or next to your code. Writing here does NOT restart the plugin. It is created before your first handler runs and deleted together with the plugin.",
+    "plugin_dir": "app.plugin_dir — your own code folder (~/.smabar/plugins/<plugin-id>/), read-only. Bundled files such as locales/ live here. Writing into it restarts the plugin, which is exactly what hot reload is for — so write to app.data_dir instead.",
+    "language": "app.language — the app's UI language code (\"en\", \"de\"). Delivered at initialize; a language change reaches the plugin on its next start.",
+    "t": "app.t(key) — translated string. Looks in <plugin>/locales/en.json overlaid with locales/<language>.json, then the app locale, then returns the key itself. Ship locales/en.json as a flat {\"key\": \"text\"} map (write it with plugin_write_file like any other file) and add locales/de.json for German; keys are yours, a plugin prefix such as \"weather.title\" keeps them out of the app locale's way. Placeholders are plain text you replace yourself: t(\"weather.places\").replace(\"{n}\", str(n)).",
+    "locale": "app.locale — the locale map handed over by the core.",
+    "log": "app.log(level, message, **fields) — \"debug\", \"info\", \"warn\" or \"error\". This is what plugin_logs returns; write messages you would want to read while debugging. Thread-safe: call app.log directly from a worker thread. print() also lands there, but without level or fields and without the RPC write lock; once your plugin uses threads, use app.log everywhere instead of print().",
+    "plugin_id": "app.plugin_id — your own id, available after initialize.",
+    "run": "app.run() — serves the RPC loop until the core shuts the plugin down. Call it LAST. Put it behind `if __name__ == \"__main__\":` so tests can import your module.",
+    "command": "@app.command(name, description=..., input_schema={...}, output_schema={...}) registers a command before run(). The handler receives an arguments dict and returns a JSON object after persistence. Validate runtime inputs yourself; schemas describe the contract, they are not a validator. Raise ValueError for invalid arguments or RpcError(code, message) for an expected failure. Commands run on the shared handler worker while the RPC reader remains free. Agents discover them with plugin_commands(id), then await plugin_call(id, command, arguments). Timeout/disconnection means outcome unknown: use persistent requestId deduplication and revisions for writes.",
+    "audio": "app.audio.play(playback_id, {\"root\":\"plugin\"|\"data\", \"path\":\"relative/file.wav\"}, volume=100, loop=False). Local WAV/MP3/Ogg Vorbis/FLAC, no external player or visible HTML required. Same id replaces playback. pause(id), resume(id), stop(id), set_volume(id, 0..100), seek(id, position_ms), status(id); @app.audio.on_event receives audio.event dicts with playbackId, state, positionMs, optional durationMs/error. 4 active per plugin, 32 total. Stops when the plugin stops. Unsupported features or inaccessible/corrupt sources return errors; device failure requires a new play. Master output and notification sounds live in Settings > System > smabar audio; plugin volume and mute are in Settings > Plugins > Plugin settings > Settings & audio.",
+    "popups": "app.popups.show(tile_id, popup_id, html, ttl_ms=None, sound=None) updates the same stable popup or inserts a new one. sound is a local audio source {root:plugin|data,path:...}; it plays once on first display, never on HTML update. app.popups.dismiss(tile_id,popup_id) closes only this plugin session's popup. Requests return accepted/suppressed/dismissed; accepted does NOT mean displayed. @app.popups.on_event receives tileId,popupId,instanceId,state (shown,dismissed,expired,dropped,suppressed),reason. data-action buttons work unchanged; commit domain data before dismissing. Keep durable reminder state in app.data_dir, since popups are ephemeral and bounded. Existing app.render(...,\"popup\",...) remains supported.",
+    "capabilities": "app.capabilities is a frozenset of host capabilities, populated at initialize (commands, popups, audio); missing on older hosts means empty. Check it before optional desktop calls."
+  },
+  "storage": {
+    "where": "app.data_dir is the ONLY place you write. It is ~/.smabar/data/<plugin-id>/, it exists before your first handler runs, writing there never restarts you, and it is deleted when the user removes the plugin. Never write next to your code (app.plugin_dir) — that restarts the plugin on every save — and never into ~/.cache, /tmp or a path of your own invention, because nothing cleans those up.",
+    "sqlite": "sqlite3 is in the standard library, so a real database costs you no dependency: con = sqlite3.connect(app.data_dir / \"state.sqlite3\"). Handlers share ONE lock, so a single connection reused across handlers is fine — but a worker thread must open its OWN connection. Create your tables with CREATE TABLE IF NOT EXISTS on every start; there is no migration system.",
+    "atomicWrites": "Write to \"<name>.tmp\" and then os.replace(tmp, final). A plugin killed mid-write otherwise leaves a truncated file, and the next start renders garbage or crashes on it. os.replace is atomic on the same filesystem.",
+    "staleWhileRefresh": "The pattern that keeps the bar looking right: on_ready reads the cache and renders it IMMEDIATELY, then a thread fetches fresh data and writes it back. On failure keep the cached values on screen, log once with app.log(\"warn\", …) and try again on the next tick. Never blank the tile because an update failed — a stale value with a quiet marker beats an empty tile.",
+    "assets": "Images, audio and video you downloaded or generated go into app.data_dir and are shown with sb-asset:<relative path> on img/audio/video/source, resolved against your own data directory. Prefer that over a data: URI: a data URI is re-sent on every render, an sb-asset: URL is a few bytes. WebVTT is the exception: read the local text, build data:text/vtt;charset=utf-8, + urllib.parse.quote(text, safe=\"\"), then html.escape the complete URI for its HTML attribute; the asset transport cannot provide the required MIME type. Set crossorigin=\"anonymous\" on audio/video for any cross-origin track, including data:. A bundled media file in app.plugin_dir is code: copy it once into app.data_dir before rendering. The sb-asset helper refuses absolute paths and .., so that URL form cannot reach another plugin's files; plugin markup itself is not a file-access security boundary because the plugin already runs as the user.",
+    "network": "There is no HTTP call through the core. Use stdlib urllib.request with an explicit timeout=, or declare your own dependency in the PEP 723 header (e.g. dependencies = [\"httpx\"]) — uv installs it. Because handlers share one lock, run every request in a thread and only publish the result back into your state; a blocking fetch freezes every timer and click of your plugin.",
+    "latestMedia": "Use @app.every with a polling interval chosen from provider freshness and rate limits, starting at most ONE worker at a time. Fetch metadata through the provider's documented API/feed with an explicit timeout and a bounded, validated response. On ready, display the stale cache from app.data_dir immediately; the worker writes fresh data with os.replace and keeps the last good result on failure. Escape external titles and URLs. Read current official documentation for authentication, quotas, embed parameters and caching; undocumented endpoints are best-effort fallbacks. Render a thumbnail in tile, separate hover HTML, and a titled HTTPS iframe plus ordinary external link in the pinned flyout. Keep the stable media id: an unchanged id must keep identical media HTML so app.render does not restart playback. smabar supplies its registered app identity through the private wrapper; provider-specific URL parameters remain plugin code. Account, DRM, codec, region or item-level embedding policy can still require the external link.",
+    "inspect": "plugin_data lists and reads that directory over MCP, so you can check what your plugin actually wrote. Binary files (a SQLite database among them) come back as metadata only — query those through the plugin's commands. For structured reads and writes register commands: plugin_commands and plugin_call avoid writing the database directly and confirm the committed result."
+  },
+  "lifecycle": {
+    "order": "The core sends initialize (id, data_dir, plugin_dir, settings, language, advertised providers) → available provider subscriptions are set up → @app.on_ready runs → @app.every timers start → the plugin serves until shutdown.",
+    "concurrency": "All handlers share ONE lock: exactly one runs at a time. A slow handler blocks every timer and action of that plugin, so move anything long (network, subprocesses, big files) into a thread and only publish the result back into your state.",
+    "errors": "A handler exception is logged as an error and the plugin keeps running. Crashing at import time is different: the process is restarted with a backoff and gives up after repeated failures.",
+    "shutdown": "There is NO shutdown hook. Code after app.run() runs on a graceful stop, but not on a kill. If you spawn child processes, make them safe on their own (own process group plus a timeout) — smabar signals the plugin's process group, so well-behaved children die with it.",
+    "reload": "Writing any file in your CODE folder (app.plugin_dir) restarts the plugin — that is hot reload. A malformed replacement manifest is the exception: smabar logs it and keeps the last valid instance running. Writing in app.data_dir never restarts. State in memory is lost on a successful restart; anything that must survive belongs in app.data_dir or settings.",
+    "tileChanges": "A manifest that declares fewer tiles than before removes the dropped ones from the bar immediately — no restart needed.",
+    "capabilities": "initialize.capabilities advertises commands, popups and audio when supported. Older hosts may omit it; desktop SDK calls reject unavailable services. The host assigns session identities; audio/toasts are cleaned up after stop, crash, reload or deactivation.",
+    "uninstall": "All plugins, including bundled ones, can be removed. A previously seeded plugin that is absent stays absent on restart and after bundle updates; explicitly reinstall its folder to use it again."
+  },
+  "debugging": {
+    "status": "plugin_list shows every plugin with status starting/running/failed/stopped, the failure reason, its code folder, its data directory, and updateAvailable for a bundled plugin whose replacement is waiting for the user.",
+    "logs": "plugin_logs(id) is the one call that answers \"why did that not work\". It returns TWO lists. pluginEntries carries a source per entry: \"log\" (your app.log calls), \"stdout\" (anything you printed that was not JSON-RPC), \"stderr\" (a Python traceback lands here), \"core\" (smabar ignored malformed optional input or rejected one operation, with the supported alternative), and \"shell\" (see markup below). Repeated identical core diagnostics are written once. coreEntries is what smabar said ABOUT your plugin: it started, it crashed, it is in restart backoff, its manifest is invalid. A plugin that dies before its first line writes nothing at all into pluginEntries, so always read both. Filter with level, contains and limit. plugin_logs WITHOUT an id returns the bar's own log instead, including its UI (target smabar::shell) and its dependencies.",
+    "markup": "The sanitizer rewrites your HTML and REMOVES what it does not allow — a <script>, an onclick=, an unsupported src. Unknown sb-* classes are kept but have no kit rule. Inline spacing and type, icon-only controls without a name, raw locale keys and overlong KPI values are flagged as well. Each case is reported into your own log as a \"shell\" entry naming the problem and the supported alternative, once per distinct problem per surface; a clean render re-arms it, so a problem that comes back is reported again. The write reply summarises them under reload.warnings. If markup is missing or unstyled, look for that entry FIRST.",
+    "data": "plugin_data(id) lists what you actually wrote into app.data_dir, and with a path returns one file's content. Use it to check whether your cache exists and holds what you think. Binary files (a SQLite database among them) come back as metadata only — use plugin_commands/plugin_call for structured queries where supported.",
+    "commonFailures": [
+      "\"smabar.json was NOT written: entry file … does not exist\" — the manifest came before the entry script; write the siblings, then smabar.json.",
+      "\"tile is not declared in smabar.json\" — app.render used an id the manifest does not list.",
+      "Plugin stuck in `starting` — a first python run resolving dependencies through uv; wait and poll plugin_list.",
+      "Tile stays empty — nothing was rendered yet. Render from @app.on_ready, which runs once right after initialize.",
+      "Tile renders but an element is missing — the sanitizer removed it; the \"shell\" entry in plugin_logs says which and why.",
+      "Text shows raw keys like \"clock.title\" — t() ran before initialize; move that render into @app.on_ready.",
+      "\"ModuleNotFoundError: No module named 'views'\" as reload.error — a sibling module was never written; plugin_write_file every file of the plugin, then smabar.json again.",
+      "Tile is missing although the plugin runs — the user hid it: plugin_list shows it under hiddenTiles; plugin_set_visible(\"plugin:<id>:<tile>\", true) brings it back."
+    ]
+  }
+}

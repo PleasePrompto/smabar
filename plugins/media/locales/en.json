@@ -1,0 +1,18 @@
+{
+  "media.title": "Media",
+  "media.no_session": "No media playing",
+  "media.no_session_hint": "Start playback in a compatible media player.",
+  "media.unknown_title": "Unknown title",
+  "media.unknown_artist": "Unknown artist",
+  "media.state.playing": "Playing",
+  "media.state.paused": "Paused",
+  "media.state.stopped": "Stopped",
+  "media.previous": "Previous",
+  "media.play_pause": "Play or pause",
+  "media.next": "Next",
+  "media.progress": "Playback progress",
+  "media.volume": "Volume",
+  "media.mute": "Mute",
+  "media.unmute": "Unmute",
+  "media.no_output": "No audio output available"
+}

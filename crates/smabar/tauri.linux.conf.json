@@ -1,0 +1,21 @@
+{
+  "bundle": {
+    "externalBin": [],
+    "linux": {
+      "deb": {
+        "files": {
+          "/usr/lib/smabar/tools/uv": "binaries/uv-x86_64-unknown-linux-gnu"
+        }
+      },
+      "rpm": {
+        "files": {
+          "/usr/lib/smabar/tools/uv": "binaries/uv-x86_64-unknown-linux-gnu"
+        }
+      }
+    },
+    "resources": {
+      "src/platform/linux/hyprland-focus-grab-v1.xml": "licenses/hyprland-focus-grab-v1.xml",
+      "web-extensions/*.so": "web-extensions/"
+    }
+  }
+}

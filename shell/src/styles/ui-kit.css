@@ -1,0 +1,2182 @@
+/* smabar plugin UI kit. ONE source, consumed twice: @import into the
+   document (globals.css) AND adopted into plugin shadow roots (kitSheet.ts,
+   ?inline). Plain CSS only. Every declaration consumes --sb-* theme tokens
+   (always set — boot-applied in main.tsx); class selectors are global;
+   element base rules live under .sb-root in the low-priority `sb.reset`
+   layer, so both harvested and hand-written component classes beat them;
+   active states use the .sb-active modifier. */
+
+/* === Root + element base ===================================== */
+.sb-root {
+  font-family: var(--sb-font-sans);
+  font-size: var(--sb-fs-m);
+  line-height: var(--sb-leading-body, 1.45);
+  color: var(--sb-text);
+  color-scheme: var(--sb-color-scheme);
+}
+/* Shadow roots get no Tailwind preflight — restore the essentials. */
+.sb-root,
+.sb-root * {
+  box-sizing: border-box;
+}
+@layer sb.reset {
+  :where(.sb-root) p {
+    margin: 0;
+  }
+  :where(.sb-root) h1,
+  :where(.sb-root) h2,
+  :where(.sb-root) h3,
+  :where(.sb-root) h4 {
+    margin: 0;
+    font-weight: var(--sb-weight-semibold, 600);
+    line-height: var(--sb-leading-heading, 1.25);
+  }
+  :where(.sb-root) h1 {
+    font-size: var(--sb-fs-hero);
+    font-weight: var(--sb-weight-bold, 700);
+  }
+  :where(.sb-root) h2 {
+    font-size: var(--sb-fs-xl);
+  }
+  :where(.sb-root) h3 {
+    font-size: var(--sb-fs-l);
+  }
+  :where(.sb-root) h4 {
+    font-size: var(--sb-fs-m);
+  }
+  :where(.sb-root) small {
+    font-size: var(--sb-fs-xs);
+    color: var(--sb-text-muted);
+  }
+  :where(.sb-root) ul,
+  :where(.sb-root) ol {
+    margin: 0;
+    padding-inline-start: var(--sb-space-l);
+  }
+  :where(.sb-root) audio,
+  :where(.sb-root) iframe,
+  :where(.sb-root) img,
+  :where(.sb-root) video {
+    max-width: 100%;
+    border-radius: var(--sb-radius-s);
+  }
+  :where(.sb-root) a {
+    color: var(--sb-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  :where(.sb-root) label {
+    font-size: var(--sb-fs-s);
+    color: var(--sb-text-dim);
+  }
+  :where(.sb-root) button,
+  :where(.sb-root) input,
+  :where(.sb-root) select,
+  :where(.sb-root) textarea {
+    font: inherit;
+    color: inherit;
+  }
+  :where(.sb-root) button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+/* === Automatic layout ========================================
+   The kit owns spacing so plugin authors never have to. Every top-level block
+   in a plugin gets rhythm from the owl selector below; the same applies inside
+   the two padded surfaces, which are otherwise plain block flow (`p{margin:0}`
+   made their children touch).
+
+   This is deliberately un-opt-in: before it existed, every shipped plugin
+   hand-wrote `style="margin-top:var(--sb-space-m)"` — 8 times across four
+   plugins and the guide template. Use .sb-flush to turn it off for one
+   container, .sb-tight for a denser rhythm.
+
+   The bar tile is excluded on purpose: there the height budget rules, not
+   rhythm (see .sb-root[data-target="tile"] below). */
+.sb-root > * + *,
+.sb-root
+  :is(
+    [data-tabs],
+    [data-tab-panel],
+    .sb-reveal,
+    .sb-accordion-item__body,
+    .sb-collapsible__body
+  )
+  > *
+  + * {
+  margin-block-start: var(--sb-space-m);
+}
+.sb-hero > * + * {
+  margin-block-start: var(--sb-space-s);
+}
+.sb-tight > * + * {
+  margin-block-start: var(--sb-space-xs);
+}
+.sb-flush > * + * {
+  margin-block-start: 0;
+}
+.sb-root[data-target="tile"] > * + * {
+  margin-block-start: 0;
+}
+/* A surface (card, hero, KPI grid, alert, empty state, table, chart, tab panel)
+   needs more air than plain text: a list row or label that starts one rhythm
+   step under a card reads as glued to it. Both sides of a surface get the
+   large step, inside the same grouping containers as the rhythm above. */
+.sb-root:not([data-target="tile"])
+  :is(
+    [data-tabs],
+    [data-tab-panel],
+    .sb-reveal,
+    .sb-accordion-item__body,
+    .sb-collapsible__body
+  )
+  > :is(
+    .sb-card,
+    .sb-hero,
+    .sb-kpi-grid,
+    .sb-alert,
+    .sb-empty,
+    .sb-table-wrap,
+    .sb-chart-bars,
+    [data-tab-panel]
+  )
+  + *,
+.sb-root:not([data-target="tile"])
+  :is(
+    [data-tabs],
+    [data-tab-panel],
+    .sb-reveal,
+    .sb-accordion-item__body,
+    .sb-collapsible__body
+  )
+  > *
+  + :is(
+    .sb-card,
+    .sb-hero,
+    .sb-kpi-grid,
+    .sb-alert,
+    .sb-empty,
+    .sb-table-wrap,
+    [data-tab-panel]
+  ),
+.sb-root:not([data-target="tile"])
+  > :is(
+    .sb-card,
+    .sb-hero,
+    .sb-kpi-grid,
+    .sb-alert,
+    .sb-empty,
+    .sb-table-wrap,
+    .sb-chart-bars,
+    [data-tabs]
+  )
+  + *,
+.sb-root:not([data-target="tile"])
+  > *
+  + :is(
+    .sb-card,
+    .sb-hero,
+    .sb-kpi-grid,
+    .sb-alert,
+    .sb-empty,
+    .sb-table-wrap,
+    [data-tabs]
+  ) {
+  margin-block-start: var(--sb-space-xl);
+}
+/* A toast is a compact surface — it needs separation, not the full rhythm. */
+.sb-root[data-target="popup"] > * + * {
+  margin-block-start: var(--sb-space-xs);
+}
+
+/* Vertical group with its own rhythm, for when the automatic one is wrong. */
+.sb-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-gap, var(--sb-space-m));
+}
+.sb-stack.sb-tight {
+  gap: var(--sb-space-xs);
+}
+
+/* Neutral horizontal cluster — .sb-row's padding/hover make it wrong for
+   form rows and tile internals, which is why plugins kept hand-rolling
+   `display:flex;gap:…`. */
+.sb-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-gap, var(--sb-space-xs));
+  min-width: 0;
+}
+
+/* Input and button on ONE line. The input takes the rest of the row. */
+.sb-field {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sb-gap, var(--sb-space-xs));
+  min-width: 0;
+}
+.sb-field .sb-input {
+  flex: 1;
+  min-width: 0;
+}
+.sb-field .sb-btn {
+  flex: none;
+}
+/* Label/control/help/error anatomy. This used to share `.sb-field` with the
+   compact row above; the surviving harvested `flex-direction:column` made
+   every input + action stack vertically. */
+.sb-field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-field-gap, var(--sb-space-xs));
+  min-width: 0;
+}
+.sb-field-stack:has(:user-invalid),
+.sb-field-stack:has([aria-invalid="true"]) {
+  --sb-field-error-display: block;
+}
+.sb-field__hint,
+.sb-field__error {
+  margin: 0;
+}
+/* Supporting text sits one clear step under its control, not on its border. */
+.sb-field-stack > .sb-field__hint,
+.sb-field-stack > .sb-field__error {
+  margin-block-start: var(--sb-space-xs);
+}
+/* Icons keep their size in a cluster; only text should give way. */
+.sb-inline > [data-lucide],
+.sb-row > [data-lucide],
+.sb-tile > [data-lucide] {
+  flex: none;
+}
+
+/* Pushes an element (and everything after it) to the end of a flex row. */
+.sb-push {
+  margin-inline-start: auto;
+}
+
+/* Reveals content smoothly — search results, expandable details. The
+   0fr→1fr grid trick, because it animates a natural height in WebKitGTK;
+   `interpolate-size`/`calc-size` are Chromium-only and deliberately unused. */
+.sb-reveal {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--sb-dur-normal) var(--sb-ease-out);
+}
+.sb-reveal > * {
+  overflow: hidden;
+  min-height: 0;
+}
+.sb-reveal.sb-active {
+  grid-template-rows: 1fr;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-reveal {
+    transition: none;
+  }
+}
+
+/* Grid with a caller-chosen column count (calendar grids, icon grids);
+   sb-kpi-grid and sb-choice-grid stay fixed at 2 and 3. */
+.sb-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--sb-grid-cols, 3), minmax(0, 1fr));
+  gap: var(--sb-gap, var(--sb-space-s));
+}
+.sb-cols-2,
+.sb-cols-3,
+.sb-cols-4,
+.sb-card-grid {
+  gap: var(--sb-gap, var(--sb-space-s));
+}
+.sb-cluster {
+  gap: var(--sb-gap, var(--sb-space-s));
+}
+.sb-accordion {
+  gap: var(--sb-accordion-gap, var(--sb-space-s));
+}
+.sb-accordion-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-gap, var(--sb-space-m));
+}
+.sb-accordion-item__body > .sb-section {
+  margin: 0;
+}
+.sb-center {
+  text-align: center;
+  align-items: center;
+  justify-items: center;
+}
+
+/* === Text utilities ==========================================
+   The type scale as classes. Without these, "make this line smaller" meant an
+   inline font-size, which is how plugins drifted out of the scale. */
+.sb-text-xs {
+  font-size: var(--sb-fs-xs);
+}
+.sb-text-s {
+  font-size: var(--sb-fs-s);
+}
+.sb-text-m {
+  font-size: var(--sb-fs-m);
+}
+.sb-text-l {
+  font-size: var(--sb-fs-l);
+}
+.sb-text-xl {
+  font-size: var(--sb-fs-xl);
+}
+.sb-text-hero {
+  font-size: var(--sb-fs-hero);
+}
+
+/* Status colors as text/icon color. The badge variants cover filled pills;
+   these cover a colored value or icon, which plugins wrote inline — twice
+   with a fallback hex that no longer matched the theme. */
+.sb-ok {
+  color: var(--sb-success);
+}
+.sb-warn {
+  color: var(--sb-warning);
+}
+.sb-crit {
+  color: var(--sb-danger);
+}
+.sb-error {
+  color: var(--sb-danger);
+  font-size: var(--sb-fs-s);
+}
+
+/* The "last updated …" line at the end of a flyout, duplicated verbatim in
+   two shipped plugins before it had a name. */
+.sb-meta {
+  color: var(--sb-text-faint);
+  font-size: var(--sb-fs-xs);
+}
+
+/* User-written titles, notes and URLs must fit a narrow flyout. */
+.sb-wrap {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.sb-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+.sb-scroll:hover {
+  scrollbar-color: var(--sb-scrollbar-thumb) transparent;
+}
+.sb-scroll::-webkit-scrollbar {
+  width: var(--sb-scrollbar-size, 6px);
+  height: var(--sb-scrollbar-size, 6px);
+}
+.sb-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--sb-radius-full);
+}
+.sb-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--sb-scrollbar-thumb);
+}
+
+/* === Shared inner surface ==================================== */
+.sb-card,
+.sb-tip,
+.sb-btn,
+.sb-input,
+.sb-toggle,
+.sb-tabs,
+.sb-kbd,
+.sb-badge,
+.sb-kpi {
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+
+/* Shared interactive behavior (hover/press/focus all animate alike). */
+.sb-btn,
+.sb-input,
+.sb-toggle,
+.sb-choice,
+.sb-tab,
+.sb-row {
+  transition:
+    background var(--sb-dur-fast) var(--sb-ease-out),
+    border-color var(--sb-dur-fast) var(--sb-ease-out),
+    color var(--sb-dur-fast) var(--sb-ease-out),
+    transform var(--sb-dur-fast) var(--sb-ease-out),
+    box-shadow var(--sb-dur-fast) var(--sb-ease-out);
+}
+.sb-btn,
+.sb-toggle,
+.sb-choice,
+.sb-tab {
+  cursor: pointer;
+}
+
+/* === Structure =============================================== */
+.sb-divider {
+  height: var(--sb-border-width, 1px);
+  border: none;
+  margin: var(--sb-space-s) 0;
+  background: var(--sb-inner-border);
+}
+.sb-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-card-gap, var(--sb-space-s));
+  border-radius: var(--sb-radius-m);
+  padding: var(--sb-card-padding, var(--sb-space-m));
+  overflow: visible;
+  box-shadow: var(--sb-shadow-sm);
+}
+/* Structured cards put their rhythm in `__body`/`__footer`; compact cards
+   without those elements use the parent padding/gap above. */
+.sb-card:has(> .sb-card__body) {
+  gap: 0;
+  padding: 0;
+}
+.sb-card > .sb-card__media:first-child {
+  border-start-start-radius: inherit;
+  border-start-end-radius: inherit;
+}
+.sb-card > .sb-card__media:last-child,
+.sb-card > .sb-card__footer:last-child {
+  border-end-start-radius: inherit;
+  border-end-end-radius: inherit;
+}
+.sb-card--soft {
+  background: color-mix(
+    in srgb,
+    var(--sb-surface-2) var(--sb-bar-opacity),
+    transparent
+  );
+  border-color: transparent;
+  border-radius: var(--sb-radius-l);
+  box-shadow: var(--sb-shadow-lg);
+}
+.sb-card--accent {
+  border-color: color-mix(
+    in oklch,
+    var(--sb-accent) 45%,
+    var(--sb-inner-border)
+  );
+}
+.sb-card--interactive,
+.sb-card--selectable {
+  transition:
+    background var(--sb-dur-fast) var(--sb-ease-out),
+    border-color var(--sb-dur-fast) var(--sb-ease-out),
+    box-shadow var(--sb-dur-fast) var(--sb-ease-out);
+}
+.sb-card--interactive:hover {
+  background: color-mix(
+    in srgb,
+    color-mix(in oklch, var(--sb-surface-2) 35%, var(--sb-inner-bg))
+      var(--sb-bar-opacity),
+    transparent
+  );
+  border-color: color-mix(
+    in oklch,
+    var(--sb-text-muted) 35%,
+    var(--sb-inner-border)
+  );
+}
+.sb-card--selectable:hover {
+  border-color: color-mix(
+    in oklch,
+    var(--sb-text-muted) 35%,
+    var(--sb-inner-border)
+  );
+}
+.sb-card--selectable:has(input:checked) {
+  --sb-card-checked: 1;
+  border-color: color-mix(
+    in oklch,
+    var(--sb-accent) 55%,
+    var(--sb-inner-border)
+  );
+}
+.sb-mesh {
+  background:
+    radial-gradient(
+      ellipse 60% 55% at 18% 8%,
+      var(--sb-mesh-stop-1),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 55% 60% at 85% 18%,
+      var(--sb-mesh-stop-2),
+      transparent
+    ),
+    radial-gradient(
+      ellipse 65% 50% at 60% 100%,
+      var(--sb-mesh-stop-3),
+      transparent
+    ),
+    color-mix(in srgb, var(--sb-flyout-bg) var(--sb-bar-opacity), transparent);
+}
+.sb-hero {
+  background: var(--sb-accent-gradient);
+  color: var(--sb-on-accent);
+  border-radius: var(--sb-radius-m);
+  padding: var(--sb-space-l);
+  box-shadow: var(--sb-accent-glow);
+}
+/* Accent surfaces own their text. The muted steps are tuned for the dark
+   surfaces, and every rule that reads them (`small`, .sb-badge, .sb-section,
+   .sb-kpi-label, `label`, .sb-tip, .sb-dim/.sb-muted/.sb-faint) matches the
+   DESCENDANT DIRECTLY — a direct match always beats the `color` inherited
+   from .sb-hero, whatever the specificity (:where() does not help). Custom
+   properties DO inherit, so redefining the four text steps here fixes every
+   current and future rule that reads them in one place, and follows a
+   tile's manifest accentFg (--sb-on-accent) automatically.
+   --sb-accent is deliberately NOT shadowed: .sb-btn-primary paints
+   var(--sb-accent) with color var(--sb-on-accent) and would turn invisible. */
+.sb-hero,
+.sb-btn-primary,
+.sb-icon-badge {
+  --sb-text: var(--sb-on-accent);
+  --sb-text-dim: color-mix(in srgb, var(--sb-on-accent) 82%, transparent);
+  --sb-text-muted: color-mix(in srgb, var(--sb-on-accent) 72%, transparent);
+  --sb-text-faint: color-mix(in srgb, var(--sb-on-accent) 60%, transparent);
+}
+/* Accent-on-accent is invisible; the underline carries the affordance. */
+.sb-hero a {
+  color: var(--sb-on-accent);
+}
+.sb-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sb-space-xs);
+  background: var(--sb-info-bg);
+  border-color: var(--sb-info-border);
+  border-radius: var(--sb-radius-s);
+  padding: var(--sb-space-s);
+  font-size: var(--sb-fs-s);
+  color: var(--sb-text-dim);
+}
+.sb-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+  margin-bottom: var(--sb-space-m);
+}
+.sb-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  margin-left: auto;
+}
+.sb-title {
+  font-size: var(--sb-fs-l);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+/* Shared uppercase label look (section heading + KPI label). */
+.sb-section,
+.sb-kpi-label {
+  font-size: var(--sb-fs-xs);
+  letter-spacing: var(--sb-tracking-label);
+  text-transform: uppercase;
+  color: var(--sb-text-faint);
+}
+.sb-section {
+  margin: var(--sb-space-m) 0 var(--sb-space-xs);
+}
+
+.sb-dim {
+  color: var(--sb-text-dim);
+}
+.sb-muted {
+  color: var(--sb-text-muted);
+}
+.sb-faint {
+  color: var(--sb-text-faint);
+}
+/* Accent-colored text — the sub-line of a modern cover (a date under the
+   time, a delta under a price) without reaching for a filled badge. */
+.sb-accent {
+  color: var(--sb-accent);
+}
+.sb-mono {
+  font-family: var(--sb-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Icon wrappers must not create an inline baseline/descender gap inside
+   centered controls. This also keeps standalone icons aligned in text. */
+[data-lucide] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  vertical-align: middle;
+}
+[data-lucide] > svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* === Buttons ================================================= */
+.sb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-2xs);
+  border-radius: var(--sb-btn-radius, var(--sb-radius-s));
+  font-size: var(--sb-fs-s);
+  font-weight: var(--sb-weight-medium, 500);
+  line-height: var(--sb-leading-control, 1.3);
+  min-height: var(--sb-control-min-height, 2.25em);
+  padding: var(--sb-space-xs) var(--sb-space-m);
+  color: var(--sb-text);
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+}
+.sb-btn:hover,
+.sb-choice:hover {
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-hover-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border-color: var(--sb-tile-hover-border);
+}
+.sb-btn:active {
+  transform: scale(0.97);
+}
+.sb-btn--primary {
+  border-color: transparent;
+  background: var(--sb-accent);
+  color: var(--sb-on-accent);
+}
+.sb-btn--primary:hover {
+  border-color: transparent;
+  background: color-mix(in oklch, var(--sb-accent) 78%, var(--sb-flyout-bg));
+}
+.sb-btn--outline,
+.sb-btn--ghost {
+  background: transparent;
+}
+.sb-btn--ghost {
+  border-color: transparent;
+  color: var(--sb-text-muted);
+}
+.sb-btn--ghost:hover {
+  border-color: transparent;
+  background: color-mix(
+    in srgb,
+    var(--sb-surface-2) var(--sb-bar-opacity),
+    transparent
+  );
+  color: var(--sb-text);
+}
+.sb-btn--soft {
+  border-color: transparent;
+  background: color-mix(
+    in srgb,
+    var(--sb-surface-2) var(--sb-bar-opacity),
+    transparent
+  );
+}
+.sb-btn--soft:hover {
+  border-color: transparent;
+  background: color-mix(
+    in srgb,
+    color-mix(in oklch, var(--sb-text) 8%, var(--sb-surface-2))
+      var(--sb-bar-opacity),
+    transparent
+  );
+}
+.sb-btn--danger {
+  border-color: transparent;
+  background: var(--sb-danger);
+  color: color-mix(in oklch, var(--sb-danger) 12%, var(--sb-flyout-bg));
+}
+.sb-btn--danger:hover {
+  border-color: transparent;
+  background: color-mix(in oklch, var(--sb-danger) 85%, var(--sb-text));
+}
+.sb-btn--sm {
+  min-height: var(--sb-control-min-height-sm, 1.4375rem);
+  padding: var(--sb-space-2xs) var(--sb-space-m);
+  font-size: var(--sb-fs-s);
+}
+.sb-btn--lg {
+  min-height: var(--sb-control-min-height-lg, 2.1875rem);
+  padding: var(--sb-space-m) var(--sb-space-l);
+  font-size: var(--sb-fs-l);
+}
+.sb-btn--icon {
+  padding: 0;
+  aspect-ratio: 1;
+  flex: none;
+}
+.sb-btn:is(:disabled, [aria-disabled="true"]) {
+  border-color: transparent;
+  background: color-mix(
+    in srgb,
+    var(--sb-surface-2) var(--sb-bar-opacity),
+    transparent
+  );
+  color: var(--sb-text-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.sb-btn-primary {
+  background: var(--sb-accent);
+  border-color: transparent;
+  color: var(--sb-on-accent);
+}
+.sb-btn-primary:hover {
+  background: var(--sb-accent);
+  border-color: transparent;
+  filter: brightness(1.12);
+}
+.sb-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--sb-text-dim);
+}
+.sb-btn-ghost:hover {
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border-color: transparent;
+  color: var(--sb-text);
+}
+.sb-btn-danger {
+  background: var(--sb-danger-bg);
+  border-color: var(--sb-danger-border);
+}
+.sb-btn-danger:hover {
+  background: var(--sb-danger-bg);
+  border-color: var(--sb-danger);
+}
+/* Square icon-sized button / icon tile. */
+.sb-btn-icon,
+.sb-icon-badge {
+  padding: var(--sb-space-xs);
+  aspect-ratio: 1;
+  flex: none;
+}
+
+/* Segmented actions are one control: one outline, one outside radius, and the
+   selected segment always paints over the collapsed border. */
+.sb-btn-group {
+  display: inline-flex;
+  gap: 0;
+  isolation: isolate;
+}
+.sb-btn-group > .sb-btn {
+  position: relative;
+  border-radius: 0;
+}
+.sb-btn-group > .sb-btn + .sb-btn {
+  margin-inline-start: -1px;
+}
+.sb-btn-group > .sb-btn:first-child {
+  border-start-start-radius: var(--sb-btn-radius, var(--sb-radius-s));
+  border-end-start-radius: var(--sb-btn-radius, var(--sb-radius-s));
+}
+.sb-btn-group > .sb-btn:last-child {
+  border-start-end-radius: var(--sb-btn-radius, var(--sb-radius-s));
+  border-end-end-radius: var(--sb-btn-radius, var(--sb-radius-s));
+}
+.sb-btn-group > .sb-btn:is(:hover, :focus-visible, .sb-active, .is-active),
+.sb-btn-group > .sb-btn[aria-pressed="true"] {
+  z-index: var(--sb-z-raised);
+}
+.sb-btn-group > .sb-btn:is(.sb-active, .is-active, [aria-pressed="true"]) {
+  border-color: transparent;
+  background: var(--sb-accent);
+  color: var(--sb-on-accent);
+}
+
+/* === Form controls =========================================== */
+.sb-input {
+  width: 100%;
+  min-height: var(--sb-control-min-height, 2.25em);
+  border-radius: var(--sb-input-radius, var(--sb-radius-s));
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  font-size: var(--sb-fs-s);
+  line-height: var(--sb-leading-snug, 1.4);
+  color: var(--sb-text);
+  outline: none;
+}
+.sb-input::placeholder {
+  color: var(--sb-text-faint);
+}
+.sb-input:focus {
+  border-color: var(--sb-accent);
+  box-shadow: var(--sb-focus-ring);
+}
+
+/* Joined controls collapse their shared hairline; unlike `.sb-field`, this is
+   intentionally a single visual control rather than a row with a gap. */
+.sb-input-group {
+  display: flex;
+  gap: 0;
+  min-width: 0;
+  isolation: isolate;
+}
+.sb-input-group
+  > :is(
+    .sb-input,
+    .sb-select,
+    .sb-select-shell,
+    .sb-btn,
+    .sb-input-group__addon
+  ) {
+  position: relative;
+  border-radius: 0;
+}
+.sb-input-group > .sb-select-shell > .sb-select-trigger {
+  border-radius: 0;
+}
+.sb-input-group > * + * {
+  margin-inline-start: -1px;
+}
+.sb-input-group > :first-child,
+.sb-input-group > :first-child > .sb-select-trigger {
+  border-start-start-radius: var(--sb-input-radius, var(--sb-radius-s));
+  border-end-start-radius: var(--sb-input-radius, var(--sb-radius-s));
+}
+.sb-input-group > :last-child,
+.sb-input-group > :last-child > .sb-select-trigger {
+  border-start-end-radius: var(--sb-input-radius, var(--sb-radius-s));
+  border-end-end-radius: var(--sb-input-radius, var(--sb-radius-s));
+}
+.sb-input-group > :is(:hover, :focus-visible, :focus-within) {
+  z-index: var(--sb-z-raised);
+}
+.sb-input-group > :is(.sb-input, .sb-select, .sb-select-shell) {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* The shell enhances `.sb-select` by default. The real select remains the
+   form-state source while the themed trigger/list own interaction and paint. */
+.sb-select-shell {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-width: 0;
+  color-scheme: var(--sb-color-scheme);
+}
+/* The enhanced native select remains the form/data-field source in the DOM;
+   the generated combobox trigger owns visible and accessible interaction. */
+.sb-select-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.sb-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sb-space-s);
+  width: 100%;
+  min-height: var(--sb-control-min-height, 2.25em);
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-input-radius, var(--sb-radius-s));
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  color: var(--sb-text);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background var(--sb-dur-fast) var(--sb-ease-out),
+    border-color var(--sb-dur-fast) var(--sb-ease-out),
+    box-shadow var(--sb-dur-fast) var(--sb-ease-out);
+}
+.sb-select-trigger::after,
+.sb-combobox-field::after {
+  content: "";
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  background-color: currentcolor;
+  -webkit-mask: var(--sb-chevron) center / contain no-repeat;
+  mask: var(--sb-chevron) center / contain no-repeat;
+  transition: transform var(--sb-dur-fast) var(--sb-ease-out);
+}
+.sb-select-shell[data-open] .sb-select-trigger::after,
+.sb-select-trigger[aria-expanded="true"]::after {
+  transform: rotate(180deg);
+}
+.sb-select-trigger:is(:hover, [aria-expanded="true"]) {
+  border-color: var(--sb-tile-hover-border);
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-hover-bg) var(--sb-bar-opacity),
+    transparent
+  );
+}
+.sb-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--sb-accent);
+  box-shadow: var(--sb-focus-ring);
+}
+.sb-select-trigger[aria-invalid="true"] {
+  border-color: var(--sb-danger);
+}
+.sb-select-trigger:disabled,
+.sb-select-trigger[aria-disabled="true"] {
+  color: var(--sb-text-faint);
+  cursor: not-allowed;
+}
+.sb-select-list {
+  position: absolute;
+  z-index: var(--sb-z-plugin-menu);
+  inset-block-start: calc(100% + var(--sb-space-2xs));
+  inset-inline: 0;
+  display: none;
+  max-height: var(--sb-select-list-max, 14rem);
+  margin: 0;
+  padding: var(--sb-space-2xs);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border: var(--sb-border-width, 1px) solid var(--sb-menu-border);
+  border-radius: var(--sb-input-radius, var(--sb-radius-s));
+  background: var(--sb-menu-bg);
+  box-shadow: var(--sb-menu-shadow);
+  color: var(--sb-menu-text);
+}
+.sb-select-list[data-open],
+.sb-select-shell[data-open] > .sb-select-list {
+  display: block;
+}
+.sb-select-list[data-top-layer] {
+  position: fixed;
+  inset: auto;
+}
+.sb-select-group + .sb-select-group,
+.sb-select-option + .sb-select-group {
+  margin-block-start: var(--sb-space-2xs);
+}
+.sb-select-group::before {
+  content: attr(aria-label);
+  display: block;
+  padding: var(--sb-space-xs) var(--sb-space-s) var(--sb-space-2xs);
+  color: var(--sb-text-faint);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.sb-select-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border-radius: var(--sb-radius-s);
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+.sb-select-option:is(:hover, :focus-visible),
+.sb-select-option[data-active],
+.sb-select-option[aria-selected="true"] {
+  outline: none;
+  background: var(--sb-menu-hover-bg);
+}
+.sb-select-option[aria-selected="true"] {
+  color: var(--sb-accent);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.sb-select-option[aria-disabled="true"] {
+  color: var(--sb-text-faint);
+  cursor: not-allowed;
+}
+
+/* Explicit native opt-out. The UA arrow is preferable to a decorative image
+   when the shell enhancer is intentionally disabled. */
+.sb-select-native,
+.sb-select[data-sb-native] {
+  appearance: auto;
+  background-image: none;
+  color-scheme: var(--sb-color-scheme);
+}
+.sb-select:not(.sb-select-native):not([data-sb-native]),
+.sb-combobox {
+  background-image: none;
+}
+.sb-combobox-field::after {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--sb-space-s);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.sb-toggle {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: var(--sb-toggle-width, 2.25em);
+  height: var(--sb-toggle-height, 1.25em);
+  margin: 0;
+  border-radius: var(--sb-radius-full);
+}
+.sb-toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: var(--sb-toggle-inset, 0.125em);
+  width: var(--sb-toggle-knob-size, 0.9em);
+  height: var(--sb-toggle-knob-size, 0.9em);
+  transform: translateY(-50%);
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-text-dim);
+  transition:
+    left var(--sb-dur-fast) var(--sb-ease-spring),
+    background var(--sb-dur-fast) var(--sb-ease-out);
+}
+.sb-toggle:checked {
+  background: var(--sb-accent);
+  border-color: transparent;
+}
+.sb-toggle:checked::after {
+  left: calc(
+    100% - var(--sb-toggle-knob-size, 0.9em) - var(--sb-toggle-inset, 0.125em)
+  );
+  background: var(--sb-on-accent);
+}
+
+/* === Choice tiles (radio-style) ============================== */
+.sb-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sb-space-xs);
+}
+.sb-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-2xs);
+  padding: var(--sb-space-s);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border: var(--sb-border-width, 1px) solid var(--sb-tile-border);
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-xs);
+  text-align: center;
+}
+
+.sb-choice.sb-active {
+  border-color: var(--sb-accent);
+  background: color-mix(in srgb, var(--sb-accent) 18%, transparent);
+  color: var(--sb-text);
+}
+
+.sb-tabs {
+  display: flex;
+  gap: var(--sb-space-2xs);
+  padding: var(--sb-space-2xs);
+  border-radius: var(--sb-radius-s);
+}
+.sb-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-2xs);
+  min-height: var(--sb-control-min-height, 2.25em);
+  border: 0;
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+  border-radius: var(--sb-radius-s);
+  font-size: var(--sb-fs-s);
+  color: var(--sb-text-muted);
+  white-space: nowrap;
+}
+.sb-choice:hover,
+.sb-tab:hover,
+.sb-tab.sb-active {
+  color: var(--sb-text);
+}
+.sb-tab.sb-active,
+.sb-row.sb-active {
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-hover-bg) var(--sb-bar-opacity),
+    transparent
+  );
+}
+
+/* === Lists, rows, badges ===================================== */
+.sb-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  list-style: none;
+}
+.sb-list.sb-scroll {
+  overflow-y: auto;
+}
+.sb-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+  padding: var(--sb-space-xs) var(--sb-space-s);
+  border-radius: var(--sb-radius-s);
+  /* A row may be a <button> (list items that switch tabs); the UA centers
+     button text, which would center a two-line label over its sub line. */
+  text-align: start;
+}
+.sb-row:hover {
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+}
+.sb-kbd {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--sb-font-mono);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-medium, 500);
+  line-height: var(--sb-leading-snug, 1.4);
+  color: var(--sb-text-dim);
+  white-space: nowrap;
+  border-bottom-width: 2px;
+  border-radius: calc(var(--sb-radius-s) / 2);
+  padding: 0 var(--sb-space-2xs);
+}
+.sb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-medium, 500);
+  line-height: var(--sb-leading-relaxed, 1.6);
+  padding: 0 var(--sb-space-s);
+  border-radius: var(--sb-radius-full);
+  color: var(--sb-text-dim);
+}
+.sb-badge-success,
+.sb-badge-warning,
+.sb-badge-danger,
+.sb-badge-info,
+.sb-badge-accent {
+  color: var(--sb-text);
+}
+.sb-badge-success {
+  background: var(--sb-success-bg);
+  border-color: var(--sb-success-border);
+}
+.sb-badge-warning {
+  background: var(--sb-warning-bg);
+  border-color: var(--sb-warning-border);
+}
+.sb-badge-danger {
+  background: var(--sb-danger-bg);
+  border-color: var(--sb-danger-border);
+}
+.sb-badge-info {
+  background: var(--sb-info-bg);
+  border-color: var(--sb-info-border);
+}
+.sb-badge-accent {
+  background: color-mix(in srgb, var(--sb-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--sb-accent) 35%, transparent);
+}
+.sb-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--sb-radius-s);
+  background: var(--sb-accent-gradient);
+  color: var(--sb-on-accent);
+}
+
+/* === KPIs, progress, charts ================================== */
+.sb-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sb-space-xs);
+}
+.sb-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  border-radius: var(--sb-radius-s);
+  padding: var(--sb-space-s);
+}
+.sb-kpi-value {
+  font-size: var(--sb-fs-xl);
+  font-weight: var(--sb-weight-semibold, 600);
+  font-variant-numeric: tabular-nums;
+}
+/* Fill level = inline width on the inner element. */
+.sb-progress:not(progress) {
+  height: var(--sb-space-xs);
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-chart-track);
+  overflow: hidden;
+}
+.sb-progress:not(progress) > * {
+  display: block;
+  height: 100%;
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-accent);
+  transition: width var(--sb-dur-slow) var(--sb-ease-out);
+}
+/* Donut container (charts.ts injects the SVG; children = center label). */
+.sb-gauge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5em;
+  height: 3.5em;
+  color: var(--sb-accent);
+}
+/* Sparkline container (charts.ts injects the SVG). */
+.sb-spark {
+  display: block;
+  width: 100%;
+  height: 2em;
+  color: var(--sb-accent);
+}
+.sb-gauge > svg,
+.sb-spark > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.sb-gauge > svg {
+  position: absolute;
+  inset: 0;
+}
+
+/* Full charts use the harvested accessible markup (visible labels/values plus
+   role="img"/aria-label). These rules tighten its bar-scale rendering without
+   inventing a canvas/SVG chart system. */
+.sb-chart-bars {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior: contain;
+  gap: var(--sb-chart-gap, var(--sb-space-s));
+}
+.sb-chart-bars[data-grid]::before {
+  content: "";
+  position: absolute;
+  inset: var(--sb-space-l) 0 calc(var(--sb-fs-s) + var(--sb-space-m));
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to top,
+    var(--sb-edge) 0 1px,
+    transparent 1px 25%
+  );
+}
+.sb-chart-bars:is([data-axis], [data-axes]) {
+  padding-inline-start: var(--sb-space-xs);
+  border-block-end: var(--sb-border-width, 1px) solid var(--sb-edge);
+  border-inline-start: var(--sb-border-width, 1px) solid var(--sb-edge);
+}
+.sb-chart-bars[data-unit]::after {
+  content: attr(data-unit);
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  color: var(--sb-text-faint);
+  font-size: var(--sb-fs-xs);
+}
+.sb-chart-bars__item {
+  min-width: var(--sb-chart-column-min, 2.25rem);
+  row-gap: var(--sb-space-xs);
+}
+.sb-chart-bars__bar {
+  block-size: clamp(
+    0px,
+    calc(var(--sb-chart-value, 0) / var(--sb-chart-max, 100) * 100%),
+    100%
+  );
+}
+.sb-chart-bars__label,
+.sb-chart-bars__value,
+.sb-chart-rows__value,
+.sb-chart-legend__value {
+  font-variant-numeric: tabular-nums;
+}
+.sb-chart-rows {
+  grid-template-columns: minmax(4rem, auto) minmax(4rem, 1fr) auto;
+  gap: var(--sb-chart-gap, var(--sb-space-s)) var(--sb-space-s);
+}
+.sb-chart-rows__bar {
+  min-width: 0;
+  background-size: clamp(
+      0px,
+      calc(var(--sb-chart-value, 0) / var(--sb-chart-max, 100) * 100%),
+      100%
+    )
+    100%;
+}
+.sb-chart-bars.is-empty,
+.sb-chart-rows.is-empty,
+.sb-chart-donut.is-empty {
+  min-height: var(--sb-chart-empty-height, 5rem);
+  border: var(--sb-border-width, 1px) dashed var(--sb-edge);
+  border-radius: var(--sb-radius-s);
+  background: none;
+}
+:is(.sb-chart-bars, .sb-chart-rows, .sb-chart-donut):is(
+  .is-loading,
+  [aria-busy="true"]
+) {
+  opacity: var(--sb-opacity-55, 0.55);
+  cursor: progress;
+}
+
+@media (forced-colors: active) {
+  .sb-chart-donut::before,
+  .sb-chart-legend__item::before {
+    forced-color-adjust: auto;
+    border: var(--sb-border-width, 1px) solid CanvasText;
+    background-color: CanvasText;
+  }
+  .sb-chart-bars__bar {
+    forced-color-adjust: none;
+    border: 0;
+    background: CanvasText;
+  }
+  .sb-chart-rows__bar {
+    position: relative;
+    border: var(--sb-border-width, 1px) solid CanvasText;
+    background: Canvas;
+  }
+  .sb-chart-rows__bar::before {
+    content: "";
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: clamp(
+      0px,
+      calc(var(--sb-chart-value, 0) / var(--sb-chart-max, 100) * 100%),
+      100%
+    );
+    background: CanvasText;
+  }
+  .sb-chart-bars[data-grid]::before {
+    background: repeating-linear-gradient(
+      to top,
+      CanvasText 0 1px,
+      transparent 1px 25%
+    );
+  }
+  .sb-chart-bars:is([data-axis], [data-axes]) {
+    border-color: CanvasText;
+  }
+}
+
+/* The tile hugs its content and centers it. No text-align: an overflowing
+   .sb-marquee-content is an inline-block, and centering would shift where its
+   scroll starts — .sb-btn centers the same way, with justify-content only. */
+.sb-tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-s);
+  white-space: nowrap;
+  font-size: var(--sb-fs-m);
+  line-height: var(--sb-leading-short, 1.2);
+  /* Every cover shows numbers that change every second or minute. Fixed
+     digit widths keep a tile from breathing with each tick without forcing
+     plugins onto the monospace face. */
+  font-variant-numeric: tabular-nums;
+}
+/* Cover icons read at tray size next to a value; 1em followed the tile's
+   12px text and looked like an afterthought beside it. The second selector
+   reaches a rotator view (an .sb-inline per coin in the crypto tile).
+   Colour is wrapped in :where() so it yields to any status class on the
+   icon itself (sb-ok on a battery): a plain glyph steps back to the dim
+   step and the value next to it is what reads first. */
+.sb-tile > [data-lucide],
+.sb-tile .sb-inline > [data-lucide] {
+  font-size: 1.4em;
+}
+:where(.sb-tile > [data-lucide], .sb-tile .sb-inline > [data-lucide]) {
+  color: var(--sb-text-dim);
+}
+/* Two lines in a bar tile (time over date, value over label).
+   The size follows the tile's height budget so the text breathes with the bar,
+   but it is CLAMPED into the type scale: unclamped, the budget is driven by the
+   SHORTCUT icon size and label mode — settings that have nothing to do with the
+   tile — and produced anything from 6px to 39px, while every other plugin sat
+   at --sb-fs-m. That is what made the clock look oversized next to its
+   neighbours. --sb-tile-min/-max are the scale steps a tileScale picks. */
+.sb-tile-stack,
+.sb-tile-seg {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: var(--sb-space-2xs);
+  /* Compact leading; the shell measures the cover including its themed gap. */
+  line-height: var(--sb-leading-ui, 1.1);
+  white-space: nowrap;
+}
+/* A shared leading edge joins the value and its caption. An explicit
+   sb-center still wins, including for user-authored covers. */
+:where(.sb-tile-stack, .sb-tile-seg) {
+  align-items: flex-start;
+}
+.sb-tile-stack > :first-child,
+.sb-tile-seg > :last-child {
+  /* The hero line of a cover: medium weight — it may use most of the height
+     budget (the clamp into the type scale still bounds it), and at that size
+     semibold read as shouting next to the regular label under it. */
+  font-weight: var(--sb-weight-medium, 500);
+  font-size: clamp(
+    var(--sb-tile-min-1, var(--sb-fs-s)),
+    calc(var(--sb-tile-content-h, 2.5rem) * 0.6),
+    var(--sb-tile-max-1, var(--sb-fs-l))
+  );
+}
+.sb-tile-stack > :last-child:not(:first-child),
+.sb-tile-seg > :first-child:not(:last-child) {
+  font-size: clamp(
+    var(--sb-tile-min-2, var(--sb-fs-xs)),
+    calc(var(--sb-tile-content-h, 2.5rem) * 0.25),
+    var(--sb-tile-max-2, var(--sb-fs-s))
+  );
+}
+/* The label colour yields to a status or accent class on the line itself
+   (sb-accent under a clock, sb-warn under a temperature): un-wrapped, the
+   child combinator outweighed every single-class colour and the documented
+   accent sub-line silently rendered muted. */
+:where(
+  .sb-tile-stack > :last-child:not(:first-child),
+  .sb-tile-seg > :first-child:not(:last-child)
+) {
+  color: var(--sb-text-muted);
+}
+
+/* The bar tile is the one surface with a hard height budget. Roomy padding
+   that is right in a flyout makes a card taller than the bar row, and the
+   card's background then paints outside it and gets clipped mid-edge — the
+   "card bleeding out of the bar". Trim the padding here and cap the wrapper,
+   so even a carelessly built plugin stays inside its tile. */
+.sb-root[data-target="tile"] {
+  font-variant-numeric: tabular-nums;
+  max-height: var(--sb-tile-content-h, 2.5rem);
+  /* Flex, not a line box: as a block wrapper, the inline-flex .sb-tile sat
+     on the wrapper's text BASELINE — aligned to its first line. A cover
+     whose first line is small (segment header, checklist) then hung almost
+     entirely below the baseline and left the tile shoved downward. Flex
+     centering has no baseline to trip over. `safe` keeps an over-tall cover
+     anchored at the top instead of overflowing upward, which is what lets the
+     shell read the cover's natural height from scrollHeight and grow the bar
+     row to fit it (PluginContent → BarShell). */
+  display: flex;
+  align-items: safe center;
+}
+.sb-root[data-target="tile"] :is(.sb-card, .sb-tip, .sb-kpi) {
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+}
+.sb-root[data-target="tile"] .sb-hero {
+  padding: var(--sb-space-2xs) var(--sb-space-s);
+  box-shadow: none;
+}
+
+/* A rotator stacks its views in ONE grid cell, so every view is as wide as the
+   widest: without this the short ones hug the left while the tile is centered.
+   Scoped to tiles — a flyout rotator wants full-width views. */
+.sb-tile .sb-rotator {
+  justify-items: center;
+}
+
+/* === Tile cover layouts ====================================== */
+/* The named cover recipes (ui_kit section "coverLayouts"). Every rule is
+   sized against the tile's hard height budget --sb-tile-content-h and
+   scales with the bar, so a recipe keeps working when the user resizes. */
+
+/* headlineMotion: a tiny equalizer glyph. Different durations per bar make
+   the motion organic instead of a wave; negative delays start mid-motion.
+   The staggered static heights below double as the frozen glyph when the
+   animation is off (reduced motion / .is-paused). */
+@keyframes sb-eq-bounce {
+  0%,
+  100% {
+    block-size: 30%;
+  }
+  50% {
+    block-size: 95%;
+  }
+}
+.sb-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  block-size: 1em;
+  color: var(--sb-accent);
+}
+.sb-eq > span {
+  inline-size: 2px;
+  border-radius: var(--sb-radius-full);
+  background: currentColor;
+  animation: sb-eq-bounce 1.1s var(--sb-ease-out) infinite;
+}
+.sb-eq > span:nth-child(1) {
+  block-size: 45%;
+  animation-delay: -0.9s;
+}
+.sb-eq > span:nth-child(2) {
+  block-size: 80%;
+  animation-delay: -0.45s;
+  animation-duration: 0.9s;
+}
+.sb-eq > span:nth-child(3) {
+  block-size: 60%;
+  animation-delay: -0.2s;
+  animation-duration: 1.3s;
+}
+.sb-eq > span:nth-child(4) {
+  block-size: 90%;
+  animation-delay: -0.7s;
+}
+.sb-eq > span:nth-child(5) {
+  block-size: 50%;
+  animation-delay: -1.1s;
+  animation-duration: 0.8s;
+}
+/* Not animation-play-state: paused — that freezes a random frame and reads
+   as broken. Dropping the animation falls back to the staggered heights. */
+.sb-eq.is-paused > span {
+  animation: none;
+  opacity: 0.55;
+}
+
+/* segmentHeader shares the stack's layout/type above, with label first.
+   --fill deliberately opts into an accent pill and its extra padding. */
+.sb-tile-seg > :first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  font-weight: var(--sb-weight-medium, 500);
+}
+.sb-tile-seg--fill > :first-child {
+  padding: 1px 0.45em;
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-accent);
+  color: var(--sb-on-accent);
+}
+
+/* statSplit: two stacks side by side with a hairline divider. */
+.sb-tile-split {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sb-space-s);
+  min-width: 0;
+  white-space: nowrap;
+}
+.sb-tile-split > * + * {
+  border-inline-start: var(--sb-border-width, 1px) solid var(--sb-edge);
+  padding-inline-start: var(--sb-space-s);
+}
+
+/* checklist: a compact task list. Two entries fit every bar; three need a
+   content height of ~38px, four ~50px (taller bar / labels below icons) —
+   overflow clips, the rest belongs in the flyout. */
+.sb-tile-check {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+  font-size: clamp(
+    0.5rem,
+    calc(var(--sb-tile-content-h, 2.5rem) * 0.28),
+    var(--sb-fs-xs)
+  );
+  line-height: var(--sb-leading-ui, 1.15);
+}
+.sb-tile-check > li {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  min-width: 0;
+}
+.sb-tile-check > li::before {
+  content: "";
+  flex: none;
+  inline-size: 0.6em;
+  block-size: 0.6em;
+  border: 1px solid var(--sb-text-faint);
+  border-radius: var(--sb-radius-full);
+}
+.sb-tile-check > li.is-done {
+  color: var(--sb-text-dim);
+}
+.sb-tile-check > li.is-done::before {
+  border-color: var(--sb-accent);
+  background: var(--sb-accent);
+}
+
+/* nextEvent: a time/title line over a slim track. The track IS the plain
+   .sb-progress bar (width transition included) — no marker dot, its
+   overflow clipping would eat one. */
+.sb-tile-next {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sb-tile-next > .sb-progress {
+  min-inline-size: 3em;
+}
+
+/* progressRing: the flyout gauge is 3.5em and would overflow the bar row;
+   inside a tile it fills the content height instead and scales with it.
+   The center label fits ~3 characters at default height — bare number,
+   unit in title. */
+.sb-root[data-target="tile"] .sb-gauge {
+  inline-size: var(--sb-tile-content-h, 2.5rem);
+  block-size: var(--sb-tile-content-h, 2.5rem);
+  font-size: clamp(
+    0.5rem,
+    calc(var(--sb-tile-content-h, 2.5rem) * 0.28),
+    var(--sb-fs-s)
+  );
+}
+/* analog clock: the flyout face is a 10rem block; inside a tile it fills
+   the content height and scales with it (the clock plugin's analog cover). */
+.sb-root[data-target="tile"] .sb-clock-face {
+  inline-size: var(--sb-tile-content-h, 2.5rem);
+  block-size: var(--sb-tile-content-h, 2.5rem);
+  margin: 0;
+}
+/* statSplit sparklines: the flyout spark is a full-width block; in a tile
+   it is a small inline glyph next to the delta. */
+.sb-root[data-target="tile"] .sb-spark {
+  inline-size: 3.5em;
+  block-size: 1.1em;
+}
+
+/* Shell-internal (charts.ts sets it post-sanitize): value changes glide to
+   the new ring fill instead of jumping. */
+.sb-donut-fill {
+  transition: stroke-dashoffset var(--sb-dur-slow) var(--sb-ease-out);
+}
+
+/* === Clock =================================================== */
+/* The hands are pure CSS animations: one full turn per period, started at a
+   negative offset the shell computes from the current time (tiles/clock.ts).
+   That keeps an analog clock smooth without any JS ticking, and without the
+   plugin re-rendering itself every second. */
+@keyframes sb-clock-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.sb-clock-face {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 10rem;
+  margin: 0 auto;
+  color: var(--sb-text);
+}
+.sb-clock-dial {
+  fill: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  stroke: var(--sb-inner-border);
+  stroke-width: 2;
+}
+.sb-clock-tick {
+  stroke: var(--sb-text-faint);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.sb-clock-tick.sb-active {
+  stroke: var(--sb-text-muted);
+  stroke-width: 3;
+}
+.sb-clock-hand {
+  stroke: var(--sb-text);
+  stroke-width: 4;
+  stroke-linecap: round;
+  transform-origin: 50px 50px;
+  animation: sb-clock-turn linear infinite;
+}
+.sb-clock-minute {
+  stroke-width: 3;
+}
+.sb-clock-second {
+  stroke: var(--sb-accent);
+  stroke-width: 1.5;
+}
+.sb-clock-cap {
+  fill: var(--sb-accent);
+}
+/* Motion-sensitive users get a still face rather than three sweeping hands.
+   The animation is PAUSED, not removed: the hand position lives in its
+   negative animation-delay, so `animation: none` would park every hand at
+   12:00. tiles/clock.ts re-seeds the paused hands once per second, so the
+   face keeps telling the time in steps. Windows reports reduced motion for
+   every RDP session, which is how this showed up as "the clock is stuck". */
+@media (prefers-reduced-motion: reduce) {
+  .sb-clock-hand {
+    animation-play-state: paused;
+  }
+}
+
+/* === Media =================================================== */
+.sb-media {
+  display: block;
+  width: 100%;
+  border-radius: var(--sb-radius-m);
+  overflow: hidden;
+}
+.sb-media-cover {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+/* data-carousel: decorators.ts adds this class; every child is a slide.
+   Swipe/trackpad scrolling works natively via scroll snap. */
+.sb-carousel {
+  display: flex;
+  overflow-x: auto;
+  padding: 0;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  cursor: grab;
+}
+.sb-carousel:is(.is-dragging, [data-dragging]) {
+  scroll-behavior: auto;
+  cursor: grabbing;
+  user-select: none;
+}
+.sb-carousel::-webkit-scrollbar {
+  display: none;
+}
+.sb-carousel > * {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* data-rotator: decorators.ts adds these classes; every child is one view,
+   all stacked in the same grid cell so the container sizes to the tallest
+   view. The base state is parked off-position without transition; only the
+   active/leaving states animate (--rotator-* are set by the enhancer). */
+.sb-rotator {
+  display: grid;
+  overflow: hidden;
+}
+.sb-rotator > * {
+  grid-area: 1 / 1;
+  visibility: hidden;
+  opacity: 0;
+  transform: translate(var(--rotator-x, 0), var(--rotator-y, 0));
+}
+.sb-rotator > .sb-rotator-active,
+.sb-rotator > .sb-rotator-leaving {
+  visibility: visible;
+  transition:
+    transform var(--sb-dur-slow) var(--sb-ease-out),
+    opacity var(--sb-dur-slow) var(--sb-ease-out);
+}
+.sb-rotator > .sb-rotator-active {
+  opacity: 1;
+}
+
+/* Panels hidden by the data-tabs enhancer stay hidden even when a
+   display-setting kit class sits on the panel ((0,2,0) beats one class). */
+[data-tab-panel][hidden] {
+  display: none;
+}
+
+/* data-marquee: decorators.ts adds the content wrapper and overflow marker. */
+.sb-marquee {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.sb-marquee-content {
+  display: inline-block;
+  min-width: max-content;
+}
+.sb-marquee[data-marquee-overflow] .sb-marquee-content {
+  animation-name: sbMarquee;
+  animation-duration: var(--marquee-duration, 4s);
+  animation-timing-function: linear;
+  animation-delay: calc(var(--sb-dur-normal) * 2.5);
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+}
+.sb-marquee[data-marquee-overflow]:hover .sb-marquee-content {
+  animation-play-state: paused;
+}
+@keyframes sbMarquee {
+  to {
+    transform: translateX(calc(-1 * var(--marquee-distance, 0px)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-marquee[data-marquee-overflow] .sb-marquee-content {
+    animation: none;
+  }
+  .sb-carousel {
+    scroll-behavior: auto;
+  }
+}
+
+/* data-badge: shell-owned accent marker, anchored to the decorated element. */
+.sb-badge-anchor {
+  position: relative;
+}
+.sb-data-badge {
+  position: absolute;
+  z-index: var(--sb-z-raised);
+  top: calc(-1 * var(--sb-space-xs));
+  right: calc(-1 * var(--sb-space-xs));
+  min-width: 1.35em;
+  padding: 0 var(--sb-space-2xs);
+  border-radius: var(--sb-radius-full);
+  background: var(--sb-accent);
+  color: var(--sb-on-accent);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-semibold, 600);
+  line-height: var(--sb-leading-help, 1.35);
+  text-align: center;
+  pointer-events: none;
+}
+.sb-data-badge-dot {
+  width: var(--sb-space-s);
+  min-width: var(--sb-space-s);
+  height: var(--sb-space-s);
+  padding: 0;
+}
+
+/* === Focus =================================================== */
+.sb-btn:focus-visible,
+.sb-input:focus-visible,
+.sb-toggle:focus-visible,
+.sb-choice:focus-visible,
+.sb-tab:focus-visible,
+.sb-row:focus-visible,
+.sb-root :focus-visible {
+  outline: none;
+  box-shadow: var(--sb-focus-ring);
+}
+
+@media (forced-colors: active) {
+  .sb-root :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+  .sb-btn-group > .sb-btn:is(.sb-active, .is-active, [aria-pressed="true"]),
+  .sb-select-option:is([data-active], [aria-selected="true"]) {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    background: SelectedItem;
+    color: SelectedItemText;
+  }
+  .sb-select-option[aria-disabled="true"] {
+    color: GrayText;
+  }
+}
+
+/* === Behaviour anchors ======================================= */
+/* The context menu is positioned absolutely at the cursor (the harvest
+   rewrites format48's `fixed`, which would anchor to the nearest surface
+   surface rather than the viewport — see CLAUDE.md). Absolute needs a
+   positioned ancestor, and the wrapper is the only element that is
+   guaranteed to be one. */
+[data-sb-context] {
+  position: relative;
+}
+/* Visually hidden, still announced. The copy button's confirmation lives in
+   the light DOM, outside every plugin root, so it survives a re-render. */
+.sb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Top-layer surfaces are deliberately opaque. Bar opacity belongs to the
+   bar/flyout/tile/inner surface family, never to settings, modals or drawers. */
+.sb-modal,
+.sb-drawer {
+  color-scheme: var(--sb-color-scheme);
+  background: var(--sb-overlay-bg);
+  color: var(--sb-text);
+  overscroll-behavior: contain;
+}
+.sb-modal[open]::backdrop,
+.sb-drawer[open]::backdrop {
+  background: color-mix(
+    in srgb,
+    light-dark(var(--sb-text), var(--sb-window-bg)) 55%,
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-modal,
+  .sb-drawer,
+  .sb-modal::backdrop,
+  .sb-drawer::backdrop {
+    transition: none;
+  }
+}
+
+/* === Floating surfaces ======================================= */
+/* Anything that floats OVER tile content has to cover it. The harvested
+   rules give these the inner-tint surface, which is right for a panel inside
+   a card and wrong here: at 9% white a menu lets the text underneath read
+   straight through. This file is un-layered, so it wins over the harvest. */
+.sb-dropdown__menu,
+.sb-context-menu,
+.sb-popover__card,
+.sb-hover-card__card,
+.sb-datepicker,
+.sb-combobox__list,
+.sb-multiselect__panel,
+.sb-command,
+.sb-toast {
+  background: var(--sb-overlay-bg);
+}
+
+/* Menus have their own opaque semantic surface so plugin-owned menus match
+   the shell's portaled context menu without inheriting overlay/modal paint. */
+.sb-dropdown__menu,
+.sb-context-menu,
+.sb-popover__card[role="menu"] {
+  color-scheme: var(--sb-color-scheme);
+  border-color: var(--sb-menu-border);
+  background: var(--sb-menu-bg);
+  box-shadow: var(--sb-menu-shadow);
+  color: var(--sb-menu-text);
+}
+:is(.sb-dropdown__menu, .sb-context-menu, .sb-popover__card[role="menu"])
+  .sb-dropdown__item:is(:hover, :focus-visible) {
+  background: var(--sb-menu-hover-bg);
+}
+:is(.sb-dropdown__menu, .sb-context-menu, .sb-popover__card[role="menu"])
+  .sb-dropdown__item--danger {
+  color: var(--sb-menu-danger);
+}
+:is(.sb-dropdown__menu, .sb-context-menu, .sb-popover__card[role="menu"])
+  .sb-dropdown__divider {
+  background: var(--sb-menu-separator);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sb-card--laser::before,
+  .sb-card--selectable:has(input:checked)::before,
+  .sb-progress:indeterminate,
+  .sb-spinner,
+  .sb-skeleton,
+  .sb-chat__typing > span,
+  .sb-eq > span {
+    animation: none;
+  }
+  .sb-donut-fill,
+  .sb-progress:not(progress) > * {
+    transition: none;
+  }
+}
+
+/* Date, time, or both: native form values with themed, inline editors.
+   Inline panels grow the measured flyout instead of escaping its window. */
+.sb-temporal {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sb-space-xs);
+  min-width: 0;
+}
+.sb-temporal-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  padding: 0;
+  border: 0;
+}
+.sb-temporal > .sb-datepicker-field {
+  display: contents;
+}
+.sb-temporal-date-trigger,
+.sb-temporal-time-trigger,
+.sb-temporal-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sb-space-xs);
+  min-height: 2.75rem;
+  padding: var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-input-radius, var(--sb-radius-s));
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  color: var(--sb-text);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.sb-temporal-date-trigger {
+  flex: 1 1 auto;
+  justify-content: flex-start;
+}
+.sb-temporal-time-trigger {
+  flex: 1 1 auto;
+}
+.sb-temporal-clear {
+  flex: 0 0 2.25rem;
+  color: var(--sb-text-muted);
+  padding-inline: var(--sb-space-xs);
+}
+.sb-temporal
+  :is(.sb-temporal-clear, .sb-temporal-time, .sb-temporal-error)[hidden] {
+  display: none;
+}
+.sb-temporal[data-empty]
+  :is(.sb-temporal-date-trigger, .sb-temporal-time-trigger) {
+  color: var(--sb-text-muted);
+}
+.sb-temporal
+  :is(
+    .sb-temporal-date-trigger,
+    .sb-temporal-time-trigger,
+    .sb-temporal-clear
+  ):hover:not(:disabled),
+.sb-temporal [aria-expanded="true"] {
+  border-color: var(--sb-accent);
+  background: color-mix(in srgb, var(--sb-accent) 8%, var(--sb-inner-bg));
+}
+.sb-temporal [aria-invalid="true"] {
+  border-color: var(--sb-danger);
+}
+.sb-temporal button:disabled {
+  opacity: var(--sb-opacity-45, 0.45);
+  cursor: default;
+}
+.sb-temporal .sb-datepicker--anchored,
+.sb-temporal-time {
+  position: static;
+  order: 10;
+  flex: 1 0 100%;
+  width: 100%;
+  box-sizing: border-box;
+  margin: var(--sb-space-xs) 0 0;
+  padding: var(--sb-space-m);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: color-mix(
+    in srgb,
+    var(--sb-surface-2) var(--sb-bar-opacity),
+    transparent
+  );
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+.sb-temporal .sb-datepicker__weekdays,
+.sb-temporal .sb-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.sb-temporal .sb-datepicker__day {
+  width: 100%;
+  min-height: 2rem;
+}
+.sb-temporal-time {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sb-space-s);
+}
+.sb-temporal-unit {
+  display: grid;
+  gap: var(--sb-space-xs);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-s);
+  text-align: center;
+}
+.sb-temporal-unit .sb-input {
+  min-width: 0;
+  min-height: 3.75rem;
+  font-size: var(--sb-fs-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.sb-temporal-apply {
+  grid-column: 1 / -1;
+  min-height: 2.5rem;
+}
+.sb-temporal-error {
+  order: 11;
+  flex-basis: 100%;
+}

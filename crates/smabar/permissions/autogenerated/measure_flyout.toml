@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-measure-flyout"
+description = "Enables the measure_flyout command without any pre-configured scope."
+commands.allow = ["measure_flyout"]
+
+[[permission]]
+identifier = "deny-measure-flyout"
+description = "Denies the measure_flyout command without any pre-configured scope."
+commands.deny = ["measure_flyout"]

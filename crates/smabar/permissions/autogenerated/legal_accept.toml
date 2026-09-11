@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-legal-accept"
+description = "Enables the legal_accept command without any pre-configured scope."
+commands.allow = ["legal_accept"]
+
+[[permission]]
+identifier = "deny-legal-accept"
+description = "Denies the legal_accept command without any pre-configured scope."
+commands.deny = ["legal_accept"]

@@ -1,0 +1,452 @@
+/* Community Store pages: list, detail, readme. Window composition lives in
+   settings-window.css, the shared controls in settings.css. */
+
+/* === Page frame ============================================== */
+.settings-store-page,
+.settings-store-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-s);
+}
+.settings-store-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-s);
+}
+.settings-store-page-title {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-xs);
+  min-width: 0;
+}
+.settings-store-page-title h2 {
+  font-size: var(--sb-fs-l);
+}
+.settings-store-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-s);
+}
+.settings-store-toolbar > .sb-input {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+.settings-store-toolbar > p {
+  margin: 0;
+}
+
+/* === The list ================================================ */
+/* One row per listing: name and badge, then author · version · date, then
+   the description; stars and the buttons on the right. The question a
+   button opens lands under the row, so the list never jumps. */
+.settings-store-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: color-mix(in srgb, var(--sb-inner-bg) 35%, transparent);
+}
+.settings-store-list > li + li {
+  border-top: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+.settings-store-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-m);
+  padding: var(--sb-space-s) var(--sb-space-m);
+}
+.settings-store-main {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  min-width: 0;
+}
+.settings-store-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-xs);
+}
+.settings-store-heading h2 {
+  margin: 0;
+  font-size: var(--sb-fs-l);
+}
+.settings-store-name {
+  color: var(--sb-text);
+  font-size: var(--sb-fs-m);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-store-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--sb-space-xs);
+  margin: 0;
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+}
+.settings-store-meta > span + span::before {
+  content: "·";
+  margin-inline-end: var(--sb-space-xs);
+  color: var(--sb-text-faint);
+}
+.settings-store-description {
+  margin: 0;
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+  line-height: 1.45;
+}
+.settings-store-side {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sb-space-xs);
+}
+.settings-store-stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-inline-end: var(--sb-space-xs);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-s);
+  font-variant-numeric: tabular-nums;
+}
+.settings-store-stars svg {
+  color: var(--sb-accent);
+}
+.settings-store-row-extra {
+  padding: 0 var(--sb-space-m) var(--sb-space-s);
+}
+.settings-store-toolbar > .settings-store-sort {
+  flex: none;
+  width: auto;
+}
+@container settings (max-width: 44rem) {
+  .settings-store-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .settings-store-side {
+    justify-content: flex-start;
+  }
+}
+
+/* === The detail page ========================================= */
+/* A header card carries what the list row carried plus the actions; the
+   readme sits beside a sidebar of source facts and drops below it when the
+   window is narrow. */
+.settings-store-back {
+  align-self: flex-start;
+}
+.settings-store-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sb-space-m);
+  padding: var(--sb-space-m);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: color-mix(in srgb, var(--sb-inner-bg) 45%, transparent);
+}
+.settings-store-hero > .settings-store-side {
+  align-self: center;
+}
+.settings-store-hero-note {
+  flex-basis: 100%;
+  margin: 0;
+}
+.settings-store-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18rem;
+  gap: var(--sb-space-m);
+  align-items: start;
+}
+.settings-store-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-s);
+  min-width: 0;
+}
+.settings-store-column > .sb-section:not(:first-child) {
+  margin-top: var(--sb-space-s);
+}
+.settings-store-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-s);
+  padding: var(--sb-space-s) var(--sb-space-m);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  font-size: var(--sb-fs-s);
+}
+@container settings (max-width: 52rem) {
+  .settings-store-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.settings-store-trust {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  margin: 0;
+  padding: 0 0 var(--sb-space-s);
+  border-bottom: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  list-style: none;
+  color: var(--sb-text-dim);
+}
+.settings-store-trust li {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-xs);
+}
+.settings-store-trust svg {
+  flex: none;
+  color: var(--sb-success);
+}
+/* Label above value: the sidebar is narrow and a commit or repository name
+   is long, so two columns would squeeze every value into a sliver. */
+.settings-store-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+}
+.settings-store-facts dt {
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+  font-weight: var(--sb-weight-semibold, 600);
+  letter-spacing: var(--sb-tracking-wide, 0.04em);
+  text-transform: uppercase;
+}
+.settings-store-facts dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-2xs) var(--sb-space-xs);
+  min-width: 0;
+  margin: 0 0 var(--sb-space-s);
+  color: var(--sb-text);
+}
+.settings-store-facts dd:last-child {
+  margin-bottom: 0;
+}
+/* A link, not a button: text in the accent colour with the icon after it.
+   Two classes, because ui-kit.css is imported after this file. */
+.sb-btn.settings-store-link {
+  height: auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--sb-accent);
+  font: inherit;
+  white-space: normal;
+  text-align: start;
+  gap: 0.3em;
+}
+.sb-btn.settings-store-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.settings-store-link > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* The harvested kit sheet (kit-components.css) only reaches plugin shadow
+   roots; the store's alerts live in the settings document, so the alert
+   anatomy is mirrored here for the settings panel. */
+.settings-panel .sb-alert {
+  --sb-alert-color: var(--sb-info);
+  display: flex;
+  gap: var(--sb-space-s);
+  align-items: flex-start;
+  padding: var(--sb-space-s) var(--sb-space-m);
+  border: var(--sb-border-width, 1px) solid
+    color-mix(in srgb, var(--sb-alert-color) 35%, transparent);
+  border-radius: var(--sb-radius-m);
+  background: color-mix(in srgb, var(--sb-alert-color) 12%, transparent);
+  font-size: var(--sb-fs-s);
+  line-height: 1.45;
+}
+.settings-panel .sb-alert__icon {
+  flex: none;
+  margin-top: 0.15em;
+  color: var(--sb-alert-color);
+}
+.settings-panel .sb-alert__text {
+  min-width: 0;
+  color: var(--sb-text-dim);
+}
+.settings-panel .sb-alert__text strong {
+  color: var(--sb-text);
+}
+.settings-panel .sb-alert--warn {
+  --sb-alert-color: var(--sb-warning);
+}
+.settings-panel .sb-alert--danger {
+  --sb-alert-color: var(--sb-danger);
+}
+.settings-panel .sb-alert--info {
+  --sb-alert-color: var(--sb-info);
+}
+.settings-store-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.settings-store-releases {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--sb-fs-s);
+}
+.settings-store-releases li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sb-space-s);
+}
+.settings-store-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-space-2xs);
+}
+
+/* === The readme ============================================== */
+/* The core renders the author's markdown into this tag set and nothing
+   else; kit-components.css does not reach the settings document, so the
+   reading typography lives here. */
+.settings-store-readme {
+  padding: var(--sb-space-m);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: color-mix(in srgb, var(--sb-inner-bg) 45%, transparent);
+  color: var(--sb-text-dim);
+  font-size: var(--sb-fs-s);
+  line-height: 1.5;
+}
+.settings-readme > * + * {
+  margin-block-start: 0.75em;
+}
+.settings-readme h1,
+.settings-readme h2,
+.settings-readme h3,
+.settings-readme h4,
+.settings-readme h5,
+.settings-readme h6 {
+  color: var(--sb-text);
+  font-weight: var(--sb-weight-semibold, 600);
+  line-height: 1.3;
+}
+.settings-readme h1 {
+  font-size: var(--sb-fs-l);
+}
+.settings-readme h2 {
+  margin-block-start: 1.4em;
+  font-size: var(--sb-fs-m);
+}
+.settings-readme h3,
+.settings-readme h4,
+.settings-readme h5,
+.settings-readme h6 {
+  margin-block-start: 1.2em;
+  font-size: var(--sb-fs-s);
+}
+.settings-readme p,
+.settings-readme ul,
+.settings-readme ol,
+.settings-readme blockquote,
+.settings-readme pre {
+  margin: 0;
+}
+.settings-readme ul,
+.settings-readme ol {
+  padding-inline-start: 1.4em;
+}
+.settings-readme li + li {
+  margin-block-start: 0.25em;
+}
+.settings-readme li > input[type="checkbox"] {
+  margin-inline-end: 0.4em;
+}
+.settings-readme a {
+  color: var(--sb-accent);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.settings-readme code {
+  padding: 0.1em 0.35em;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-xs, 0.1875rem);
+  background: color-mix(in srgb, var(--sb-inner-bg) 70%, transparent);
+  font-family: var(--sb-font-mono);
+  font-size: 0.9em;
+}
+.settings-readme pre {
+  overflow-x: auto;
+  padding: var(--sb-space-s);
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-inner-bg) 70%, transparent);
+}
+.settings-readme pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: var(--sb-fs-xs);
+}
+.settings-readme blockquote {
+  padding-inline-start: var(--sb-space-m);
+  border-inline-start: 2px solid var(--sb-accent);
+  color: var(--sb-text-muted);
+}
+.settings-readme table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+.settings-readme th,
+.settings-readme td {
+  padding: 0.4em 0.7em;
+  border-bottom: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  text-align: start;
+}
+.settings-readme th {
+  color: var(--sb-text);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+.settings-readme img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--sb-radius-s);
+}
+.settings-readme hr {
+  border: 0;
+  border-top: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+
+/* === The navigation entry of a page ========================== */
+/* Listed under its group beside the section anchors; the chevron says it
+   opens a page rather than scrolling. Three classes, so the sub-navigation
+   button rule of settings-window.css does not win. */
+.settings-group-nav .settings-subnav .settings-subnav-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sb-space-2xs);
+}
+.settings-group-nav .settings-subnav .settings-subnav-page.sb-active {
+  color: var(--sb-text);
+  font-weight: var(--sb-weight-semibold, 600);
+}

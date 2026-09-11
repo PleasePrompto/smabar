@@ -1,0 +1,18 @@
+{
+  "media.title": "Medien",
+  "media.no_session": "Keine Medienwiedergabe",
+  "media.no_session_hint": "Starte die Wiedergabe in einem kompatiblen Mediaplayer.",
+  "media.unknown_title": "Unbekannter Titel",
+  "media.unknown_artist": "Unbekannter Interpret",
+  "media.state.playing": "Wird wiedergegeben",
+  "media.state.paused": "Pausiert",
+  "media.state.stopped": "Gestoppt",
+  "media.previous": "Zurück",
+  "media.play_pause": "Wiedergeben oder pausieren",
+  "media.next": "Weiter",
+  "media.progress": "Wiedergabefortschritt",
+  "media.volume": "Lautstärke",
+  "media.mute": "Stummschalten",
+  "media.unmute": "Stummschaltung aufheben",
+  "media.no_output": "Keine Audioausgabe verfügbar"
+}

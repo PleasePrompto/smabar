@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-input-shape"
+description = "Enables the set_input_shape command without any pre-configured scope."
+commands.allow = ["set_input_shape"]
+
+[[permission]]
+identifier = "deny-set-input-shape"
+description = "Denies the set_input_shape command without any pre-configured scope."
+commands.deny = ["set_input_shape"]

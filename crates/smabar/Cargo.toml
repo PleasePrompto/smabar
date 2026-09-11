@@ -1,0 +1,93 @@
+[package]
+name = "smabar"
+description = "smabar — the smart taskbar"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+
+[features]
+# Store packages receive application updates exclusively through Microsoft Store.
+no-self-update = []
+
+[dependencies]
+anyhow = "1.0.104"
+# The one HTTP client in the workspace, deliberately at the app edge:
+# smabar-core stays free of a network stack (see shortcuts/web.rs).
+reqwest = { version = "0.13.4", default-features = false, features = ["rustls", "charset"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+sha2 = "0.10.9"
+smabar-core = { path = "../smabar-core" }
+# Decodes the WebView2 preview so Windows can crop the shell-measured subject.
+# This exact version is already locked through Tauri's tray dependency.
+png = "0.18.1"
+# protocol-asset backs app.security.assetProtocol: plugin HTML addresses files
+# in its own data directory via sb-asset: instead of base64-inlining them.
+# Transparent macOS windows require this feature and app.macOSPrivateApi to
+# agree even for direct cargo checks; the feature has no effect on other OSes.
+tauri = { version = "2.11.5", features = ["tray-icon", "protocol-asset", "macos-private-api"] }
+tauri-plugin-single-instance = "2.4.3"
+# Per-user desktop login registration, owned by platform::autostart.
+tauri-plugin-autostart = "=2.5.1"
+# Application update check + Windows install (ADR 0009); Linux downloads
+# through it and hands the package to the system installer.
+tauri-plugin-updater = "2.10.1"
+# The catalog key type for the debug-only SMABAR_STORE_PUBKEY override.
+minisign-verify = "0.2.5"
+tokio = { version = "1.53.1", features = ["sync", "rt", "time", "fs", "io-util"] }
+tracing = "0.1.44"
+rodio = { version = "=0.22.2", default-features = false, features = ["playback", "wav", "mp3", "vorbis", "flac", "tracing"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Match Tauri's objc2 stack; Accessibility keeps ordinary windows clear of the bar.
+objc2 = "0.6.4"
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["std", "libc", "NSEvent", "NSRunningApplication", "NSScreen", "NSTrackingArea", "NSView", "NSWindow", "NSWorkspace"] }
+objc2-foundation = { version = "0.3.2", default-features = false, features = ["std", "NSArray", "NSDictionary", "NSGeometry", "NSString", "NSURL"] }
+objc2-application-services = { version = "0.3.2", default-features = false, features = ["std", "HIServices", "AXUIElement", "AXValue", "AXError", "libc"] }
+objc2-core-foundation = { version = "0.3.2", default-features = false, features = ["std", "CFArray", "CFDate", "CFDictionary", "CFNumber", "CFRunLoop", "CFString", "CFCGTypes"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Must track the gtk minor that Tauri's Linux window handle is built on
+# (gtk_window() returns a gtk 0.18 ApplicationWindow).
+gtk = "0.18"
+gtk-layer-shell = { version = "=0.8.2", features = ["v0_6"] }
+# Already locked through GTK; resolves the optional native layer-shell 0.9 API.
+libc = "0.2.189"
+# bar_screenshot: WebKit renders the DOM into a cairo surface, cairo writes
+# the PNG. Version and feature must match what wry 0.55 builds against —
+# `with_webview` hands out ITS webkit2gtk::WebView, not ours.
+cairo-rs = { version = "0.18", features = ["png"] }
+webkit2gtk = { version = "=2.0.2", features = ["v2_38"] }
+
+[target.'cfg(windows)'.dependencies]
+# Must match the versions Tauri 2.11.5 exposes through `with_webview`.
+webview2-com = "=0.38.2"
+# The WebView2 bindings use windows 0.61 COM types. Keep this alias beside the
+# app's newer Win32 bindings rather than mixing the incompatible IStream types.
+windows-webview2 = { package = "windows", version = "=0.61.3", features = [
+  "Win32_Foundation",
+  "Win32_System_Com",
+  "Win32_UI_Shell",
+] }
+windows = { version = "0.62.2", features = [
+  "ApplicationModel",
+  "Win32_Storage_Packaging_Appx",
+  "Win32_Devices_Display",
+  "Win32_Foundation",
+  "Win32_Graphics_Gdi",
+  "Win32_System_LibraryLoader",
+  "Win32_System_Registry",
+  "Win32_System_Threading",
+  "Win32_UI_HiDpi",
+  "Win32_UI_Input_KeyboardAndMouse",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+tempfile = "3.27.0"
+# Captures tracing output so the ui_log test can assert on level and target.
+tracing-subscriber = { version = "0.3.23", features = ["fmt"] }
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }

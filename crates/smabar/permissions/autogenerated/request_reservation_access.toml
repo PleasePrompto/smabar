@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-request-reservation-access"
+description = "Enables the request_reservation_access command without any pre-configured scope."
+commands.allow = ["request_reservation_access"]
+
+[[permission]]
+identifier = "deny-request-reservation-access"
+description = "Denies the request_reservation_access command without any pre-configured scope."
+commands.deny = ["request_reservation_access"]

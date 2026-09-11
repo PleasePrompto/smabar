@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-remove-plugin"
+description = "Enables the remove_plugin command without any pre-configured scope."
+commands.allow = ["remove_plugin"]
+
+[[permission]]
+identifier = "deny-remove-plugin"
+description = "Denies the remove_plugin command without any pre-configured scope."
+commands.deny = ["remove_plugin"]

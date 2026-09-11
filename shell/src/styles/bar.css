@@ -1,0 +1,696 @@
+/* ============================================================
+   Smabar chrome — the bar, flyout and tile surfaces + micro animations.
+   Un-layered on purpose: these classes override utility classes
+   on the same element (see CLAUDE.md). No layout properties here.
+   ============================================================ */
+
+/* Surfaces — every color/shadow is a --sb-* theme token (set on :root by
+   theme/apply.ts); the var() fallbacks are the bundled default theme
+   (themes/default.json), so browser-dev without Tauri looks identical.
+   Surfaces run their backgrounds through the bar or flyout opacity token —
+   plain translucency, never a backdrop blur (removed 2026-09-03: a webview
+   cannot blur the desktop behind its window anyway). The surface tokens are
+   deliberately OPAQUE: color-mix(..., transparent) can only lower a colour's
+   alpha, so an rgba() token would put a ceiling below 100% and the slider
+   could never make the bar fully opaque. Themes set their own resting
+   opacity instead (default 92%). */
+/* Typed so a bad value (a unitless "1" via MCP, say) falls back to the initial
+   value instead of voiding the whole `background` declaration below and making
+   the bar surface vanish. Verified in WebKitGTK. */
+@property --sb-bar-opacity {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 92%;
+}
+@property --sb-flyout-opacity {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 97%;
+}
+.surface-bar {
+  background: color-mix(
+    in srgb,
+    var(--sb-bar-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  /* The frame width is the bar's own knob (design-tab slider); every other
+     surface keeps following the global --sb-border-width. */
+  border: var(--sb-bar-border-width, var(--sb-border-width, 1px)) solid
+    var(--sb-bar-border);
+  box-shadow: none;
+}
+/* Flat only hides the frame. Both bar styles stay shadow-free. */
+.surface-bar[data-bar-chrome="flat"] {
+  border-color: transparent;
+}
+
+.surface-flyout {
+  /* Nested kit cards use the bar-owned material tokens. Inside a flyout they
+     must inherit the flyout's stronger opacity or the outer 90% surface still
+     contains washed-out panels. */
+  --sb-bar-opacity: var(--sb-flyout-opacity);
+  background: color-mix(
+    in srgb,
+    var(--sb-flyout-bg) var(--sb-flyout-opacity),
+    transparent
+  );
+  border: var(--sb-border-width, 1px) solid var(--sb-flyout-border);
+  box-shadow: var(--sb-flyout-shadow);
+}
+.flyout-content-transition {
+  opacity: var(--sb-opacity-55, 0.55);
+  transform: translateY(var(--flyout-content-shift, 0.1875rem)) scale(0.99);
+  transition:
+    opacity 150ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.flyout-content-transition[data-settled] {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.surface-tile {
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border: var(--sb-border-width, 1px) solid var(--sb-tile-border);
+}
+/* Hover only lifts the background one step. The border stays put, so a
+   pointer sweeping the bar does not light up a ring on every tile it
+   passes — the ring is reserved for the one open surface below. */
+:where(:root:not([data-sb-pointer-outside])) .surface-tile-hover:hover,
+:where(:root:not([data-sb-pointer-outside]))
+  .surface-bar
+  button[data-tile-chrome="flat"]:hover,
+.surface-bar button[data-tile-chrome]:active {
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-hover-bg) var(--sb-bar-opacity),
+    transparent
+  );
+}
+/* Active (open-flyout) state of a tile: the hover background, held, plus
+   the ring — this is what tells the open tile from a merely hovered one. */
+.surface-tile-active {
+  background: color-mix(
+    in srgb,
+    var(--sb-tile-hover-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border-color: var(--sb-tile-hover-border);
+}
+/* Flat is a resting material choice, not an absence of feedback. An inset
+   edge identifies the open tile without changing its size. */
+.surface-tile-active[data-tile-chrome="flat"] {
+  box-shadow: inset 0 0 0 var(--sb-border-width, 1px)
+    var(--sb-tile-hover-border);
+}
+:where(.surface-bar button[data-tile-chrome]) {
+  transition:
+    background var(--sb-dur-fast) var(--sb-ease-out),
+    border-color var(--sb-dur-fast) var(--sb-ease-out),
+    box-shadow var(--sb-dur-fast) var(--sb-ease-out);
+}
+/* Keyboard focus uses the theme's ring. The transparent outline survives
+   as a system-colour outline when forced colours remove box shadows. */
+.surface-bar button[data-tile-chrome]:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: var(--sb-focus-ring);
+}
+@media (forced-colors: active) {
+  .surface-bar button[data-tile-chrome]:focus-visible {
+    outline-color: Highlight;
+  }
+}
+.surface-inner {
+  background: color-mix(
+    in srgb,
+    var(--sb-inner-bg) var(--sb-bar-opacity),
+    transparent
+  );
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+}
+
+/* Subtle pulse for live indicators */
+.live-dot {
+  animation: livePulse calc(var(--sb-dur-slow) * 7.5) ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .flyout-content-transition {
+    transform: none;
+    transition-duration: 80ms;
+  }
+  .live-dot {
+    animation: none;
+  }
+}
+
+/* Positive live-indicator color (paired with .live-dot; the plugin status
+   dot keeps its own color). Fallback = Tailwind emerald-400. */
+.dot-success {
+  background: var(--sb-success);
+}
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: var(--sb-opacity-55, 0.55);
+    transform: scale(0.82);
+  }
+}
+
+/* Custom scrollbar for flyout content */
+.surface-scroll {
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--sb-space-l),
+    black calc(100% - var(--sb-space-l)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    black var(--sb-space-l),
+    black calc(100% - var(--sb-space-l)),
+    transparent 100%
+  );
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+:where(:root:not([data-sb-pointer-outside])) .surface-scroll:hover {
+  scrollbar-color: var(--sb-scrollbar-thumb) transparent;
+}
+.surface-scroll::-webkit-scrollbar {
+  width: var(--sb-scrollbar-size, 6px);
+  height: var(--sb-scrollbar-size, 6px);
+}
+.surface-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: var(--sb-radius-full);
+}
+:where(:root:not([data-sb-pointer-outside]))
+  .surface-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--sb-scrollbar-thumb);
+}
+.surface-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Tile hover lift */
+.plugin-tile {
+  font-family: var(--sb-font-sans);
+  font-size: var(--sb-fs-m);
+  line-height: var(--sb-leading-short, 1.2);
+  gap: var(--sb-space-s);
+  text-align: start;
+  padding: var(--sb-tile-pad-y) var(--sb-tile-pad-x);
+  /* The height a plugin actually has inside the bar: the row minus its
+     border and padding, the card padding and the card's own 1px border
+     (transparent in the bundled themes, but it still takes space).
+     .zone-scroll clips on
+     BOTH axes (overflow-x:auto forces overflow-y to auto) with the scrollbar
+     hidden, so anything taller is silently cut off. Publishing the budget as
+     a token lets the kit size two-line tiles against it instead of guessing —
+     and it follows the whitespace slider and the theme automatically. The
+     row's real block padding (--sb-bar-pad-y, BarShell) comes off first, so
+     a full-height card tile keeps breathing room to the bar edge. */
+  --sb-tile-content-h: calc(
+    var(--sb-bar-row-height, var(--sb-bar-height, 3.25rem)) - 2 *
+      var(--sb-bar-pad-y, 0.375rem) - 2 * var(--sb-tile-pad-y, 0.375rem) - 2 *
+      var(--sb-border-width, 1px) - 2 *
+      var(--sb-bar-border-width, var(--sb-border-width, 1px))
+  );
+}
+/* Base text size of a two-line tile, as a fraction of that budget. A plugin
+   picks the step via `tileScale` in its manifest; the shell puts it on the
+   shadow host and custom properties inherit into the shadow tree. */
+/* tileScale shifts WHICH steps of the type scale bound the two lines; the
+   size itself still tracks the tile's height budget in between. "m" is the
+   kit default (s…l / xs…s) and needs no rule. */
+[data-tile-scale="s"] {
+  --sb-tile-min-1: var(--sb-fs-xs);
+  --sb-tile-max-1: var(--sb-fs-m);
+  --sb-tile-min-2: var(--sb-fs-xs);
+  --sb-tile-max-2: var(--sb-fs-xs);
+}
+[data-tile-scale="l"] {
+  --sb-tile-min-1: var(--sb-fs-m);
+  --sb-tile-max-1: var(--sb-fs-xl);
+  --sb-tile-min-2: var(--sb-fs-xs);
+  --sb-tile-max-2: var(--sb-fs-m);
+}
+.plugin-lift {
+  transition:
+    transform var(--sb-dur-base) var(--sb-ease-spring),
+    background var(--sb-dur-base) var(--sb-ease-out),
+    border-color var(--sb-dur-base) var(--sb-ease-out);
+  /* Grows away from the docked edge, like the shortcut fisheye — the var is
+     set on the tile zone (PluginZone.tsx). */
+  transform-origin: var(--sb-magnify-origin, center);
+}
+/* Theme-driven hover pop: lift and magnify are tokens, so every theme picks
+   its own effect strength (1px / 1 keeps the classic subtle lift). */
+:where(:root:not([data-sb-pointer-outside]))
+  .plugin-lift[data-tile-chrome="card"]:hover {
+  transform: translateY(calc(-1 * var(--sb-tile-hover-lift, 1px)))
+    scale(var(--sb-tile-hover-scale, 1));
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(:root:not([data-sb-pointer-outside]))
+    .plugin-lift[data-tile-chrome="card"]:hover {
+    transform: none;
+  }
+}
+
+/* ---- Bar zones ---------------------------------------------------- */
+
+/* Classic edge autohide. WebKit content stays completely static; the native
+   top-level window moves through the screen edge. This avoids stale partial
+   damage in transparent proprietary-NVIDIA WebKit buffers. */
+.bar-autohide-shell {
+  pointer-events: none;
+  top: 0;
+  bottom: 0;
+}
+.bar-autohide-shell[data-bar-position="bottom"] {
+  justify-content: flex-end;
+}
+.bar-autohide-surface[data-input-region],
+.bar-autohide-hotzone {
+  pointer-events: auto;
+}
+/* The strip spans only the small native bar window, never the monitor. */
+.bar-autohide-hotzone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--sb-autohide-hotzone-size, 8px);
+}
+.bar-autohide-hotzone[data-autohide-region="activation"] {
+  position: static;
+  flex: 1 1 0;
+  min-height: var(--sb-autohide-hotzone-size, 8px);
+}
+.bar-autohide-hotzone[data-autohide-region="activation"][data-bar-position="bottom"] {
+  order: -1;
+}
+/* The outer strip bridges the dock's edge margin. Both strips remain in
+   place during native movement, so the initial enter cannot turn into a
+   leave just because React switched the reveal state. */
+.bar-autohide-hotzone[data-autohide-region="edge"] {
+  height: calc(
+    var(--sb-autohide-edge-gap, 0px) + var(--sb-autohide-hotzone-size, 8px)
+  );
+}
+.bar-autohide-hotzone[data-autohide-region="edge"][data-bar-position="bottom"] {
+  bottom: 0;
+}
+.bar-autohide-hotzone[data-autohide-region="edge"][data-bar-position="top"] {
+  top: 0;
+}
+/* The row stack (BarShell): one column, themed gap — in the rows variant the
+   two bar rows read as separate pills instead of sticking together. */
+.bar-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sb-bar-gap, 0.25rem);
+}
+
+/* The solo layout's primary row: the layer toggle at the start, the zone
+   centred in the WHOLE row, the gear at the end. Two equal flexible outer
+   columns keep the zone on the row's centre line whatever the buttons
+   weigh; left and right alignment hand the zone the free space on one side
+   instead. */
+.bar-solo-row {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  column-gap: var(--sb-bar-gap, 0.25rem);
+}
+.bar-solo-row > :nth-child(1) {
+  justify-self: start;
+}
+.bar-solo-zone {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+  height: 100%;
+}
+.bar-solo-row > :nth-child(3) {
+  justify-self: end;
+}
+/* Content-sized, the pill's rounded ends sit right against the buttons;
+   a little air keeps the toggle and the gear off the edge. */
+.bar-solo-row[data-auto] {
+  padding-inline: var(--sb-space-xs, 0.375rem);
+}
+.bar-solo-row[data-align="left"] {
+  grid-template-columns: max-content auto minmax(max-content, 1fr);
+}
+.bar-solo-row[data-align="right"] {
+  grid-template-columns: minmax(max-content, 1fr) auto max-content;
+}
+
+/* Horizontal overflow scroller for a bar zone. Like .surface-scroll this
+   class IS the scroll behavior (not a surface); sizing and flex
+   layout stay in the components. The data-fade-* attributes are toggled
+   by useZoneScroll when content overflows past an edge.
+
+   A zone becomes a scroll container ONLY while its content actually
+   overflows (data-zone-overflowing, useZoneScroll): a scroll container
+   clips BOTH axes, which cut hover-magnified tiles off exactly at the row
+   edge. A fitting zone — the whole point of the auto-width dock — stays
+   overflow-visible, so effects grow past the bar freely. `position:
+   relative` makes the zone the offsetParent of its tiles, which is what
+   lets useZoneScroll measure overflow from transform-free layout offsets
+   (scrollWidth counts the very transforms the toggle must ignore). */
+.zone-scroll {
+  position: relative;
+  overflow-x: visible;
+  scrollbar-width: none;
+  /* Touch may pan the row sideways but must never scroll/zoom the page —
+     a held tile has to reach useDragReorder's long press intact. */
+  touch-action: pan-x;
+}
+.zone-scroll[data-zone-overflowing] {
+  overflow-x: auto;
+}
+/* The zone scrolls when the divider leaves less room than its content. Its
+   direct children therefore keep their intrinsic width; shrinking them would
+   collapse plugin shadow hosts to an empty-looking card instead of creating
+   horizontal overflow. */
+.zone-scroll > * {
+  flex-shrink: 0;
+}
+/* Effect headroom for the tile zone: as a scroll container it clips on
+   BOTH axes, so a lifted/magnified card would be cut at the row edge. The
+   zone grows past the row by the theme's worst-case effect growth while
+   negative margins keep the layout put — the same trick the shortcut zone
+   applies for the fisheye (there computed in JS, here purely from the
+   effect tokens, so any user theme sizes its own headroom). */
+.zone-scroll[data-plugin-zone] {
+  /* 0.25rem slack on top of the exact worst case: device-pixel rounding,
+     scaled borders and tall font metrics (a serif user theme) otherwise land the
+     grown card exactly on the clip edge. */
+  --tile-effect-reserve: calc(
+    0.25rem + var(--sb-tile-hover-lift, 1px) +
+      (var(--sb-tile-hover-scale, 1) - 1) *
+      var(--sb-bar-row-height, var(--sb-bar-height, 3.25rem))
+  );
+  height: calc(100% + 2 * var(--tile-effect-reserve));
+  margin-block: calc(-1 * var(--tile-effect-reserve));
+  padding-block: var(--tile-effect-reserve);
+  margin-inline: calc(-1 * var(--tile-effect-reserve));
+  padding-inline: var(--tile-effect-reserve);
+}
+/* Tile alignment inside a zone (appearance.shortcutAlign / pluginAlign).
+   The `safe` keyword (WebKit since Safari 17.6; our WebKitGTK 2.52 is far
+   newer) falls back to start alignment on overflow — plain center/end would
+   push the scroll start out of reach. Left needs no rule (flex default). */
+.zone-scroll[data-zone-align="center"] {
+  justify-content: safe center;
+}
+.zone-scroll[data-zone-align="right"] {
+  justify-content: safe flex-end;
+}
+.zone-scroll::-webkit-scrollbar {
+  display: none;
+}
+.zone-scroll[data-fade-left] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--sb-space-xl)
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--sb-space-xl)
+  );
+}
+.zone-scroll[data-fade-right] {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    transparent 0,
+    black var(--sb-space-xl)
+  );
+  mask-image: linear-gradient(to left, transparent 0, black var(--sb-space-xl));
+}
+.zone-scroll[data-fade-left][data-fade-right] {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--sb-space-xl),
+    black calc(100% - var(--sb-space-xl)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black var(--sb-space-xl),
+    black calc(100% - var(--sb-space-xl)),
+    transparent 100%
+  );
+}
+
+/* Shortcut tiles: the fisheye magnify (useFisheye.ts) sets --magnify per
+   tile; the WHOLE tile (icon + label) scales via transform ONLY (no
+   reflow), growing away from the docked edge (--sb-magnify-origin is set
+   on the zone). The icon box and label size come from the shortcuts config
+   via --sb-shortcut-* vars on the zone (ShortcutZone.tsx). */
+.shortcut-tile {
+  border-radius: var(--sb-radius-m, 0.5rem);
+  transform: scale(var(--magnify, 1));
+  transform-origin: var(--sb-magnify-origin, center);
+  transition: transform var(--sb-dur-fast) var(--sb-ease-out);
+}
+/* Dock-button chrome (appearance.tileChrome "card"): the card material
+   comes from .surface-tile/.surface-tile-hover on the same element
+   (ShortcutZone.tsx); rhythm and radius reuse the plugin-tile tokens so one
+   theme group styles both tile kinds. Flat chrome keeps the bare icon. */
+.shortcut-tile[data-tile-chrome="card"] {
+  padding: var(--sb-tile-pad-y, 0.375rem);
+  transition:
+    transform var(--sb-dur-fast) var(--sb-ease-out),
+    background var(--sb-dur-base) var(--sb-ease-out),
+    border-color var(--sb-dur-base) var(--sb-ease-out);
+}
+/* The hairline sits in the CONTENT box while its old margins became padding:
+   same footprint and same look as before, but the whole strip is a hit
+   target — a 1px wide element is impossible to grab for a reorder drag. */
+.shortcut-separator {
+  box-sizing: border-box;
+  width: calc(1px + 2 * var(--sb-space-2xs));
+  height: 55%;
+  padding-inline: var(--sb-space-2xs);
+  /* --sb-edge, not the bar border: the frame color may be a bright metal. */
+  background: var(
+    --sb-edge,
+    color-mix(in srgb, var(--sb-text) 12%, transparent)
+  );
+  background-clip: content-box;
+}
+.shortcut-icon {
+  width: var(--sb-shortcut-icon-size, 2rem);
+  height: var(--sb-shortcut-icon-size, 2rem);
+  border-radius: var(--sb-radius-s);
+}
+.shortcut-label {
+  font-size: var(--sb-shortcut-label-size, 0.75rem);
+}
+.shortcut-initial {
+  background: var(--sb-accent-gradient);
+  color: var(--sb-on-accent);
+  font-size: calc(var(--sb-shortcut-icon-size, 2rem) * 0.45);
+  font-weight: var(--sb-weight-semibold, 600);
+}
+
+/* Reorder drag (useDragReorder.ts). A running drag owns the tile transforms:
+   the fisheye is suspended, so the item rects measured at drag start are the
+   plain layout rects. The dragged tile is the ORIGINAL element (no clone —
+   plugin tiles live in shadow roots), lifted above its siblings; the marker
+   is a body-level overlay because a transformed ancestor would become the
+   containing block of a fixed child.
+
+   The tiles it passes step aside as it goes (reorderShift.ts). That shift is
+   written as `translate` while the magnify is a `transform`, so the two live
+   on separate properties: the rule below animates the stepping aside and
+   leaves the magnify to snap away, which is what the drag needs. */
+.zone-scroll[data-reordering] {
+  touch-action: none;
+  cursor: grabbing;
+}
+.zone-scroll[data-reordering] > *:not(.zone-drag-source) {
+  transition: translate var(--sb-dur-fast) var(--sb-ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The tiles still step aside — that is the drop indicator — they just stop
+     sliding. */
+  .zone-scroll[data-reordering] > *:not(.zone-drag-source) {
+    transition: none;
+  }
+}
+.zone-drag-source {
+  position: relative;
+  z-index: var(--sb-z-raised);
+  opacity: var(--sb-opacity-85, 0.85);
+  pointer-events: none;
+  /* No transition: an animated translate makes the dragged tile trail the
+     pointer by the whole duration. */
+  transition: none;
+  will-change: translate;
+}
+/* Follows the hole with the same timing as the tiles, or it would arrive
+   where the gap will be in 140 ms rather than where it is. */
+.zone-drop-marker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  /* Must match MARKER_WIDTH_PX in useDragReorder.ts. */
+  width: var(--sb-drag-marker-width, 2px);
+  border-radius: calc(var(--sb-drag-marker-width, 2px) / 2);
+  background: var(--sb-accent);
+  box-shadow: var(--sb-drag-marker-shadow, 0 0 6px var(--sb-accent));
+  pointer-events: none;
+  will-change: transform;
+  transition: transform var(--sb-dur-fast) var(--sb-ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-drop-marker {
+    transition: none;
+  }
+}
+
+/* Drop highlight while a file drag hovers the shortcut zone (dragDrop.ts). */
+.zone-drop-target {
+  outline: var(--sb-border-width, 1px) dashed var(--sb-accent);
+  outline-offset: -2px;
+  border-radius: var(--sb-radius-s);
+  background: color-mix(in srgb, var(--sb-accent) 12%, transparent);
+}
+
+/* Split divider grip; the .zone-divider hit area lives in the component. */
+.zone-divider-grip {
+  background: var(
+    --sb-edge,
+    color-mix(in srgb, var(--sb-text) 12%, transparent)
+  );
+  transition: background var(--sb-dur-fast) var(--sb-ease-out);
+}
+:where(:root:not([data-sb-pointer-outside]))
+  .zone-divider:hover
+  .zone-divider-grip {
+  background: var(--sb-accent);
+}
+
+:where(:root:not([data-sb-pointer-outside])) .bar-hover-foreground:hover {
+  color: var(--sb-text);
+}
+
+/* Flyout enter/exit — the slide direction is set per element via
+   --flyout-shift-y (see Flyout.tsx) */
+@keyframes flyoutY {
+  0% {
+    opacity: 0;
+    transform: translateY(var(--flyout-shift-y, 0)) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes flyoutOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+.notification-close {
+  inline-size: 2rem;
+  block-size: 2rem;
+  min-height: 2rem;
+  padding: 0;
+}
+
+/* Atmospheric desktop wallpaper (browser-dev only) */
+.smabar-desktop {
+  background-color: var(--sb-dev-desktop-bg, #050714);
+  background-image: var(
+    --sb-dev-desktop-glow,
+    radial-gradient(
+      900px circle at 12% 18%,
+      rgba(124, 58, 237, 0.45) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      800px circle at 82% 12%,
+      rgba(14, 165, 233, 0.38) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      900px circle at 78% 88%,
+      rgba(236, 72, 153, 0.32) 0%,
+      transparent 55%
+    ),
+    radial-gradient(
+      700px circle at 30% 78%,
+      rgba(34, 197, 94, 0.22) 0%,
+      transparent 55%
+    ),
+    linear-gradient(180deg, #060814 0%, #0a0d1f 50%, #050714 100%)
+  );
+}
+.smabar-desktop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(
+    --sb-dev-desktop-stars,
+    radial-gradient(1px 1px at 12% 22%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 32% 48%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(
+      1.5px 1.5px at 67% 18%,
+      rgba(255, 255, 255, 0.45),
+      transparent
+    ),
+    radial-gradient(1px 1px at 88% 72%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1px 1px at 45% 84%, rgba(255, 255, 255, 0.35), transparent),
+    radial-gradient(
+      1.5px 1.5px at 22% 65%,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    ),
+    radial-gradient(1px 1px at 75% 38%, rgba(255, 255, 255, 0.3), transparent)
+  );
+  opacity: var(--sb-opacity-6, 0.6);
+  pointer-events: none;
+}
+
+/* Desktop background blobs (browser-dev only) */
+@keyframes blob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -30px) scale(1.08);
+  }
+  66% {
+    transform: translate(-30px, 40px) scale(0.95);
+  }
+}

@@ -1,0 +1,1775 @@
+{
+  "generatedBy": "scripts/gen-kit-classes.py — do not hand-edit",
+  "classes": [
+    {
+      "name": "is-active",
+      "purpose": "Button group: selected segment, filled solid ink",
+      "example": "<button class=\"sb-btn is-active\">Week</button>",
+      "category": "actions"
+    },
+    {
+      "name": "is-copied",
+      "purpose": "Copy Button: set by the shell for 1.5s after a successful copy — swaps the icon to a check and tints it with --sb-success",
+      "example": "<button class=\"sb-copy is-copied\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "is-loading",
+      "purpose": "Button: blocks pointer input while keeping the variant's look; set aria-busy=\"true\" and place an inline .sb-spinner before the label",
+      "example": "<button class=\"sb-btn is-loading\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "is-selected",
+      "purpose": "Chip: selected filter chip, filled solid ink",
+      "example": "<button class=\"sb-chip is-selected\" type=\"button\" aria-pressed=\"true\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--danger",
+      "purpose": "Button: destructive actions — the only colored fill",
+      "example": "<button class=\"sb-btn sb-btn--danger\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--ghost",
+      "purpose": "Button: borderless, lowest visual weight",
+      "example": "<button class=\"sb-btn sb-btn--ghost\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--icon",
+      "purpose": "Button: square icon-only button, combine with sizes",
+      "example": "<button class=\"sb-btn sb-btn--icon\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--lg",
+      "purpose": "Button: large size using the shared type and spacing scale",
+      "example": "<button class=\"sb-btn sb-btn--lg\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--outline",
+      "purpose": "Button: transparent-background twin of the default secondary style, for tinted surfaces",
+      "example": "<button class=\"sb-btn sb-btn--outline\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--primary",
+      "purpose": "Button: main call to action: solid ink fill, shifts one ramp step on hover",
+      "example": "<button class=\"sb-btn sb-btn--primary\" type=\"button\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--sm",
+      "purpose": "Button: compact size using the shared type and spacing scale",
+      "example": "<button class=\"sb-btn sb-btn--sm\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-btn--soft",
+      "purpose": "Button: tertiary: gray fill without border",
+      "example": "<button class=\"sb-btn sb-btn--soft\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-chip",
+      "purpose": "Compact pill for filters and tags; selectable via .is-selected and dismissible via an embedded close control.",
+      "example": "<button class=\"sb-chip is-selected\" type=\"button\" aria-pressed=\"true\">Design</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-chip__close",
+      "purpose": "Chip: remove control inside a non-button chip; its hit area is extended to 24x24px invisibly (WCAG 2.5.8)",
+      "example": "<span class=\"sb-chip\">Design<button class=\"sb-chip__close\" aria-label=\"Remove\" data-action=\"remove\">&times;</button></span>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-close",
+      "purpose": "Standalone dismiss button (×) for modals, drawers, alerts, and toasts; the morph variant animates between X and chevron-down for disclosure triggers.",
+      "example": "<button class=\"sb-close\" type=\"button\" aria-label=\"Close\">&times;</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-close--morph",
+      "purpose": "Close button: bar-built icon driven by aria-expanded: \"false\" shows a chevron-down (collapsed), anything else an X (expanded); keep the button empty — no &times; glyph",
+      "example": "<button class=\"sb-close sb-close--morph\">…</button>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-copy",
+      "purpose": "A copy-to-clipboard button that copies a target element's text or a literal string and confirms success by swapping its icon to a check mark for 1.5 seconds.",
+      "example": "<div class=\"sb-input-group sb-copy-group\"><input class=\"sb-input\" id=\"share-url\" type=\"text\" value=\"https://example.com/invite/x7k2\" readonly><button class=\"sb-btn sb-btn--icon sb-copy\" type=\"button\" data-sb-copy=\"#share-url\" aria-label=\"Copy share link\"></button></div>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-copy-group",
+      "purpose": "Copy Button: add next to .sb-input-group when it pairs an input with a copy button — focusing the input draws ONE ring around the whole group instead of a clipped ring on the input alone; a tabbed copy button keeps its own focus outline",
+      "example": "<div class=\"sb-input-group sb-copy-group\">…</div>",
+      "category": "actions"
+    },
+    {
+      "name": "sb-card--accent",
+      "purpose": "Card: accent-tinted border",
+      "example": "<article class=\"sb-card sb-card--accent\">…</article>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card--interactive",
+      "purpose": "Card: for clickable cards: quiet surface-shift hover (background and border darken), no lift",
+      "example": "<article class=\"sb-card sb-card--interactive\">…</article>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card--laser",
+      "purpose": "Laser card: animated accent ring, 4s rotation; static under reduced motion",
+      "example": "<div class=\"sb-card sb-card--laser\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card--selectable",
+      "purpose": "Card: wrap the card in a <label> with a visually hidden radio/checkbox (the hidden attribute); the checked card gets the accent border and the laser ring — pure CSS via :has(). The card also exposes --sb-card-checked (0 unchecked, 1 checked) to all children, so inner content can react to the selection, e.g. opacity: var(--sb-card-checked) or color-mix percentages",
+      "example": "<article class=\"sb-card sb-card--selectable\">…</article>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card--soft",
+      "purpose": "Soft Card: soft-UI emphasis: dual-light modelling + lifted-corner depth (shadow sits under the EDGES, the middle stays clean). Borderless, radius-xl. Budget: at most ONE per view; never combine with other card effects",
+      "example": "<div class=\"sb-card sb-card--soft\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card-grid",
+      "purpose": "Card: auto-fit grid and container-query container; cards inside switch to a compact layout (shorter media, tighter padding) when the grid is narrower than 26rem",
+      "example": "<div class=\"sb-card-grid\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__body",
+      "purpose": "Card: body",
+      "example": "<div class=\"sb-card__body\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__checked-cue",
+      "purpose": "Card: ready-made react-to-selection status pill inside a selectable card: muted ghost pill by default, flips to the accent treatment with a check glyph while the card's input is checked (driven by --sb-card-checked, smooth transition)",
+      "example": "<div class=\"sb-card__checked-cue\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__footer",
+      "purpose": "Card: flex row for actions, separated by a top border",
+      "example": "<div class=\"sb-card__footer\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__header",
+      "purpose": "Card: icon + title row — icon and title always side by side, never stacked",
+      "example": "<div class=\"sb-card__header\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__icon",
+      "purpose": "Card: 2.5rem accent-tinted icon box; put any inline SVG inside",
+      "example": "<span class=\"sb-card__icon\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__media",
+      "purpose": "Card: image/video at the top edge, 16:9 by default",
+      "example": "<img class=\"sb-card__media\" src=\"sb-asset:cover.png\" alt=\"\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__text",
+      "purpose": "Card: text",
+      "example": "<p class=\"sb-card__text\">…</p>",
+      "category": "content"
+    },
+    {
+      "name": "sb-card__title",
+      "purpose": "Card: title",
+      "example": "<h3 class=\"sb-card__title\">…</h3>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code",
+      "purpose": "A framed code panel for <pre><code> snippets with an optional header row: language tag, filename, and a one-tap copy button (reuses the sb-copy hook). Monochrome by design — no syntax highlighting shipped, bring your own if you need it.",
+      "example": "<figure class=\"sb-code\"><figcaption class=\"sb-code__header\"><span class=\"sb-code__lang\">css</span><span class=\"sb-code__title\">theme.css</span><button class=\"sb-btn sb-btn--icon sb-btn--sm sb-btn--ghost sb-copy\" type=\"button\" data-sb-copy=\"#code-theme\" aria-label=\"Copy code\"></button></figcaption><pre class=\"sb-code__body\" tabindex=\"0\" role=\"region\" aria-label=\"theme.css source\"><code id=\"code-theme\">:root {--sb-radius-s: 0.375rem;--sb-font-sans: \"Inter\", sans-serif;}</code></pre></figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code--invert",
+      "purpose": "Code Box: terminal look: dark panel in BOTH color modes",
+      "example": "<figure class=\"sb-code sb-code--invert\">…</figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code--wrap",
+      "purpose": "Code Box: soft-wraps long lines instead of horizontal scrolling — for command one-liners and prose-like snippets",
+      "example": "<figure class=\"sb-code sb-code--wrap\">…</figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code__body",
+      "purpose": "Code Box: the <pre> itself; scrolls when the snippet outgrows --sb-code-max-height or the width — then add tabindex=\"0\", role=\"region\" and an aria-label so keyboard users can scroll it",
+      "example": "<pre class=\"sb-code__body\" tabindex=\"0\" role=\"region\" aria-label=\"theme.css source\">…</pre>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code__header",
+      "purpose": "Code Box: optional top row — language tag and/or filename on the left, copy button docks right automatically; omit the whole row for a bare panel",
+      "example": "<figcaption class=\"sb-code__header\">…</figcaption>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code__lang",
+      "purpose": "Code Box: optional uppercase language tag (e.g. bash, css, ts)",
+      "example": "<span class=\"sb-code__lang\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-code__title",
+      "purpose": "Code Box: optional mono filename label",
+      "example": "<span class=\"sb-code__title\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare",
+      "purpose": "Before/after image comparison slider: two stacked images, a draggable divider with handle, driven entirely by one transparent native range input.",
+      "example": "<div class=\"sb-compare\" data-sb-compare><img class=\"sb-compare__img sb-compare__img--before\" alt=\"Kitchen before the renovation\"><img class=\"sb-compare__img\" alt=\"Kitchen after the renovation\"><span class=\"sb-compare__divider\" aria-hidden=\"true\"></span><span class=\"sb-compare__label sb-compare__label--before\" aria-hidden=\"true\">Before</span><span class=\"sb-compare__label\" aria-hidden=\"true\">After</span><input class=\"sb-compare__range\" type=\"range\" min=\"0\" max=\"100\" value=\"50\" aria-label=\"How much of the before image to reveal\"></div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__divider",
+      "purpose": "Image compare: presentational divider line + drag handle following --sb-compare-pos; aria-hidden, pointer-events: none",
+      "example": "<span class=\"sb-compare__divider\" aria-hidden=\"true\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__img",
+      "purpose": "Image compare: both images; sized by --sb-compare-ratio (default 3 / 2) with object-fit: cover, so mismatched sources still align",
+      "example": "<img class=\"sb-compare__img sb-compare__img--before\" alt=\"Kitchen before the renovation\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__img--before",
+      "purpose": "Image compare: the FIRST image — clipped from the right, shown left of the divider",
+      "example": "<img class=\"sb-compare__img sb-compare__img--before\" alt=\"Kitchen before the renovation\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__label",
+      "purpose": "Image compare: corner caption chip, default top right (after side); aria-hidden — the real names live on the images' alt text and the range aria-label",
+      "example": "<span class=\"sb-compare__label sb-compare__label--before\" aria-hidden=\"true\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__label--before",
+      "purpose": "Image compare: moves the chip to the top left (before side)",
+      "example": "<span class=\"sb-compare__label sb-compare__label--before\" aria-hidden=\"true\">…</span>",
+      "category": "content"
+    },
+    {
+      "name": "sb-compare__range",
+      "purpose": "Image compare: full-area transparent <input type=\"range\" min=\"0\" max=\"100\"> — THE control; its value attribute sets the initial divider position",
+      "example": "<input class=\"sb-compare__range\" type=\"range\" min=\"0\" max=\"100\" value=\"50\" aria-label=\"How much of the before image to reveal\">",
+      "category": "content"
+    },
+    {
+      "name": "sb-display",
+      "purpose": "Large hero typography, caps at 3.5625rem (57px).",
+      "example": "<h1 class=\"sb-display\">Payments for platforms</h1>",
+      "category": "content"
+    },
+    {
+      "name": "sb-empty",
+      "purpose": "Dashed placeholder panel shown when a list or view has no data yet, with icon, title, explanatory text, and an optional action.",
+      "example": "<div class=\"sb-empty\"><div class=\"sb-empty__icon\" aria-hidden=\"true\"><svg width=\"36\" height=\"36\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"22 12 16 12 14 15 10 15 8 12 2 12\"></polyline><path d=\"M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z\"></path></svg></div><p class=\"sb-empty__title\">No messages yet</p><p class=\"sb-empty__text\">When someone writes to you, it will show up here.</p></div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-empty__icon",
+      "purpose": "Empty state: decorative inline stroke SVG (no emoji)",
+      "example": "<div class=\"sb-empty__icon\" aria-hidden=\"true\">…</div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-empty__text",
+      "purpose": "Empty state: text",
+      "example": "<p class=\"sb-empty__text\">…</p>",
+      "category": "content"
+    },
+    {
+      "name": "sb-empty__title",
+      "purpose": "Empty state: title",
+      "example": "<p class=\"sb-empty__title\">…</p>",
+      "category": "content"
+    },
+    {
+      "name": "sb-enter",
+      "purpose": "Time-based entrance that plays once on page load — for heroes and other above-the-fold content. sb-enter animates one element; sb-enter-group staggers its direct children by 45 ms steps (up to 5).",
+      "example": "<header class=\"sb-enter-group\"><h1 class=\"sb-display\">Loads with a staggered entrance</h1><p class=\"sb-muted\">Each direct child fades and rises in sequence.</p></header>",
+      "category": "content"
+    },
+    {
+      "name": "sb-enter-group",
+      "purpose": "Time-based entrance that plays once on page load — for heroes and other above-the-fold content. sb-enter animates one element; sb-enter-group staggers its direct children by 45 ms steps (up to 5).",
+      "example": "<header class=\"sb-enter-group\"><h1 class=\"sb-display\">Loads with a staggered entrance</h1><p class=\"sb-muted\">Each direct child fades and rises in sequence.</p></header>",
+      "category": "content"
+    },
+    {
+      "name": "sb-grain",
+      "purpose": "Decorative opt-in effect — use sparingly (max one per page); not part of the default look. Film-grain texture overlay rendered via ::after, no images or extra markup.",
+      "example": "<div class=\"sb-card sb-grain\"><div class=\"sb-card__body\"><h3 class=\"sb-card__title\">Textured card</h3><p class=\"sb-card__text\">Subtle film grain on top of the surface.</p></div></div>",
+      "category": "content"
+    },
+    {
+      "name": "sb-mesh",
+      "purpose": "Decorative opt-in effect — use sparingly (max one per page); not part of the default look. Gradient-mesh background that inherits the accent: a quiet gray mist with the default ink accent, recolored automatically by a branded --sb-accent plus --sb-accent-2; adapts to both color modes.",
+      "example": "<section class=\"sb-card sb-mesh\"><div class=\"sb-card__body\"><h2 class=\"sb-card__title\">Feature panel</h2><p class=\"sb-card__text\">Gradient mesh background, no images.</p></div></section>",
+      "category": "content"
+    },
+    {
+      "name": "sb-press",
+      "purpose": "Tactile press feedback that scales any element down slightly while it is active.",
+      "example": "<button class=\"sb-btn sb-btn--primary sb-press\">Save</button>",
+      "category": "content"
+    },
+    {
+      "name": "sb-prose",
+      "purpose": "Readable long-form typography wrapper for articles and docs: spacing, headings, lists, blockquotes, code, tables, rules, and images on plain semantic HTML.",
+      "example": "<article class=\"sb-prose\"><h2>Heading</h2><p>Body text with <code>inline code</code>.</p><blockquote>A quoted thought.</blockquote></article>",
+      "category": "content"
+    },
+    {
+      "name": "sb-quote",
+      "purpose": "Standalone pull quote (figure > blockquote + figcaption) — typography only, with an ink hairline before the cited source. Use --center for testimonials, --plain inside long-form text.",
+      "example": "<figure class=\"sb-quote\"><blockquote class=\"sb-quote__text\">Design is how it works.</blockquote><figcaption class=\"sb-quote__cite\">Jane Doe — CTO, Acme</figcaption></figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-quote--center",
+      "purpose": "Quote: centered testimonial style",
+      "example": "<figure class=\"sb-quote sb-quote--center\">…</figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-quote--plain",
+      "purpose": "Quote: borderless, for prose contexts",
+      "example": "<figure class=\"sb-quote sb-quote--plain\">…</figure>",
+      "category": "content"
+    },
+    {
+      "name": "sb-quote__cite",
+      "purpose": "Quote: the <figcaption> with the source",
+      "example": "<figcaption class=\"sb-quote__cite\">…</figcaption>",
+      "category": "content"
+    },
+    {
+      "name": "sb-quote__text",
+      "purpose": "Quote: the <blockquote>",
+      "example": "<blockquote class=\"sb-quote__text\">…</blockquote>",
+      "category": "content"
+    },
+    {
+      "name": "sb-timeline",
+      "purpose": "Vertical list of dated events with accent markers and a connecting line, for changelogs and activity feeds.",
+      "example": "<ol class=\"sb-timeline\"><li><time class=\"sb-timeline__time\" datetime=\"2026-06-01\">June 1, 2026</time><p class=\"sb-timeline__title\">v1.0 released</p><p class=\"sb-muted\">First stable release.</p></li></ol>",
+      "category": "content"
+    },
+    {
+      "name": "sb-timeline__time",
+      "purpose": "Timeline: use a <time> element",
+      "example": "<time class=\"sb-timeline__time\" datetime=\"2026-06-01\">…</time>",
+      "category": "content"
+    },
+    {
+      "name": "sb-timeline__title",
+      "purpose": "Timeline: title",
+      "example": "<p class=\"sb-timeline__title\">…</p>",
+      "category": "content"
+    },
+    {
+      "name": "is-done",
+      "purpose": "Countdown: set by the shell on the root at zero — mutes the all-zero digits",
+      "example": "<div class=\"sb-countdown is-done\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-avatar",
+      "purpose": "A circular user image or initials fallback in three sizes, with an overlapping group for showing multiple people.",
+      "example": "<span class=\"sb-avatar\" role=\"img\" aria-label=\"Jane Doe\">JD</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-avatar--lg",
+      "purpose": "Avatar: large size",
+      "example": "<span class=\"sb-avatar sb-avatar--lg\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-avatar--sm",
+      "purpose": "Avatar: small size",
+      "example": "<span class=\"sb-avatar sb-avatar--sm\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-avatar-group",
+      "purpose": "Avatar: wrapper that overlaps consecutive avatars",
+      "example": "<div class=\"sb-avatar-group\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge--danger",
+      "purpose": "Badge: error / destructive status — renders a leading dot",
+      "example": "<span class=\"sb-badge sb-badge--danger\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge--info",
+      "purpose": "Badge: informational status — renders a leading dot",
+      "example": "<span class=\"sb-badge sb-badge--info\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge--ok",
+      "purpose": "Badge: success status — renders a leading dot",
+      "example": "<span class=\"sb-badge sb-badge--ok\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-badge--warn",
+      "purpose": "Badge: warning status — renders a leading dot",
+      "example": "<span class=\"sb-badge sb-badge--warn\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars",
+      "purpose": "A CSS-only vertical bar chart — fixed-height columns whose bars map --sb-chart-value against --sb-chart-max, with values above each bar, labels below, and a 1px baseline.",
+      "example": "<div class=\"sb-chart-bars\" role=\"img\" aria-label=\"Deploys per day: Mon 14, Tue 9, Wed 17\" style=\"--sb-chart-max: 20\"><div class=\"sb-chart-bars__item\" style=\"--sb-chart-value: 14\"><span class=\"sb-chart-bars__bar\"><span class=\"sb-chart-bars__value\">14</span></span><span class=\"sb-chart-bars__label\">Mon</span></div><div class=\"sb-chart-bars__item\" style=\"--sb-chart-value: 9\"><span class=\"sb-chart-bars__bar\"><span class=\"sb-chart-bars__value\">9</span></span><span class=\"sb-chart-bars__label\">Tue</span></div><div class=\"sb-chart-bars__item sb-chart-bars__item--accent\" style=\"--sb-chart-value: 17\"><span class=\"sb-chart-bars__bar\"><span class=\"sb-chart-bars__value\">17</span></span><span class=\"sb-chart-bars__label\">Wed</span></div></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars__bar",
+      "purpose": "Bar chart: the bar itself; neutral by default",
+      "example": "<span class=\"sb-chart-bars__bar\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars__item",
+      "purpose": "Bar chart: one column; carries --sb-chart-value",
+      "example": "<div class=\"sb-chart-bars__item\" style=\"--sb-chart-value: 14\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars__item--accent",
+      "purpose": "Bar chart: accent-colored bar for the one highlighted period",
+      "example": "<div class=\"sb-chart-bars__item sb-chart-bars__item--accent\" style=\"--sb-chart-value: 17\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars__label",
+      "purpose": "Bar chart: axis label under the column, truncates with ellipsis",
+      "example": "<span class=\"sb-chart-bars__label\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-bars__value",
+      "purpose": "Bar chart: small tabular number floating above the bar — place it inside the bar element",
+      "example": "<span class=\"sb-chart-bars__value\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-donut",
+      "purpose": "A CSS-only donut chart built from a conic-gradient with up to four segments fed via custom properties, a quiet remainder track, and a center label slot for the headline value.",
+      "example": "<div class=\"sb-chart-donut\" role=\"img\" aria-label=\"Storage used: 64 of 100 gigabytes\" style=\"--sb-chart-v1: 64\"><span class=\"sb-chart-donut__label\"><span class=\"sb-chart-donut__value\">64%</span><span class=\"sb-chart-donut__caption\">used</span></span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-donut__caption",
+      "purpose": "Donut chart: muted line under the value",
+      "example": "<span class=\"sb-chart-donut__caption\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-donut__label",
+      "purpose": "Donut chart: center slot, stacked vertically",
+      "example": "<span class=\"sb-chart-donut__label\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-donut__value",
+      "purpose": "Donut chart: headline number, scales with --sb-chart-size",
+      "example": "<span class=\"sb-chart-donut__value\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-legend",
+      "purpose": "A reusable inline legend for charts — square series swatches colored via --sb-chart-color with optional tabular values per entry.",
+      "example": "<ul class=\"sb-chart-legend\"><li class=\"sb-chart-legend__item\">Documents <span class=\"sb-chart-legend__value\">38%</span></li><li class=\"sb-chart-legend__item\" style=\"--sb-chart-color: var(--sb-chart-2)\">Media <span class=\"sb-chart-legend__value\">27%</span></li></ul>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-legend__item",
+      "purpose": "Chart legend: swatch + text; set --sb-chart-color to the series color (--sb-chart-1..4 are available here)",
+      "example": "<li class=\"sb-chart-legend__item\">…</li>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-legend__value",
+      "purpose": "Chart legend: optional value after the series name",
+      "example": "<span class=\"sb-chart-legend__value\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-rows",
+      "purpose": "A CSS-only horizontal bar chart as a single three-column grid — auto-sized labels, comparable bars on a shared track, and right-aligned tabular values.",
+      "example": "<div class=\"sb-chart-rows\" role=\"img\" aria-label=\"Requests by region: Frankfurt 412k, Virginia 268k\" style=\"--sb-chart-max: 450\"><span class=\"sb-chart-rows__label\">Frankfurt</span><span class=\"sb-chart-rows__bar\" style=\"--sb-chart-value: 412\"></span><span class=\"sb-chart-rows__value\">412k</span><span class=\"sb-chart-rows__label\">Virginia</span><span class=\"sb-chart-rows__bar\" style=\"--sb-chart-value: 268\"></span><span class=\"sb-chart-rows__value\">268k</span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-rows__bar",
+      "purpose": "Bar rows: carries --sb-chart-value; fill painted over a quiet full-width track",
+      "example": "<span class=\"sb-chart-rows__bar\" style=\"--sb-chart-value: 412\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-rows__bar--accent",
+      "purpose": "Bar rows: accent fill for the one highlighted row",
+      "example": "<span class=\"sb-chart-rows__bar sb-chart-rows__bar--accent\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-rows__label",
+      "purpose": "Bar rows: row label, truncates beyond --sb-chart-label-max",
+      "example": "<span class=\"sb-chart-rows__label\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chart-rows__value",
+      "purpose": "Bar rows: right-aligned tabular number",
+      "example": "<span class=\"sb-chart-rows__value\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat",
+      "purpose": "A message thread for messenger- and AI-assistant UIs — avatar rows with bubbles, an author/time caption, delivery status as quiet text, and a three-dot typing indicator; own messages mirror to the inline end with a monochrome ink fill.",
+      "example": "<div class=\"sb-chat\" role=\"log\" aria-label=\"Conversation with support\"><div class=\"sb-chat__message\"><span class=\"sb-avatar sb-avatar--sm\" role=\"img\" aria-label=\"Mia Krüger\">MK</span><div class=\"sb-chat__body\"><div class=\"sb-chat__meta\"><span class=\"sb-chat__author\">Mia (Support)</span> <time datetime=\"2026-06-11T14:02\">14:02</time></div><div class=\"sb-chat__bubble\">Found the invoice. I'll reissue it with the corrected VAT rate today.</div></div></div><div class=\"sb-chat__message sb-chat__message--self\"><div class=\"sb-chat__body\"><div class=\"sb-chat__meta\"><span class=\"sb-chat__author\">You</span> <time datetime=\"2026-06-11T14:03\">14:03</time></div><div class=\"sb-chat__bubble\">Perfect, thank you!</div><span class=\"sb-chat__status\">Delivered</span></div></div></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__author",
+      "purpose": "Chat: author name inside the meta line",
+      "example": "<span class=\"sb-chat__author\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__body",
+      "purpose": "Chat: column holding meta, bubble, and status; capped at --sb-chat-max-width",
+      "example": "<div class=\"sb-chat__body\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__bubble",
+      "purpose": "Chat: the speech bubble; supports multiple <p> children",
+      "example": "<div class=\"sb-chat__bubble\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__message",
+      "purpose": "Chat: one message row: optional sb-avatar + sb-chat__body; messages appended later fade in",
+      "example": "<div class=\"sb-chat__message\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__message--self",
+      "purpose": "Chat: own/user message — aligns to the inline end, bubble fills with accent ink",
+      "example": "<div class=\"sb-chat__message sb-chat__message--self\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__meta",
+      "purpose": "Chat: caption line above the bubble: author + <time>",
+      "example": "<div class=\"sb-chat__meta\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__status",
+      "purpose": "Chat: delivery status under the bubble — plain caption text like \"Delivered\"",
+      "example": "<span class=\"sb-chat__status\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-chat__typing",
+      "purpose": "Chat: typing indicator inside a bubble: three empty <span> dots, aria-hidden, paired with sb-sr-only text",
+      "example": "<div class=\"sb-chat__typing\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown",
+      "purpose": "A live countdown to a target date with stat-sized digits and caption labels: the shell parses data-sb-countdown, updates the author-written part slots every second, and at zero clears the timer, sets .is-done and reveals an optional done message.",
+      "example": "<div class=\"sb-countdown\" data-sb-countdown=\"2027-03-01T09:00\" role=\"timer\" aria-label=\"Time until launch\"><div class=\"sb-countdown__segment\"><span class=\"sb-countdown__value\" data-sb-countdown-part=\"days\">00</span><span class=\"sb-countdown__label\">Days</span></div><div class=\"sb-countdown__segment\"><span class=\"sb-countdown__value\" data-sb-countdown-part=\"hours\">00</span><span class=\"sb-countdown__label\">Hours</span></div><div class=\"sb-countdown__segment\"><span class=\"sb-countdown__value\" data-sb-countdown-part=\"minutes\">00</span><span class=\"sb-countdown__label\">Minutes</span></div><div class=\"sb-countdown__segment\"><span class=\"sb-countdown__value\" data-sb-countdown-part=\"seconds\">00</span><span class=\"sb-countdown__label\">Seconds</span></div><p class=\"sb-countdown__done\" data-sb-countdown-done role=\"status\" hidden>We are live.</p></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown--boxed",
+      "purpose": "Countdown: each segment sits on its own small surface tile",
+      "example": "<div class=\"sb-countdown sb-countdown--boxed\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown__done",
+      "purpose": "Countdown: optional finished message with data-sb-countdown-done and the hidden attribute; the shell unhides it at zero (fade+rise entrance)",
+      "example": "<p class=\"sb-countdown__done\" data-sb-countdown-done role=\"status\" hidden>…</p>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown__label",
+      "purpose": "Countdown: caption label under the value (Days, Hours, …)",
+      "example": "<span class=\"sb-countdown__label\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown__segment",
+      "purpose": "Countdown: one time unit: value on top, label below",
+      "example": "<div class=\"sb-countdown__segment\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-countdown__value",
+      "purpose": "Countdown: the digits — carries data-sb-countdown-part=\"days|hours|minutes|seconds\"; the shell only rewrites its textContent (zero-padded to 2 digits)",
+      "example": "<span class=\"sb-countdown__value\" data-sb-countdown-part=\"days\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator",
+      "purpose": "A positioned notification dot or count pill anchored to the corner of another element (avatar, icon button) — top-end by default, bottom-end for online status, with semantic status colors and an optional background-colored ring for clean overlap.",
+      "example": "<span class=\"sb-indicator\"><button class=\"sb-btn sb-btn--icon sb-btn--outline\" type=\"button\" aria-label=\"Notifications, 3 unread\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9\"></path><path d=\"M10.3 21a1.94 1.94 0 0 0 3.4 0\"></path></svg></button><span class=\"sb-indicator__count\" aria-hidden=\"true\">3</span></span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--bottom",
+      "purpose": "Indicator: bottom-end placement — the classic online-status spot on avatars",
+      "example": "<span class=\"sb-indicator sb-indicator--bottom\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--danger",
+      "purpose": "Indicator: error / busy status color",
+      "example": "<span class=\"sb-indicator sb-indicator--danger\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--info",
+      "purpose": "Indicator: informational status color",
+      "example": "<span class=\"sb-indicator sb-indicator--info\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--ok",
+      "purpose": "Indicator: success / online status color",
+      "example": "<span class=\"sb-indicator sb-indicator--ok\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--ring",
+      "purpose": "Indicator: background-colored ring around the marker for clean overlap on avatars; override --sb-indicator-ring-color when the anchor sits on a card surface",
+      "example": "<span class=\"sb-indicator sb-indicator--ring\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator--warn",
+      "purpose": "Indicator: warning / away status color",
+      "example": "<span class=\"sb-indicator sb-indicator--warn\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator__count",
+      "purpose": "Indicator: tiny numeric pill (tabular numerals); mark it aria-hidden and carry the number in the anchor's accessible name",
+      "example": "<span class=\"sb-indicator__count\" aria-hidden=\"true\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-indicator__dot",
+      "purpose": "Indicator: small filled circle, no text — pair it with a visually hidden text alternative",
+      "example": "<span class=\"sb-indicator__dot\"></span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-list--interactive",
+      "purpose": "List: items are links or buttons; adds hover feedback and full-width rows",
+      "example": "<ul class=\"sb-list sb-list--interactive\">…</ul>",
+      "category": "data"
+    },
+    {
+      "name": "sb-list__item",
+      "purpose": "List: row — <li> in static lists, <a>/<button> in interactive lists",
+      "example": "<li class=\"sb-list__item\">…</li>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat",
+      "purpose": "A key metric block with a large value, a muted label, and an optional up/down delta for dashboards.",
+      "example": "<div class=\"sb-stat\"><span class=\"sb-stat__value\">2,481</span><span class=\"sb-stat__label\">Active users</span><span class=\"sb-stat__delta sb-stat__delta--up\">&#8593; 12.4%</span></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat--center",
+      "purpose": "Stat: centers value, label and delta — for stat rows in centered heros or bands",
+      "example": "<div class=\"sb-stat sb-stat--center\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat__delta",
+      "purpose": "Stat: change vs. previous period",
+      "example": "<span class=\"sb-stat__delta sb-stat__delta--up\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat__delta--down",
+      "purpose": "Stat: negative change (red)",
+      "example": "<span class=\"sb-stat__delta sb-stat__delta--down\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat__delta--up",
+      "purpose": "Stat: positive change (green)",
+      "example": "<span class=\"sb-stat__delta sb-stat__delta--up\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat__label",
+      "purpose": "Stat: what the number measures",
+      "example": "<span class=\"sb-stat__label\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-stat__value",
+      "purpose": "Stat: the large number",
+      "example": "<span class=\"sb-stat__value\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table",
+      "purpose": "A styled data table inside a scroll wrapper — caption-style uppercase header, hairline row dividers, tabular numerals — with hover, striped, sticky-header, numeric-column and person-cell options for dense tabular data.",
+      "example": "<div class=\"sb-table-wrap\" role=\"region\" aria-labelledby=\"deploys-caption\" tabindex=\"0\"><table class=\"sb-table sb-table--hover\"><caption class=\"sb-sr-only\" id=\"deploys-caption\">Latest deployments</caption><thead><tr><th scope=\"col\">Owner</th><th scope=\"col\">Status</th><th scope=\"col\" class=\"sb-table__num\">Duration</th></tr></thead><tbody><tr><td><span class=\"sb-table__person\"><span class=\"sb-avatar sb-avatar--sm\" role=\"img\" aria-label=\"Ada Lovelace\">AL</span>Ada Lovelace</span></td><td><span class=\"sb-badge sb-badge--ok\">Passing</span></td><td class=\"sb-table__num\">2m 14s</td></tr><tr><td><span class=\"sb-table__person\"><span class=\"sb-avatar sb-avatar--sm\" role=\"img\" aria-label=\"Grace Hopper\">GH</span>Grace Hopper</span></td><td><span class=\"sb-badge sb-badge--danger\">Failed</span></td><td class=\"sb-table__num\">38s</td></tr></tbody></table></div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table--editable",
+      "purpose": "Table: cells hold borderless inputs for inline editing",
+      "example": "<table class=\"sb-table sb-table--editable\">…</table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table--hover",
+      "purpose": "Table: row highlight on hover",
+      "example": "<table class=\"sb-table sb-table--hover\">…</table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table--spotlight",
+      "purpose": "Table: focused row stays sharp, all other rows blur and dim (pure CSS :focus-within; blur removed under prefers-reduced-motion)",
+      "example": "<table class=\"sb-table sb-table--spotlight\">…</table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table--sticky",
+      "purpose": "Table: sticky header; wrapper becomes scrollable up to --sb-table-max-height",
+      "example": "<table class=\"sb-table sb-table--sticky\">…</table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table--striped",
+      "purpose": "Table: zebra rows",
+      "example": "<table class=\"sb-table sb-table--striped\">…</table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table-filter__count",
+      "purpose": "Filterable Table: optional result counter carrying data-sb-filter-count=\"<same table selector>\"; the shell writes \"8 of 24 rows\" into it (debounced 400ms) — give it role=\"status\" so updates are announced politely",
+      "example": "<p class=\"sb-table-filter__count\" data-sb-filter-count=\"#users-table\" role=\"status\">…</p>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table-filter__empty",
+      "purpose": "Filterable Table: optional empty-state message inside the table's .sb-table-wrap, after the table; author it with role=\"status\" and hidden — the shell removes hidden when no row matches",
+      "example": "<p class=\"sb-table-filter__empty\" role=\"status\" hidden>…</p>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table-wrap",
+      "purpose": "Table: scroll wrapper — always place around the table",
+      "example": "<div class=\"sb-table-wrap\" role=\"region\" aria-labelledby=\"deploys-caption\" tabindex=\"0\">…</div>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table__input",
+      "purpose": "Table: borderless cell input (use inside sb-table--editable, with aria-label)",
+      "example": "<input class=\"sb-table__input\" value=\"12\" aria-label=\"Amount\">",
+      "category": "data"
+    },
+    {
+      "name": "sb-table__num",
+      "purpose": "Table: right-aligns a numeric column — put it on the column's th AND every td (numbers render tabular automatically)",
+      "example": "<table><thead><tr><th scope=\"col\" class=\"sb-table__num\">…</th></tr></thead></table>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table__person",
+      "purpose": "Table: span inside a td that composes an avatar (sb-avatar sb-avatar--sm) and a name on one line",
+      "example": "<span class=\"sb-table__person\">…</span>",
+      "category": "data"
+    },
+    {
+      "name": "sb-table__sort",
+      "purpose": "Sortable Table: a <button type=\"button\"> wrapping the label inside a th[data-sb-sort]; fills the cell and renders the sort chevron — use data-sb-sort=\"number\" on the th for numeric columns",
+      "example": "<button type=\"button\" class=\"sb-table__sort\">…</button>",
+      "category": "data"
+    },
+    {
+      "name": "sb-tree",
+      "purpose": "File-explorer style directory tree built from nested lists and native <details> folders; use it for file browsers, docs sidebars, or any expandable hierarchy.",
+      "example": "<ul class=\"sb-tree\"><li><details class=\"sb-tree__dir\" open><summary>src</summary><ul class=\"sb-tree__group\"><li><a class=\"sb-tree__leaf is-active\" href=\"https://example.com\" aria-current=\"page\">app.css</a></li><li><a class=\"sb-tree__leaf\" href=\"https://example.com\">app.js</a></li></ul></details></li><li><a class=\"sb-tree__leaf\" href=\"https://example.com\">README.md</a></li></ul>",
+      "category": "data"
+    },
+    {
+      "name": "sb-tree__dir",
+      "purpose": "Tree: on a <details> wrapping a folder; its <summary> is the clickable folder row (chevron rotates on [open])",
+      "example": "<details class=\"sb-tree__dir\" open>…</details>",
+      "category": "data"
+    },
+    {
+      "name": "sb-tree__group",
+      "purpose": "Tree: on the nested <ul> inside a folder; draws the indent guide line",
+      "example": "<ul class=\"sb-tree__group\">…</ul>",
+      "category": "data"
+    },
+    {
+      "name": "sb-tree__leaf",
+      "purpose": "Tree: file row, an <a> or <button>; optional leading inline SVG icon",
+      "example": "<a class=\"sb-tree__leaf is-active\" href=\"https://example.com\" aria-current=\"page\">…</a>",
+      "category": "data"
+    },
+    {
+      "name": "sb-accordion",
+      "purpose": "A stack of native <details> panels for FAQs and grouped content; every panel opens and closes on its own.",
+      "example": "<div class=\"sb-accordion\"><details class=\"sb-accordion-item\" name=\"faq\" open><summary>Question one</summary><div class=\"sb-accordion-item__body\">Answer one.</div></details><details class=\"sb-accordion-item\" name=\"faq\"><summary>Question two</summary><div class=\"sb-accordion-item__body\">Answer two.</div></details></div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-accordion-item",
+      "purpose": "Accordion: goes on each <details>",
+      "example": "<details class=\"sb-accordion-item\" name=\"faq\" open>…</details>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-accordion-item__body",
+      "purpose": "Accordion: content wrapper inside <details>",
+      "example": "<div class=\"sb-accordion-item__body\">…</div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-collapsible",
+      "purpose": "A single borderless <details> disclosure for inline show/hide content such as advanced options or fine print.",
+      "example": "<details class=\"sb-collapsible\"><summary>Show advanced options</summary><div class=\"sb-collapsible__body\">Hidden content revealed on demand.</div></details>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-collapsible__body",
+      "purpose": "Collapsible: body",
+      "example": "<div class=\"sb-collapsible__body\">…</div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-scroll-area",
+      "purpose": "A height-constrained block with a thin, token-themed scrollbar for long lists, logs, or legal text.",
+      "example": "<div class=\"sb-scroll-area\" role=\"region\" aria-label=\"Changelog\" tabindex=\"0\"><p>Long content…</p></div>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler",
+      "purpose": "Clamps long text to a few lines (default 3, via --sb-spoiler-lines) behind a native Show more / Show less disclosure for bios, reviews, and changelogs.",
+      "example": "<details class=\"sb-spoiler\"><summary class=\"sb-spoiler__toggle\"><span class=\"sb-spoiler__more\">Show more</span><span class=\"sb-spoiler__less\">Show less</span><svg class=\"sb-spoiler__chevron\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"></path></svg></summary><p class=\"sb-spoiler__content\">Long text that gets clamped to three lines until the reader asks for the rest…</p></details>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler__chevron",
+      "purpose": "Spoiler: optional stroke icon inside the toggle, rotates 180° when open",
+      "example": "<svg class=\"sb-spoiler__chevron\" aria-hidden=\"true\">…</svg>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler__content",
+      "purpose": "Spoiler: the clamped text — keep it ONE flowing block (a single <p>) so the animated reveal lines up",
+      "example": "<p class=\"sb-spoiler__content\">…</p>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler__less",
+      "purpose": "Spoiler: label span shown while expanded",
+      "example": "<span class=\"sb-spoiler__less\">…</span>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler__more",
+      "purpose": "Spoiler: label span shown while collapsed",
+      "example": "<span class=\"sb-spoiler__more\">…</span>",
+      "category": "disclosure"
+    },
+    {
+      "name": "sb-spoiler__toggle",
+      "purpose": "Spoiler: native <summary> toggle inside the enclosing <details>",
+      "example": "<summary class=\"sb-spoiler__toggle\">…</summary>",
+      "category": "disclosure"
+    },
+    {
+      "name": "is-current",
+      "purpose": "Stepper: active step (accent ring); always pair with aria-current=\"step\", which is styled identically",
+      "example": "<li class=\"sb-stepper__step is-current\" aria-current=\"step\">…</li>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert",
+      "purpose": "Inline status message that highlights success, warning, danger, or info context directly in the page flow.",
+      "example": "<div class=\"sb-alert sb-alert--ok\" role=\"alert\"><span class=\"sb-alert__icon\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"m8.5 12.5 2.5 2.5 4.5-5\"></path></svg></span><div><div class=\"sb-alert__title\">Saved</div><div class=\"sb-alert__text\">Your changes have been stored.</div></div></div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert--danger",
+      "purpose": "Alert: error",
+      "example": "<div class=\"sb-alert sb-alert--danger\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert--info",
+      "purpose": "Alert: neutral information (default color)",
+      "example": "<div class=\"sb-alert sb-alert--info\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert--ok",
+      "purpose": "Alert: success",
+      "example": "<div class=\"sb-alert sb-alert--ok\" role=\"alert\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert--warn",
+      "purpose": "Alert: warning",
+      "example": "<div class=\"sb-alert sb-alert--warn\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert__icon",
+      "purpose": "Alert: optional leading icon (inline stroke SVG, Lucide-style), colored by the variant",
+      "example": "<span class=\"sb-alert__icon\" aria-hidden=\"true\">…</span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert__text",
+      "purpose": "Alert: text",
+      "example": "<div class=\"sb-alert__text\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-alert__title",
+      "purpose": "Alert: title",
+      "example": "<div class=\"sb-alert__title\">…</div>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-skeleton",
+      "purpose": "Shimmering placeholder that mirrors upcoming content while it loads; sized by its invisible placeholder text.",
+      "example": "<p class=\"sb-skeleton\">Placeholder line that defines the width</p>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-spinner",
+      "purpose": "Rotating loading indicator for indeterminate waits; scales with font-size.",
+      "example": "<span class=\"sb-spinner\" role=\"status\" aria-label=\"Loading\"></span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-stepper",
+      "purpose": "Progress indicator for multi-step flows — an ordered list with auto-numbered circle markers, connector lines and done/current states; pure CSS, horizontal by default or vertical.",
+      "example": "<ol class=\"sb-stepper\" role=\"list\" aria-label=\"Checkout progress\"><li class=\"sb-stepper__step is-done\"><span class=\"sb-stepper__marker\" aria-hidden=\"true\"></span><span class=\"sb-stepper__label\">Account <span class=\"sb-sr-only\">(completed)</span></span></li><li class=\"sb-stepper__step is-current\" aria-current=\"step\"><span class=\"sb-stepper__marker\" aria-hidden=\"true\"></span><span class=\"sb-stepper__label\">Shipping</span></li><li class=\"sb-stepper__step\"><span class=\"sb-stepper__marker\" aria-hidden=\"true\"></span><span class=\"sb-stepper__label\">Payment <span class=\"sb-sr-only\">(not completed)</span></span></li></ol>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-stepper--vertical",
+      "purpose": "Stepper: stacks the steps with the connector running down along the markers",
+      "example": "<ol class=\"sb-stepper sb-stepper--vertical\">…</ol>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-stepper__label",
+      "purpose": "Stepper: step name; append visually hidden \"(completed)\" / \"(not completed)\" via .sb-sr-only",
+      "example": "<span class=\"sb-stepper__label\">…</span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-stepper__marker",
+      "purpose": "Stepper: decorative circle (number or check mark) — set aria-hidden=\"true\"",
+      "example": "<span class=\"sb-stepper__marker\" aria-hidden=\"true\">…</span>",
+      "category": "feedback"
+    },
+    {
+      "name": "sb-stepper__step",
+      "purpose": "Stepper: an <li>; numbered automatically via CSS counters",
+      "example": "<li class=\"sb-stepper__step is-done\">…</li>",
+      "category": "feedback"
+    },
+    {
+      "name": "is-in-range",
+      "purpose": "Date range: set by the shell on .sb-datepicker__day cells strictly between the endpoints (quiet gray surface band; override via --sb-daterange-range-bg)",
+      "example": "<div class=\"sb-daterange is-in-range\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "is-range-end",
+      "purpose": "Date range: set by the shell on the end day; squares its inline-start corners",
+      "example": "<div class=\"sb-daterange is-range-end\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "is-range-start",
+      "purpose": "Date range: set by the shell on the start day; squares its inline-end corners so the band connects",
+      "example": "<div class=\"sb-daterange is-range-start\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-check",
+      "purpose": "Custom-drawn checkbox and radio inputs that match the theme — wrap the native input and its text in a .sb-check label. Set --sb-radio-radius once (default 50%) to switch every radio from round to rounded-square; the checked dot follows the shape.",
+      "example": "<label class=\"sb-check\"><input type=\"checkbox\" checked> Email me updates</label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-combobox",
+      "purpose": "Combobox: add alongside sb-input on the <input> (chevron styling)",
+      "example": "<input class=\"sb-input sb-combobox\" type=\"text\" list=\"frameworks\" placeholder=\"Type or pick…\">",
+      "category": "forms"
+    },
+    {
+      "name": "sb-combobox-field",
+      "purpose": "Text input combined with a <datalist>: type to filter suggestions or enter a free value. With data-sb-combobox on the wrapper, the shell replaces the browser's unstylable, OS-themed datalist popup with a fully themed listbox (filtering, ArrowDown/Up, Enter commits, Esc closes); without the shell the native datalist keeps working as the fallback.",
+      "example": "<div class=\"sb-combobox-field\" data-sb-combobox><input class=\"sb-input sb-combobox\" type=\"text\" list=\"frameworks\" placeholder=\"Type or pick…\"><datalist id=\"frameworks\"><option value=\"Astro\"></option><option value=\"Svelte\"></option></datalist></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker",
+      "purpose": "Month calendar for picking a single date — usable inline as static markup or anchored to a text input, where the shell renders the grid and writes the ISO date (YYYY-MM-DD) into the input.",
+      "example": "<div class=\"sb-datepicker-field\" data-sb-datepicker><input class=\"sb-input\" type=\"text\" placeholder=\"YYYY-MM-DD\" aria-label=\"Date\"><div class=\"sb-datepicker sb-datepicker--anchored\" role=\"dialog\" aria-label=\"Choose date\"></div></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker--anchored",
+      "purpose": "Datepicker: absolutely positioned panel inside .sb-datepicker-field, shown via .is-open on the wrapper (managed by the shell)",
+      "example": "<div class=\"sb-datepicker sb-datepicker--anchored\" role=\"dialog\" aria-label=\"Choose date\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker-field",
+      "purpose": "Month calendar for picking a single date — usable inline as static markup or anchored to a text input, where the shell renders the grid and writes the ISO date (YYYY-MM-DD) into the input.",
+      "example": "<div class=\"sb-datepicker-field\" data-sb-datepicker><input class=\"sb-input\" type=\"text\" placeholder=\"YYYY-MM-DD\" aria-label=\"Date\"><div class=\"sb-datepicker sb-datepicker--anchored\" role=\"dialog\" aria-label=\"Choose date\"></div></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__day",
+      "purpose": "Datepicker: day button (role=\"gridcell\"): aria-selected=\"true\" = picked, aria-current=\"date\" = today, disabled = not selectable",
+      "example": "<div class=\"sb-datepicker__day\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__day--outside",
+      "purpose": "Datepicker: day of the previous/next month, muted",
+      "example": "<div class=\"sb-datepicker__day sb-datepicker__day--outside\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__grid",
+      "purpose": "Datepicker: role=\"grid\" wrapper labelled with the visible month",
+      "example": "<div class=\"sb-datepicker__grid\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__header",
+      "purpose": "Datepicker: prev button, title, next button",
+      "example": "<div class=\"sb-datepicker__header\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__nav",
+      "purpose": "Datepicker: month nav button; combine with --prev or --next for the chevron direction",
+      "example": "<div class=\"sb-datepicker__nav\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__title",
+      "purpose": "Datepicker: month + year, aria-live=\"polite\"",
+      "example": "<div class=\"sb-datepicker__title\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__week",
+      "purpose": "Datepicker: role=\"row\", 7-column grid",
+      "example": "<div class=\"sb-datepicker__week\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__weekday",
+      "purpose": "Datepicker: weekday",
+      "example": "<div class=\"sb-datepicker__weekday\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-datepicker__weekdays",
+      "purpose": "Datepicker: role=\"row\" of role=\"columnheader\" weekday cells",
+      "example": "<div class=\"sb-datepicker__weekdays\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-daterange",
+      "purpose": "Two date inputs sharing one anchored calendar: the first picked day sets the start, the second the end (swapped automatically if reversed), and both ISO dates (YYYY-MM-DD) are written into the inputs.",
+      "example": "<div class=\"sb-daterange\" data-sb-daterange><input class=\"sb-input\" type=\"text\" placeholder=\"YYYY-MM-DD\" aria-label=\"Start date\"><span class=\"sb-daterange__sep\" aria-hidden=\"true\">–</span><input class=\"sb-input\" type=\"text\" placeholder=\"YYYY-MM-DD\" aria-label=\"End date\"></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-daterange__sep",
+      "purpose": "Date range: decorative dash between the inputs, aria-hidden=\"true\"",
+      "example": "<span class=\"sb-daterange__sep\" aria-hidden=\"true\">…</span>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-dualrange",
+      "purpose": "Min/max slider made of two overlaid native range inputs with an accent fill between the thumbs — values stay cross-clamped (min ≤ max) and both inputs are real form fields.",
+      "example": "<div class=\"sb-dualrange\" data-sb-dualrange data-sb-dualrange-unit=\" €\"><div class=\"sb-dualrange__values\" aria-hidden=\"true\"><output>200 €</output><output>800 €</output></div><div class=\"sb-dualrange__track\"><input class=\"sb-range\" type=\"range\" name=\"price-from\" min=\"0\" max=\"1000\" value=\"200\" aria-label=\"Minimum price\"><input class=\"sb-range\" type=\"range\" name=\"price-to\" min=\"0\" max=\"1000\" value=\"800\" aria-label=\"Maximum price\"></div></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-dualrange__track",
+      "purpose": "Dual Range: rail holding exactly two <input type=\"range\" class=\"sb-range\"> — first = from, second = to; the shell raises the from-input via .is-on-top so thumbs never get stuck",
+      "example": "<div class=\"sb-dualrange__track\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-dualrange__values",
+      "purpose": "Dual Range: aria-hidden row with the two value outputs (kept in sync by the shell)",
+      "example": "<div class=\"sb-dualrange__values\" aria-hidden=\"true\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-field__error",
+      "purpose": "Field: hidden until the control matches :user-invalid or has aria-invalid=\"true\"",
+      "example": "<p class=\"sb-field__error\" id=\"email-error\">…</p>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-field__hint",
+      "purpose": "Field: supporting text below the control",
+      "example": "<p class=\"sb-field__hint\">…</p>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-field__label",
+      "purpose": "Field: label",
+      "example": "<label class=\"sb-field__label\" for=\"email\">…</label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-input-group__addon",
+      "purpose": "Input group: static text segment, e.g. a prefix or unit",
+      "example": "<span class=\"sb-input-group__addon\">…</span>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect",
+      "purpose": "A multi-select dropdown built as a disclosure trigger in input look plus a panel of native checkboxes — selected values show as removable pills, and the checkboxes' name/value submit with the form without any the shell glue.",
+      "example": "<div class=\"sb-multiselect\" data-sb-multiselect><button type=\"button\" class=\"sb-multiselect__toggle\" aria-expanded=\"false\" aria-controls=\"ms-tags-panel\"><span class=\"sb-multiselect__placeholder\">Select tags…</span></button><div class=\"sb-multiselect__panel\" id=\"ms-tags-panel\" role=\"group\" aria-label=\"Tags\"><label class=\"sb-check sb-multiselect__option\"><input type=\"checkbox\" name=\"tags\" value=\"bug\" checked> bug</label><label class=\"sb-check sb-multiselect__option\"><input type=\"checkbox\" name=\"tags\" value=\"docs\"> docs</label></div></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__option",
+      "purpose": "Multi-select: full-width row, added to a label.sb-check that wraps the native checkbox",
+      "example": "<label class=\"sb-check sb-multiselect__option\">…</label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__panel",
+      "purpose": "Multi-select: absolutely positioned checkbox panel (role=group, labeled after the field); scrolls past --sb-multiselect-panel-max-height",
+      "example": "<div class=\"sb-multiselect__panel\" id=\"ms-tags-panel\" role=\"group\" aria-label=\"Tags\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__pill",
+      "purpose": "Multi-select: one selected value — a .sb-chip rendered by the shell from a checked box (static pills in the markup are replaced on init); holds a .sb-multiselect__remove button",
+      "example": "<div class=\"sb-multiselect__pill\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__placeholder",
+      "purpose": "Multi-select: muted prompt inside the toggle; hidden once a pill exists — the shell keeps the toggle named via aria-label \"<field label>, N selected\"",
+      "example": "<span class=\"sb-multiselect__placeholder\">…</span>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__remove",
+      "purpose": "Multi-select: labeled remove button on a pill — unchecks the matching checkbox (change fires on it) and returns focus to the toggle; disabled when its checkbox is disabled",
+      "example": "<div class=\"sb-multiselect__remove\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-multiselect__toggle",
+      "purpose": "Multi-select: disclosure <button> filling the field; carries aria-expanded + aria-controls, the chevron rotates when open",
+      "example": "<button type=\"button\" class=\"sb-multiselect__toggle\" aria-expanded=\"false\" aria-controls=\"ms-tags-panel\">…</button>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-number",
+      "purpose": "A number input with − / + stepper buttons that replaces the tiny native spinners with proper touch targets while keeping the native input as the single accessible control.",
+      "example": "<div class=\"sb-number\" data-sb-number><button class=\"sb-number__btn\" type=\"button\" data-sb-number-down aria-hidden=\"true\" tabindex=\"-1\">&minus;</button><input id=\"qty\" type=\"number\" min=\"1\" max=\"8\" value=\"2\"><button class=\"sb-number__btn\" type=\"button\" data-sb-number-up aria-hidden=\"true\" tabindex=\"-1\">+</button></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-number__btn",
+      "purpose": "Number Input: the − / + buttons, marked data-sb-number-down / data-sb-number-up; pointer-only enhancements with aria-hidden=\"true\" and tabindex=\"-1\"",
+      "example": "<button class=\"sb-number__btn\" type=\"button\" data-sb-number-down aria-hidden=\"true\" tabindex=\"-1\">…</button>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-otp",
+      "purpose": "Segmented one-time-code input with smart behavior via the shell (data-sb-otp on the wrapper): typing auto-advances, focusing a slot selects it so typing overwrites, Backspace walks back, arrow keys navigate, and pasting anywhere fills the whole code from the first slot — a pasted code longer than the slots fills as many slots as fit and marks the group invalid to signal the cut-off.",
+      "example": "<div class=\"sb-otp\" data-sb-otp role=\"group\" aria-label=\"One-time code\"><input class=\"sb-otp__slot\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\"><input class=\"sb-otp__slot\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 2\"><input class=\"sb-otp__slot\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 3\"><input class=\"sb-otp__slot\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 4\"></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-otp__slot",
+      "purpose": "OTP input: one <input maxlength=\"1\"> per digit",
+      "example": "<input class=\"sb-otp__slot\" type=\"text\" inputmode=\"numeric\" maxlength=\"1\" aria-label=\"Digit 1\">",
+      "category": "forms"
+    },
+    {
+      "name": "sb-password",
+      "purpose": "Password input with a show/hide eye toggle; the shell flips the input type so masking is safe in every browser (CSS-only text-security hacks leak the password in Firefox).",
+      "example": "<div class=\"sb-password\"><input class=\"sb-input\" type=\"password\" aria-label=\"Password\"><button class=\"sb-password__toggle\" type=\"button\" data-sb-password-toggle aria-pressed=\"false\" aria-label=\"Show password\"><svg class=\"sb-password__eye-on\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg><svg class=\"sb-password__eye-off\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle><path d=\"M4 4l16 16\"></path></svg></button></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-password__eye-off",
+      "purpose": "Password: SVG shown while revealed",
+      "example": "<svg class=\"sb-password__eye-off\" aria-hidden=\"true\">…</svg>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-password__eye-on",
+      "purpose": "Password: SVG shown while masked",
+      "example": "<svg class=\"sb-password__eye-on\" aria-hidden=\"true\">…</svg>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-password__toggle",
+      "purpose": "Password: icon button with data-sb-password-toggle and aria-pressed",
+      "example": "<button class=\"sb-password__toggle\" type=\"button\" data-sb-password-toggle aria-pressed=\"false\" aria-label=\"Show password\">…</button>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-radio-group",
+      "purpose": "A labeled set of radio options built on fieldset/legend, stacked by default or inline.",
+      "example": "<fieldset class=\"sb-radio-group\"><legend>Billing cycle</legend><label class=\"sb-check\"><input type=\"radio\" name=\"billing\" checked> Monthly</label><label class=\"sb-check\"><input type=\"radio\" name=\"billing\"> Yearly</label></fieldset>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-radio-group--inline",
+      "purpose": "Radio Group: options flow in a wrapping row",
+      "example": "<fieldset class=\"sb-radio-group sb-radio-group--inline\">…</fieldset>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-range",
+      "purpose": "Styled slider themed in WebKit and Firefox. Wrap it in .sb-range-wrap for min/max labels, an accent fill up to the thumb and a value bubble: set style=\"--sb-range-fill: 40%; --sb-range-pct: 0.4\" on the wrapper yourself. The plain input works without JavaScript.",
+      "example": "<div class=\"sb-range-wrap\" data-sb-range data-sb-range-unit=\"%\"><output class=\"sb-range-wrap__bubble\" aria-hidden=\"true\">40%</output><input class=\"sb-range\" type=\"range\" min=\"0\" max=\"100\" value=\"40\" aria-label=\"Volume\"><div class=\"sb-range-wrap__labels\" aria-hidden=\"true\"><span>0</span><span>100</span></div></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-range-wrap",
+      "purpose": "Range: wrapper with data-sb-range enabling fill + bubble (the shell)",
+      "example": "<div class=\"sb-range-wrap\" data-sb-range data-sb-range-unit=\"%\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-range-wrap__bubble",
+      "purpose": "Range: <output> showing the current value while sliding",
+      "example": "<output class=\"sb-range-wrap__bubble\" aria-hidden=\"true\">…</output>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-range-wrap__labels",
+      "purpose": "Range: min/max line under the slider",
+      "example": "<div class=\"sb-range-wrap__labels\" aria-hidden=\"true\">…</div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-rating",
+      "purpose": "Star rating input built from a fieldset of real radio buttons (pure CSS, no the shell), with a read-only static variant that renders fractional average scores.",
+      "example": "<fieldset class=\"sb-rating\"><legend class=\"sb-sr-only\">Your rating</legend><label class=\"sb-rating__star\"><input type=\"radio\" name=\"rating\" value=\"1\" aria-label=\"1 star\"></label><label class=\"sb-rating__star\"><input type=\"radio\" name=\"rating\" value=\"2\" aria-label=\"2 stars\"></label><label class=\"sb-rating__star\"><input type=\"radio\" name=\"rating\" value=\"3\" aria-label=\"3 stars\" checked></label><label class=\"sb-rating__star\"><input type=\"radio\" name=\"rating\" value=\"4\" aria-label=\"4 stars\"></label><label class=\"sb-rating__star\"><input type=\"radio\" name=\"rating\" value=\"5\" aria-label=\"5 stars\"></label></fieldset>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-rating--static",
+      "purpose": "Rating: read-only display on a <div role=\"img\">; set --sb-rating-value (0–5, fractions allowed) and an aria-label",
+      "example": "<fieldset class=\"sb-rating sb-rating--static\">…</fieldset>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-rating__star",
+      "purpose": "Rating: a <label> wrapping one radio input; one per star, in ascending value order",
+      "example": "<label class=\"sb-rating__star\">…</label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-switch",
+      "purpose": "A toggle for instant on/off settings, built on a native checkbox — no JavaScript needed. For tooltips (e.g. why a switch is disabled) put title on the .sb-switch label, not the input — disabled controls swallow hover.",
+      "example": "<label class=\"sb-switch\"><input type=\"checkbox\" role=\"switch\" checked> Notifications</label>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-taginput",
+      "purpose": "A multi-value text field that turns typed entries into removable chips and syncs them to a hidden input (comma-separated) for form submission.",
+      "example": "<div class=\"sb-taginput\" data-sb-taginput=\"tags\"><span class=\"sb-chip\">css<button type=\"button\" class=\"sb-chip__close\" aria-label=\"Remove css\">&times;</button></span><input class=\"sb-taginput__input\" type=\"text\" aria-label=\"Add tag\" placeholder=\"Add tag…\"></div>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-taginput__input",
+      "purpose": "Tag Input: borderless inline text input; Enter or comma adds a chip, Backspace in the empty input removes the last one",
+      "example": "<input class=\"sb-taginput__input\" type=\"text\" aria-label=\"Add tag\" placeholder=\"Add tag…\">",
+      "category": "forms"
+    },
+    {
+      "name": "sb-textarea",
+      "purpose": "Multi-line text control that stays vertically resizable, and never collapses below its configurable minimum size while typing.",
+      "example": "<textarea class=\"sb-textarea\" placeholder=\"Your message\"></textarea>",
+      "category": "forms"
+    },
+    {
+      "name": "sb-bento",
+      "purpose": "Dense 4-column bento grid where items can span columns and rows; collapses to 2 columns below 60rem and to 1 column (all spans reset) below 40rem.",
+      "example": "<div class=\"sb-bento\"><div class=\"sb-card sb-bento__item--2x\"><div class=\"sb-card__body\">Hero feature</div></div><div class=\"sb-card sb-bento__item--wide\"><div class=\"sb-card__body\">Wide item</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">Item</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">Item</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-bento__item--2x",
+      "purpose": "Bento: item spans 2 columns and 2 rows",
+      "example": "<div class=\"sb-card sb-bento__item--2x\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-bento__item--tall",
+      "purpose": "Bento: item spans 2 rows",
+      "example": "<div class=\"sb-card sb-bento__item--tall\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-bento__item--wide",
+      "purpose": "Bento: item spans 2 columns",
+      "example": "<div class=\"sb-card sb-bento__item--wide\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-cluster",
+      "purpose": "Horizontal group of items that wraps onto new lines when space runs out, e.g. for tags or button rows.",
+      "example": "<div class=\"sb-cluster\"><span class=\"sb-badge\">CSS</span><span class=\"sb-badge\">Zero build</span></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-cols-2",
+      "purpose": "Fixed 2/3/4 equal-width columns that collapse to 2 below 60rem and to 1 below 40rem viewport width.",
+      "example": "<div class=\"sb-cols-2\"><div class=\"sb-card\"><div class=\"sb-card__body\">A</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">B</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">C</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-cols-3",
+      "purpose": "Fixed 2/3/4 equal-width columns that collapse to 2 below 60rem and to 1 below 40rem viewport width.",
+      "example": "<div class=\"sb-cols-3\"><div class=\"sb-card\"><div class=\"sb-card__body\">A</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">B</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">C</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-cols-4",
+      "purpose": "Fixed 2/3/4 equal-width columns that collapse to 2 below 60rem and to 1 below 40rem viewport width.",
+      "example": "<div class=\"sb-cols-4\"><div class=\"sb-card\"><div class=\"sb-card__body\">A</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">B</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">C</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-container",
+      "purpose": "Centered page column with a fluid side gutter; use it to constrain page content width.",
+      "example": "<div class=\"sb-container\"><p>Page content</p></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-container--narrow",
+      "purpose": "Container: 46rem max width, ideal for prose pages",
+      "example": "<div class=\"sb-container sb-container--narrow\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-container--wide",
+      "purpose": "Container: 88rem max width for dashboards",
+      "example": "<div class=\"sb-container sb-container--wide\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-cq",
+      "purpose": "Establishes an inline-size query container so child components can adapt to their container instead of the viewport.",
+      "example": "<div class=\"sb-cq\"><div class=\"sb-card\"><div class=\"sb-card__body\">Adapts to wrapper width</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-masonry",
+      "purpose": "Pinterest-style waterfall layout via CSS multi-column: items of varying height pack into as many columns of at least --sb-masonry-min as fit, with fixed 2/3/4-column variants that collapse to 2 below 60rem and to 1 below 40rem.",
+      "example": "<div class=\"sb-masonry sb-masonry--3\"><div class=\"sb-card\"><div class=\"sb-card__body\">Short note</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">A taller card. Items keep their natural height and pack column by column.</div></div><div class=\"sb-card\"><div class=\"sb-card__body\">Third note</div></div></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-masonry--2",
+      "purpose": "Masonry: fixed 2 columns",
+      "example": "<div class=\"sb-masonry sb-masonry--2\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-masonry--3",
+      "purpose": "Masonry: fixed 3 columns",
+      "example": "<div class=\"sb-masonry sb-masonry--3\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-masonry--4",
+      "purpose": "Masonry: fixed 4 columns",
+      "example": "<div class=\"sb-masonry sb-masonry--4\">…</div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-ratio",
+      "purpose": "Fixed aspect-ratio box (default 16/9) whose direct img or video child fills it with object-fit cover.",
+      "example": "<div class=\"sb-ratio\"><img src=\"sb-asset:cover.jpg\" alt=\"Team at work\"></div>",
+      "category": "layout"
+    },
+    {
+      "name": "sb-command",
+      "purpose": "A Ctrl/Cmd+K command menu on the native dialog top layer with live filtering, grouped results, and full keyboard navigation.",
+      "example": "<dialog class=\"sb-modal sb-command\" id=\"cmdk\" data-sb-command aria-label=\"Command palette\"><div class=\"sb-command__header\"><input class=\"sb-command__input\" type=\"text\" placeholder=\"Type a command…\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"cmdk-list\" aria-label=\"Search commands\"></div><div class=\"sb-command__list\" role=\"listbox\" id=\"cmdk-list\" aria-label=\"Commands\"><div role=\"group\" aria-labelledby=\"cmdk-g1\"><div class=\"sb-command__heading\" id=\"cmdk-g1\">Actions</div><button class=\"sb-command__item\" type=\"button\" role=\"option\" aria-selected=\"false\" tabindex=\"-1\">New file <kbd class=\"sb-dropdown__kbd\">⌘N</kbd></button></div></div><p class=\"sb-command__empty\" role=\"status\" hidden>No results found.</p></dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__empty",
+      "purpose": "Command palette: empty-state message, placed after the list (outside the listbox); start it with the hidden attribute, the shell reveals it when nothing matches",
+      "example": "<p class=\"sb-command__empty\" role=\"status\" hidden>…</p>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__header",
+      "purpose": "Command palette: search row with optional leading svg icon and trailing .sb-dropdown__kbd hint; shows an accent underline on focus",
+      "example": "<div class=\"sb-command__header\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__heading",
+      "purpose": "Command palette: muted uppercase group label",
+      "example": "<div class=\"sb-command__heading\" id=\"cmdk-g1\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__input",
+      "purpose": "Command palette: search field; role=\"combobox\" aria-expanded=\"true\" aria-controls pointing at the list, aria-autocomplete=\"list\"; give it autofocus so the dialog focuses it on open",
+      "example": "<input class=\"sb-command__input\" type=\"text\" placeholder=\"Type a command…\" role=\"combobox\" aria-expanded=\"true\" aria-controls=\"cmdk-list\" aria-label=\"Search commands\">",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__item",
+      "purpose": "Command palette: result button; role=\"option\" aria-selected=\"false\" tabindex=\"-1\" (focus stays on the input); optional leading svg icon and trailing .sb-dropdown__kbd hint; the shell toggles .is-active + aria-selected and closes the dialog on activation",
+      "example": "<button class=\"sb-command__item\" type=\"button\" role=\"option\" aria-selected=\"false\" tabindex=\"-1\">…</button>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-command__list",
+      "purpose": "Command palette: scrollable results container; role=\"listbox\" with an aria-label",
+      "example": "<div class=\"sb-command__list\" role=\"listbox\" id=\"cmdk-list\" aria-label=\"Commands\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-context-menu",
+      "purpose": "Context Menu: added next to sb-dropdown__menu on the menu element; the shell positions it fixed at the cursor (viewport-clamped) and toggles .is-open on it",
+      "example": "<div class=\"sb-dropdown__menu sb-context-menu\" role=\"menu\" aria-label=\"File actions\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer",
+      "purpose": "A panel that slides in from the right (default), left or bottom edge for navigation, filters or carts, built on the native <dialog> element.",
+      "example": "<button class=\"sb-btn\" commandfor=\"my-drawer\" command=\"show-modal\">Open drawer</button><dialog class=\"sb-drawer\" id=\"my-drawer\" aria-labelledby=\"my-drawer-title\"><div class=\"sb-drawer__header\"><h3 class=\"sb-drawer__title\" id=\"my-drawer-title\">Cart</h3><button class=\"sb-btn sb-btn--ghost sb-btn--icon sb-btn--sm\" commandfor=\"my-drawer\" command=\"close\" aria-label=\"Close\">&times;</button></div><div class=\"sb-drawer__body\"><p>Content.</p></div><div class=\"sb-drawer__footer\"><button class=\"sb-btn sb-btn--primary\" commandfor=\"my-drawer\" command=\"close\">Checkout</button></div></dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer--bottom",
+      "purpose": "Drawer: full-width sheet sliding up from the bottom",
+      "example": "<dialog class=\"sb-drawer sb-drawer--bottom\">…</dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer--left",
+      "purpose": "Drawer: slides in from the left",
+      "example": "<dialog class=\"sb-drawer sb-drawer--left\">…</dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer__body",
+      "purpose": "Drawer: fills remaining height, scrolls when needed",
+      "example": "<div class=\"sb-drawer__body\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer__footer",
+      "purpose": "Drawer: pinned action row",
+      "example": "<div class=\"sb-drawer__footer\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer__header",
+      "purpose": "Drawer: title row with bottom border",
+      "example": "<div class=\"sb-drawer__header\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-drawer__title",
+      "purpose": "Drawer: title",
+      "example": "<h3 class=\"sb-drawer__title\" id=\"my-drawer-title\">…</h3>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown",
+      "purpose": "A menu anchored below its trigger button, for secondary actions that should not clutter the page.",
+      "example": "<div class=\"sb-dropdown\" data-sb-dropdown><button class=\"sb-btn\" data-sb-dropdown-toggle aria-expanded=\"false\" aria-haspopup=\"menu\">Options</button><div class=\"sb-dropdown__menu\" role=\"menu\"><button class=\"sb-dropdown__item\" role=\"menuitem\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" aria-hidden=\"true\"><path d=\"M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z\"></path></svg>Edit</button><button class=\"sb-dropdown__item\" role=\"menuitem\">Duplicate</button><div class=\"sb-dropdown__divider\" role=\"separator\"></div><button class=\"sb-dropdown__item sb-dropdown__item--danger\" role=\"menuitem\">Delete</button></div></div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__divider",
+      "purpose": "Dropdown: separator line between item groups",
+      "example": "<div class=\"sb-dropdown__divider\" role=\"separator\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__item",
+      "purpose": "Dropdown: menu entry, works as <button> or <a>",
+      "example": "<button class=\"sb-dropdown__item\" role=\"menuitem\">…</button>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__item--danger",
+      "purpose": "Dropdown: destructive action",
+      "example": "<button class=\"sb-dropdown__item sb-dropdown__item--danger\" role=\"menuitem\">…</button>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__kbd",
+      "purpose": "Dropdown: right-aligned keyboard shortcut hint inside an item",
+      "example": "<div class=\"sb-dropdown__kbd\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__menu",
+      "purpose": "Dropdown: absolutely positioned panel, hidden until the wrapper has .is-open",
+      "example": "<div class=\"sb-dropdown__menu\" role=\"menu\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__menu--draw",
+      "purpose": "Dropdown: ink ring draws itself around the menu on open (@property + conic-gradient, follows --sb-accent)",
+      "example": "<div class=\"sb-dropdown__menu sb-dropdown__menu--draw\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-dropdown__menu--right",
+      "purpose": "Dropdown: aligns the menu to the inline-end edge of the trigger",
+      "example": "<div class=\"sb-dropdown__menu sb-dropdown__menu--right\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-hover-card",
+      "purpose": "A preview card that appears with a short delay when hovering or focusing a trigger, e.g. a user mention or link preview.",
+      "example": "<span class=\"sb-hover-card\"><a href=\"https://example.com\">@m.keller</a><span class=\"sb-hover-card__card\"><strong>Maren Keller</strong><br><span class=\"sb-muted\">Frontend engineer, Zurich. 214 followers.</span></span></span>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-hover-card__card",
+      "purpose": "Hover Card: the floating card; fill it with any content",
+      "example": "<span class=\"sb-hover-card__card\">…</span>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox",
+      "purpose": "Fullscreen image viewer on a native dialog — link gallery thumbnails to their large images and the shell handles opening, captions, a position counter, and prev/next navigation.",
+      "example": "<div class=\"sb-lightbox-grid\" data-sb-lightbox><a class=\"sb-lightbox-grid__item\" href=\"https://example.com\"><img alt=\"Sunrise over the bay\"></a><a class=\"sb-lightbox-grid__item\" href=\"https://example.com\"><img alt=\"Harbor at night\"></a></div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox-grid",
+      "purpose": "Fullscreen image viewer on a native dialog — link gallery thumbnails to their large images and the shell handles opening, captions, a position counter, and prev/next navigation.",
+      "example": "<div class=\"sb-lightbox-grid\" data-sb-lightbox><a class=\"sb-lightbox-grid__item\" href=\"https://example.com\"><img alt=\"Sunrise over the bay\"></a><a class=\"sb-lightbox-grid__item\" href=\"https://example.com\"><img alt=\"Harbor at night\"></a></div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox-grid__item",
+      "purpose": "Lightbox: thumbnail link, href = large image URL",
+      "example": "<a class=\"sb-lightbox-grid__item\" href=\"https://example.com\">…</a>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__caption",
+      "purpose": "Lightbox: text from a figcaption inside the link, else the thumbnail alt",
+      "example": "<div class=\"sb-lightbox__caption\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__close",
+      "purpose": "Lightbox: dismiss button, focused on open, closes via data-sb-close",
+      "example": "<div class=\"sb-lightbox__close\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__counter",
+      "purpose": "Lightbox: \"2/6\" position indicator, aria-live=\"polite\"; hidden for single-image galleries",
+      "example": "<div class=\"sb-lightbox__counter\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__figure",
+      "purpose": "Lightbox: image + caption column",
+      "example": "<div class=\"sb-lightbox__figure\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__img",
+      "purpose": "Lightbox: large image, max 90vmin, object-fit: contain",
+      "example": "<div class=\"sb-lightbox__img\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__nav",
+      "purpose": "Lightbox: prev/next button; hidden for single-image galleries",
+      "example": "<div class=\"sb-lightbox__nav\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__nav--next",
+      "purpose": "Lightbox: next",
+      "example": "<div class=\"sb-lightbox__nav sb-lightbox__nav--next\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-lightbox__nav--prev",
+      "purpose": "Lightbox: prev",
+      "example": "<div class=\"sb-lightbox__nav sb-lightbox__nav--prev\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-menubar",
+      "purpose": "Desktop-style application menu bar (File / Edit / View) where each entry is a standard dropdown menu with full keyboard support.",
+      "example": "<div class=\"sb-menubar\" role=\"menubar\" aria-label=\"Application menu\" data-sb-menubar><div class=\"sb-dropdown\" role=\"none\" data-sb-dropdown><button class=\"sb-menubar__trigger\" type=\"button\" role=\"menuitem\" data-sb-dropdown-toggle aria-haspopup=\"menu\" aria-expanded=\"false\">File</button><div class=\"sb-dropdown__menu\" role=\"menu\" aria-label=\"File\"><button class=\"sb-dropdown__item\" type=\"button\" role=\"menuitem\">New file</button><button class=\"sb-dropdown__item\" type=\"button\" role=\"menuitem\">Save</button></div></div><div class=\"sb-dropdown\" role=\"none\" data-sb-dropdown><button class=\"sb-menubar__trigger\" type=\"button\" role=\"menuitem\" data-sb-dropdown-toggle aria-haspopup=\"menu\" aria-expanded=\"false\">Edit</button><div class=\"sb-dropdown__menu\" role=\"menu\" aria-label=\"Edit\"><button class=\"sb-dropdown__item\" type=\"button\" role=\"menuitem\">Undo</button><button class=\"sb-dropdown__item\" type=\"button\" role=\"menuitem\">Redo</button></div></div></div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-menubar__trigger",
+      "purpose": "Menubar: menu trigger button inside a data-sb-dropdown wrapper; highlighted while its wrapper has .is-open",
+      "example": "<button class=\"sb-menubar__trigger\" type=\"button\" role=\"menuitem\" data-sb-dropdown-toggle aria-haspopup=\"menu\" aria-expanded=\"false\">…</button>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal",
+      "purpose": "A centered dialog on the top layer for focused tasks like forms or confirmations, built on the native <dialog> element.",
+      "example": "<button class=\"sb-btn sb-btn--primary\" commandfor=\"my-modal\" command=\"show-modal\">Open</button><dialog class=\"sb-modal\" id=\"my-modal\" aria-labelledby=\"my-modal-title\"><div class=\"sb-modal__header\"><h3 class=\"sb-modal__title\" id=\"my-modal-title\">Title</h3><button class=\"sb-btn sb-btn--ghost sb-btn--icon sb-btn--sm\" commandfor=\"my-modal\" command=\"close\" aria-label=\"Close\">&times;</button></div><div class=\"sb-modal__body\"><p>Body text.</p></div><div class=\"sb-modal__footer\"><button class=\"sb-btn sb-btn--ghost\" commandfor=\"my-modal\" command=\"close\">Cancel</button><button class=\"sb-btn sb-btn--primary\" commandfor=\"my-modal\" command=\"close\">Save</button></div></dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal--alert",
+      "purpose": "A narrow confirmation dialog with centered text and actions for destructive or irreversible operations.",
+      "example": "<button class=\"sb-btn sb-btn--danger\" commandfor=\"confirm-delete\" command=\"show-modal\">Delete project</button><dialog class=\"sb-modal sb-modal--alert\" id=\"confirm-delete\" role=\"alertdialog\" aria-labelledby=\"confirm-delete-title\" aria-describedby=\"confirm-delete-desc\"><div class=\"sb-modal__header\"><span class=\"sb-modal__icon\" aria-hidden=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7\"></path></svg></span><h3 class=\"sb-modal__title\" id=\"confirm-delete-title\">Delete project?</h3></div><div class=\"sb-modal__body\"><p id=\"confirm-delete-desc\">This cannot be undone.</p></div><div class=\"sb-modal__footer\"><button class=\"sb-btn sb-btn--outline\" commandfor=\"confirm-delete\" command=\"close\">Cancel</button><button class=\"sb-btn sb-btn--primary\" commandfor=\"confirm-delete\" command=\"close\">Delete</button></div></dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal--lg",
+      "purpose": "Modal: wide width (48rem)",
+      "example": "<dialog class=\"sb-modal sb-modal--lg\">…</dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal--sm",
+      "purpose": "Modal: narrow width (24rem)",
+      "example": "<dialog class=\"sb-modal sb-modal--sm\">…</dialog>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal__body",
+      "purpose": "Modal: scrolls when content overflows",
+      "example": "<div class=\"sb-modal__body\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal__footer",
+      "purpose": "Modal: action row, right-aligned",
+      "example": "<div class=\"sb-modal__footer\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal__header",
+      "purpose": "Modal: title row, holds title and close button",
+      "example": "<div class=\"sb-modal__header\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal__icon",
+      "purpose": "Alert dialog: centered icon circle above the title: neutral fill, ink glyph; place it in the header before the title with aria-hidden=\"true\"",
+      "example": "<span class=\"sb-modal__icon\" aria-hidden=\"true\">…</span>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-modal__title",
+      "purpose": "Modal: title",
+      "example": "<h3 class=\"sb-modal__title\" id=\"my-modal-title\">…</h3>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover",
+      "purpose": "A rich, freely placeable card anchored to a trigger, for contextual details that need more than a tooltip.",
+      "example": "<div class=\"sb-popover\"><button class=\"sb-btn\" popovertarget=\"shipping-popover\" aria-haspopup=\"dialog\">Details</button><div class=\"sb-popover__card\" popover id=\"shipping-popover\" role=\"dialog\" aria-label=\"Shipping details\"><p class=\"sb-popover__title\">Shipping</p><p class=\"sb-popover__body\">Free worldwide shipping on orders over $50.</p></div></div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover__body",
+      "purpose": "Popover: muted body text",
+      "example": "<p class=\"sb-popover__body\">…</p>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover__card",
+      "purpose": "Popover: the floating card; prefer popover + id matching the trigger's popovertarget",
+      "example": "<div class=\"sb-popover__card\" popover id=\"shipping-popover\" role=\"dialog\" aria-label=\"Shipping details\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover__card--right",
+      "purpose": "Popover: aligns the card to the inline-end edge of the trigger",
+      "example": "<div class=\"sb-popover__card sb-popover__card--right\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover__card--top",
+      "purpose": "Popover: opens above the trigger",
+      "example": "<div class=\"sb-popover__card sb-popover__card--top\">…</div>",
+      "category": "overlays"
+    },
+    {
+      "name": "sb-popover__title",
+      "purpose": "Popover: title",
+      "example": "<p class=\"sb-popover__title\">…</p>",
+      "category": "overlays"
+    }
+  ]
+}

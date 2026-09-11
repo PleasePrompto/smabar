@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-launch-shortcut"
+description = "Enables the launch_shortcut command without any pre-configured scope."
+commands.allow = ["launch_shortcut"]
+
+[[permission]]
+identifier = "deny-launch-shortcut"
+description = "Denies the launch_shortcut command without any pre-configured scope."
+commands.deny = ["launch_shortcut"]

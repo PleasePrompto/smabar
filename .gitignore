@@ -1,0 +1,42 @@
+# Everything dot-prefixed at repo root (agent/session state, reference
+# material, debug output) — except the entries git itself needs
+/.*
+!/.gitignore
+!/.github/
+!/.gitattributes
+
+# The maintainer's notes and helpers: kept locally, never part of the public tree
+/docs/
+/AGENTS.md
+/CLAUDE.md
+/scripts/vm-start.sh
+/scripts/debug-clickmap.py
+/scripts/win-*.ps1
+
+# Rust
+target/
+
+# Shell
+node_modules/
+shell/dist/
+
+# Python
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Fetched uv sidecar binaries (scripts/fetch-uv.sh)
+crates/smabar/binaries/
+
+# Tauri build output
+crates/smabar/gen/
+crates/smabar/web-extensions/
+
+# Playwright MCP artifacts (snapshots, console logs)
+.playwright-mcp/
+
+# Editor/OS noise
+.DS_Store

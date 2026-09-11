@@ -1,0 +1,83 @@
+@import "tailwindcss";
+@import "./bar.css";
+@import "./overlay.css";
+@import "./settings-window.css";
+@import "./settings.css";
+@import "./settings-store.css";
+@import "./settings-fonts.css";
+@import "./ui-kit.css";
+
+/* Mirror selected theme tokens (colors + radii ONLY) as Tailwind theme
+   variables so JSX can use text-muted / bg-accent / rounded-sb-m utilities.
+   `inline` keeps the generated utilities pointing at the var() values, so a
+   live theme switch restyles them without a rebuild. */
+@theme inline {
+  --color-accent: var(--sb-accent);
+  --color-accent-2: var(--sb-accent-2);
+  --color-foreground: var(--sb-text);
+  --color-dim: var(--sb-text-dim);
+  --color-muted: var(--sb-text-muted);
+  --color-faint: var(--sb-text-faint);
+  --color-danger: var(--sb-danger);
+  --color-success: var(--sb-success);
+  --color-warning: var(--sb-warning);
+  --color-info: var(--sb-info);
+  --color-on-accent: var(--sb-on-accent);
+  --radius-sb-s: var(--sb-radius-s);
+  --radius-sb-m: var(--sb-radius-m);
+  --radius-sb-l: var(--sb-radius-l);
+}
+
+/* Whole-UI zoom. Every size in smabar is a rem (theme tokens, Tailwind
+   utilities, the em values inside the plugin kit), so moving the root font
+   size scales the bar, flyouts, notifications, the settings window AND every
+   plugin shadow root together — rem always resolves against the document
+   root, shadow boundaries included.
+
+   Deliberately not WebKit page zoom: that leaves getBoundingClientRect()
+   reporting unzoomed pixels while the window paints zoomed ones, which would
+   put the input shape and the strut out by the zoom factor. A CSS size keeps
+   the whole geometry pipeline honest, because it measures real DOM rects.
+
+   Typed so a bad value falls back to 1 instead of collapsing the UI. */
+@property --sb-scale {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+:root {
+  /* Shell architecture, deliberately outside the theme contract. Keep these
+     values in the same order as styles/layers.ts; components consume the
+     names, never the numbers. */
+  --sb-z-behind: -1;
+  --sb-z-raised: 1;
+  --sb-z-control: 2;
+  --sb-z-control-active: 3;
+  --sb-z-bar: 50;
+  --sb-z-plugin-menu: 60;
+  --sb-z-flyout-catcher: 80;
+  --sb-z-plugin-context: 80;
+  --sb-z-flyout: 90;
+  --sb-z-panel: 100;
+  --sb-z-plugin-toast: 100;
+  --sb-z-drag-marker: 110;
+  --sb-z-context-menu: 130;
+  --sb-z-tooltip: 140;
+
+  font-size: calc(100% * var(--sb-scale, 1));
+  color-scheme: var(--sb-color-scheme);
+}
+
+/* The bar lives in a transparent, frameless window — the page itself paints nothing. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+body,
+#root {
+  font-family: var(--sb-font-sans);
+}

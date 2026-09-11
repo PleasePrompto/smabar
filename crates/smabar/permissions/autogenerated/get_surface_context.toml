@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-surface-context"
+description = "Enables the get_surface_context command without any pre-configured scope."
+commands.allow = ["get_surface_context"]
+
+[[permission]]
+identifier = "deny-get-surface-context"
+description = "Denies the get_surface_context command without any pre-configured scope."
+commands.deny = ["get_surface_context"]

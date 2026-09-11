@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pin-flyout"
+description = "Enables the pin_flyout command without any pre-configured scope."
+commands.allow = ["pin_flyout"]
+
+[[permission]]
+identifier = "deny-pin-flyout"
+description = "Denies the pin_flyout command without any pre-configured scope."
+commands.deny = ["pin_flyout"]

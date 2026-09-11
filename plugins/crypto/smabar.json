@@ -1,0 +1,47 @@
+{
+  "id": "crypto",
+  "name": "Crypto Prices",
+  "version": "0.3.1",
+  "description": "Cryptocurrency prices with 24h change from the free CoinGecko API; coins are found by name or symbol",
+  "protocolVersion": 1,
+  "runtime": "python",
+  "entry": "plugin.py",
+  "tiles": [
+    {
+      "id": "crypto",
+      "name": "Crypto Prices",
+      "hasFlyout": true,
+      "tileScale": "l"
+    }
+  ],
+  "settingsSchema": {
+    "type": "object",
+    "description": "Settings of the crypto price plugin",
+    "properties": {
+      "coins": {
+        "type": "array",
+        "description": "CoinGecko coin ids to track, in display order; the first entry is shown on the bar tile. Look up ids via https://api.coingecko.com/api/v3/coins/list",
+        "items": {
+          "type": "string",
+          "description": "One CoinGecko coin id, e.g. \"bitcoin\" or \"solana\""
+        },
+        "uniqueItems": true,
+        "default": [
+          "bitcoin",
+          "ethereum"
+        ]
+      },
+      "currency": {
+        "type": "string",
+        "description": "Quote currency as a CoinGecko vs_currency code, e.g. \"eur\", \"usd\", \"chf\"; see https://api.coingecko.com/api/v3/simple/supported_vs_currencies",
+        "default": "eur"
+      },
+      "alertPercent": {
+        "type": "number",
+        "description": "Price-move alert threshold in percent: a popup notification fires when a coin moved this far (in either direction) since the last alert; 0 disables alerts. There is no shell-side rate limit - this threshold is the frequency control.",
+        "default": 0.5
+      }
+    },
+    "additionalProperties": false
+  }
+}

@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-app-icon"
+description = "Enables the get_app_icon command without any pre-configured scope."
+commands.allow = ["get_app_icon"]
+
+[[permission]]
+identifier = "deny-get-app-icon"
+description = "Denies the get_app_icon command without any pre-configured scope."
+commands.deny = ["get_app_icon"]

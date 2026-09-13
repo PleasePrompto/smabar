@@ -175,6 +175,16 @@ export function initInputShape(): void {
   let lastSignature = "";
   let lastBarSignature = "";
   let scheduled = false;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  // Static plugin content may never trigger another store update. Retry
+  // failed native geometry at most once per second, using fresh measurements.
+  const retry = (): void => {
+    if (retryTimer !== undefined) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = undefined;
+      schedule();
+    }, 1_000);
+  };
   const sync = (): void => {
     scheduled = false;
     if (paused) return;
@@ -187,6 +197,7 @@ export function initInputShape(): void {
         // console.* (a permanently dead command would freeze click behavior).
         lastSignature = "";
         reportError(error);
+        retry();
       });
     }
     reportBarGeometry();
@@ -216,6 +227,7 @@ export function initInputShape(): void {
       (error: unknown) => {
         lastBarSignature = "";
         reportError(error);
+        retry();
       },
     );
   };

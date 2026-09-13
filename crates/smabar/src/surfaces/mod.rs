@@ -6,11 +6,13 @@ mod model;
 pub mod monitor;
 pub mod notifications;
 pub mod overlay;
+mod plugin_ui;
 mod pointer;
 pub mod presentation;
 mod settings;
 pub mod tooltip;
 
+pub(crate) use model::OverlayFlyoutRequest;
 pub use model::SurfaceRole;
 pub(crate) use model::SurfaceSize;
 pub(crate) use pointer::install_watchdog as install_pointer_watchdog;
@@ -68,11 +70,6 @@ impl SurfaceManager {
         self.ensure(app, SurfaceRole::Overlay, None).map(|_| ())
     }
 
-    pub fn prewarm_settings(&self, app: &AppHandle, size: (u32, u32)) -> anyhow::Result<()> {
-        self.ensure(app, SurfaceRole::Settings, Some(size))
-            .map(|_| ())
-    }
-
     fn ensure(
         &self,
         app: &AppHandle,
@@ -122,8 +119,7 @@ impl SurfaceManager {
         }
         crate::platform::window::setup_surface(&window, role, &monitor)?;
         if role != SurfaceRole::Bar {
-            window
-                .hide()
+            crate::platform::hide_surface(&window)
                 .with_context(|| format!("failed to hide prewarmed `{}` surface", role.label()))?;
         }
         tracing::info!(surface = role.label(), "surface created");
@@ -213,7 +209,7 @@ impl SurfaceManager {
         settings::raise_settings(window)
     }
 
-    fn is_ready(&self, role: SurfaceRole) -> anyhow::Result<bool> {
+    pub(crate) fn is_ready(&self, role: SurfaceRole) -> anyhow::Result<bool> {
         self.lifecycle
             .lock()
             .map(|state| state.ready.contains(&role))
@@ -272,8 +268,7 @@ impl SurfaceManager {
             if requested {
                 self.present_settings(&window)?;
             } else {
-                window
-                    .hide()
+                crate::platform::hide_surface(&window)
                     .context("failed to hide the prewarmed settings surface after startup")?;
             }
         }
@@ -295,9 +290,7 @@ impl SurfaceManager {
             && let Some(window) = app.get_webview_window(role.label())
         {
             if let Some(flyout) = flyout {
-                window
-                    .emit("surface-flyout", flyout)
-                    .context("failed to deliver buffered flyout")?;
+                self.deliver_flyout(app, &flyout, true)?;
             }
             if let Some(menu) = menu {
                 window
@@ -321,7 +314,8 @@ impl SurfaceManager {
                 {
                     tracing::warn!(%error, "settings window geometry was not saved; it opens centered next time");
                 }
-                window.hide().context("failed to hide settings surface")?;
+                crate::platform::hide_surface(&window)
+                    .context("failed to hide settings surface")?;
             }
             self.lifecycle
                 .lock()
@@ -446,7 +440,7 @@ pub fn surface_ready(
 }
 
 #[tauri::command]
-pub fn open_settings(app: AppHandle, group: Option<String>) -> Result<(), String> {
+pub async fn open_settings(app: AppHandle, group: Option<String>) -> Result<(), String> {
     open_settings_from_app(&app, group.as_deref().unwrap_or("bar"))
         .map_err(|error| format!("{error:#}"))
 }
@@ -461,7 +455,7 @@ pub fn open_settings_from_app(app: &AppHandle, group: &str) -> anyhow::Result<()
 }
 
 #[tauri::command]
-pub fn toggle_settings(app: AppHandle) -> Result<(), String> {
+pub async fn toggle_settings(app: AppHandle) -> Result<(), String> {
     let config = app.state::<AppState>().config();
     app.state::<SurfaceManager>()
         .toggle_settings(

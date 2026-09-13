@@ -8,7 +8,9 @@ mod fonts;
 mod frame_ipc;
 mod http_util;
 mod icons;
+mod memory_probe;
 mod platform;
+mod plugin_delivery;
 mod provision;
 mod runtime_paths;
 mod store_http;
@@ -56,6 +58,20 @@ fn main() -> anyhow::Result<()> {
         std::process::exit(code);
     }
 
+    let probe_value = std::env::var_os("SMABAR_MEMORY_PROBE");
+    let memory_probe = probe_value
+        .as_ref()
+        .map(|value| value.to_str().context("SMABAR_MEMORY_PROBE must contain valid Unicode"))
+        .transpose()
+        .and_then(memory_probe::Mode::parse)
+        .inspect_err(|error| tracing::error!(%error, "invalid memory probe; unset SMABAR_MEMORY_PROBE and restart"))?;
+    if let Some(mode) = memory_probe.name() {
+        tracing::warn!(
+            mode,
+            "memory probe enabled for this process; unset SMABAR_MEMORY_PROBE and restart for normal operation"
+        );
+    }
+
     if let Some(Err(error)) = &startup_config {
         tracing::warn!(
             %error,
@@ -99,6 +115,7 @@ fn main() -> anyhow::Result<()> {
     #[cfg(not(feature = "no-self-update"))]
     let builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
     let app = builder
+        .manage(memory_probe)
         // DnD observability: XDND onto an input-shaped dock window is
         // unproven terrain — these logs show whether drags reach the webview
         // at all (the shell's onDragDropEvent handler does the pinning).
@@ -298,6 +315,7 @@ fn main() -> anyhow::Result<()> {
             let embed_origin = embed_server
                 .as_ref()
                 .map(smabar_core::embed::EmbedServer::origin);
+            let (initial_ui, plugin_events) = supervisor.subscribe_with_ui();
             app.manage(commands::AppState::new(
                 paths.clone(),
                 Arc::clone(&watcher),
@@ -307,6 +325,7 @@ fn main() -> anyhow::Result<()> {
                 embed_server,
                 rendering,
             ));
+            app.state::<commands::AppState>().plugin_delivery.reset(initial_ui);
             app.manage(surfaces::SurfaceManager::new(
                 embed_origin,
                 surfaces::settings_window_title(&locale),
@@ -325,7 +344,7 @@ fn main() -> anyhow::Result<()> {
                 paths.clone(),
                 shortcuts.clone(),
             );
-            commands::spawn_plugin_events(app.handle().clone(), &supervisor);
+            commands::spawn_plugin_events(app.handle().clone(), &supervisor, plugin_events);
             commands::runtime::spawn_runtime_events(app.handle().clone(), &supervisor);
             commands::store::spawn_store_events(app.handle().clone(), &store);
             commands::store::spawn_store_refresh_timer(store.clone());
@@ -347,8 +366,6 @@ fn main() -> anyhow::Result<()> {
                 app.state::<commands::AppState>().window_level(),
             )?;
             surface_manager.prewarm_overlay(app.handle())?;
-            let settings = app.state::<commands::AppState>().config().settings_window;
-            surface_manager.prewarm_settings(app.handle(), (settings.width, settings.height))?;
             if !smabar_core::legal::is_accepted(&paths) {
                 // Presented by `mark_ready` once the settings shell reports in.
                 if let Err(error) = surfaces::open_settings_from_app(app.handle(), "legal") {

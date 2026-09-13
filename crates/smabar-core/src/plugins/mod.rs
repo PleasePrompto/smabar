@@ -3,7 +3,7 @@
 //!
 //! [`PluginSupervisor::start`] scans [`crate::config::SmabarPaths::plugins_dir`]
 //! for folders containing a `smabar.json` manifest, spawns each plugin as a
-//! child process (`uv run --script` for the python runtime, a literal command
+//! child process (a uv-prepared interpreter for Python, a literal command
 //! for exec), supervises it (initialize handshake, periodic ping, exponential
 //! restart backoff), hot-reloads on folder changes, and fans plugin output out
 //! as [`PluginEvent`]s. Every stdout line that is not valid JSON-RPC and all
@@ -21,6 +21,7 @@ mod backoff;
 #[cfg(test)]
 mod command_tests;
 mod commands;
+mod events;
 mod handlers;
 mod host;
 mod icon;
@@ -30,6 +31,9 @@ mod manifest;
 mod process;
 mod protocol;
 mod provision;
+mod python;
+#[cfg(all(test, unix))]
+mod python_tests;
 mod remove;
 mod replace;
 mod rpc;

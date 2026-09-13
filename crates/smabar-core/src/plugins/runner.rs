@@ -7,7 +7,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serde_json::{Value, json};
-use tokio::sync::{broadcast, mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot};
 use tokio::task::JoinHandle;
 use tokio::time::Instant;
 
@@ -15,6 +15,7 @@ use crate::config::{ConfigWatcher, SmabarPaths};
 use crate::providers::ProviderHub;
 
 use super::backoff::{MAX_CONSECUTIVE_FAILURES, STABLE_RUN, restart_delay};
+use super::events::PluginEvents;
 use super::handlers;
 use super::logfile::{PluginDiagnostics, PluginLog};
 use super::manifest::{PluginManifest, PluginRuntime};
@@ -28,9 +29,7 @@ use super::rpc::{
 };
 use super::{PluginEvent, PluginStatus, SupervisorOptions};
 
-/// initialize keeps a generous timeout: the runtime is provisioned before
-/// the spawn (see [`RuntimeProvisioner`]), but the first `uv run` of a plugin
-/// may still resolve its PEP 723 dependencies over the network.
+/// Preparation and initialize each allow for a cold Python environment.
 const INITIALIZE_TIMEOUT: Duration = Duration::from_secs(60);
 const PING_INTERVAL: Duration = Duration::from_secs(30);
 const PING_TIMEOUT: Duration = Duration::from_secs(10);
@@ -69,7 +68,7 @@ pub(crate) struct RunCtx {
     pub hub: ProviderHub,
     pub config: Arc<ConfigWatcher>,
     pub options: SupervisorOptions,
-    pub events: broadcast::Sender<PluginEvent>,
+    pub events: PluginEvents,
     pub runtime: RuntimeProvisioner,
     pub diagnostics: PluginDiagnostics,
 }
@@ -211,9 +210,14 @@ async fn run_once(
         ));
     }
     log.begin_run();
-    let mut process = match spawn_plugin(&ctx.manifest, &ctx.dir, &data_dir, &ctx.options) {
-        Ok(process) => process,
-        Err(error) => return RunEnd::Failure(error.to_string()),
+    let mut process = tokio::select! {
+        result = spawn_plugin(&ctx.manifest, &ctx.dir, &data_dir, &ctx.options, log) => match result {
+            Ok(process) => process,
+            Err(error) => return RunEnd::Failure(error.to_string()),
+        },
+        timed_out = backoff_wait(commands, INITIALIZE_TIMEOUT) => return if timed_out {
+            RunEnd::Failure("plugin preparation exceeded 60 seconds; check its dependencies and network, then restart the plugin".into())
+        } else { RunEnd::Shutdown },
     };
     let child = &mut process.child;
     let (stdin, stdout, stderr) =
@@ -424,8 +428,7 @@ fn warn_line_too_long(ctx: &RunCtx, source: &str) {
 /// process group → up to 1 s more; the caller's [`kill_and_reap`] then
 /// finishes off stragglers with SIGKILL.
 ///
-/// The group step matters because the plugin is not alone: a python plugin
-/// runs under `uv`, and a plugin may spawn CLI children of its own. Signalling
+/// The group step matters because a plugin may spawn CLI children. Signalling
 /// the group first gives every one of them the chance to exit on its own.
 async fn graceful_shutdown(ctx: &RunCtx, rpc: &RpcClient, process: &mut PluginProcess) {
     if let Err(error) = rpc.request("shutdown", json!({}), SHUTDOWN_GRACE).await {

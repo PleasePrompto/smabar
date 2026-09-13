@@ -10,6 +10,8 @@ export interface FlyoutRequest {
   tileId: string;
   mode: FlyoutMode;
   preserveContent?: boolean;
+  /** Open/replay snapshot; absent when pinning the active generation in place. */
+  content?: { hover: string | null; flyout: string | null };
 }
 
 export interface FlyoutPlacement {

@@ -139,8 +139,7 @@ impl SurfaceManager {
             (Some(popup), Some(notice)) => union(popup, notice),
             (Some(frame), None) | (None, Some(frame)) => frame,
             (None, None) => {
-                window
-                    .hide()
+                crate::platform::hide_surface(&window)
                     .context("failed to hide empty notifications surface")?;
                 return Ok(());
             }

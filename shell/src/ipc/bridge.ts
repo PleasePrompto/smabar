@@ -27,10 +27,17 @@ import { POPUP_TOTAL_MAX } from "../plugins/popupQueue";
 import type { PluginAddedPayload } from "../plugins/PluginContent";
 import type { LegalChanged } from "./legal";
 import { reportError, uiLog } from "./log";
+import {
+  initMemoryProbe,
+  recordMemoryUi,
+  suppressMemoryStateUpdate,
+  type MemoryProbeMode,
+} from "./memoryProbe";
 import { initManagedPopups } from "./managedPopups";
 import { showNotice, type SurfaceRole } from "./surface";
 
 interface UiState {
+  memoryProbe?: MemoryProbeMode | null;
   language: string;
   layout: LayoutConfig;
   zOrder: ZOrder;
@@ -63,7 +70,7 @@ interface PluginStatusEvent {
   error?: string;
 }
 
-interface PluginUiEvent {
+export interface PluginUiEvent {
   pluginId: string;
   tileId: string;
   target: "tile" | "flyout" | "hover" | "popup";
@@ -106,6 +113,7 @@ export function needsKeyboardFocus(
  * event streams.
  */
 export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
+  const keepsPluginHtml = role === "bar";
   // The bar is a DOCK-type X11 window; window managers never give docks
   // keyboard focus on click. When the user focuses something that needs
   // keys — form fields, custom selects, carousels and roving controls — ask
@@ -282,12 +290,17 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
     }),
   );
   // Stored raw; sanitization happens where it renders (ShadowHost).
-  await listen<PluginUiEvent>(
-    "plugin-ui",
-    afterStartup((payload) => {
-      routePluginUi(payload, role === "notifications");
-    }),
-  );
+  if (keepsPluginHtml || role === "notifications") {
+    const applyUi = afterStartup<PluginUiEvent>((payload) => {
+      routePluginUi(payload, role === "notifications", "live");
+    });
+    const channel = keepsPluginHtml ? `plugin-ui-${role}` : "plugin-ui";
+    await listen<PluginUiEvent>(channel, (event) => {
+      // Filter before startup queuing as well: notification windows never
+      // retain the persistent HTML of every plugin in the background.
+      if (keepsPluginHtml || event.payload.target === "popup") applyUi(event);
+    });
+  }
 
   if (role === "notifications") {
     await listen<{ key: string; ttlMs: number }>(
@@ -300,6 +313,7 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
 
   try {
     const ui = await invoke<UiState>("get_ui_state");
+    initMemoryProbe(ui.memoryProbe, role);
     // Before queued plugin UI renders: sb-asset: is inert without it.
     setAssetRoot(ui.dataRoot);
     setEmbedRoot(ui.embedRoot);
@@ -329,10 +343,12 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
     // empty tiles until their next push).
     const plugins = await invoke<PluginAddedPayload[]>("get_plugins");
     plugins.forEach(registerPlugin);
-    const rendered = await invoke<PluginUiEvent[]>("get_plugin_ui");
-    rendered.forEach((render) => {
-      routePluginUi(render, false);
-    });
+    if (keepsPluginHtml) {
+      const rendered = await invoke<PluginUiEvent[]>("get_plugin_ui");
+      rendered.forEach((render) => {
+        routePluginUi(render, false, "snapshot");
+      });
+    }
     // Same replay rationale: a provisioning run triggered before the webview
     // attached emitted its transitions into the void.
     const runtime = await invoke<RuntimeStatusInfo>("get_runtime_status");
@@ -348,8 +364,15 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
 }
 
 /** Live popups are ephemeral; startup cache replay only restores persistent UI. */
-function routePluginUi(render: PluginUiEvent, allowPopup: boolean): void {
+function routePluginUi(
+  render: PluginUiEvent,
+  allowPopup: boolean,
+  source: "live" | "snapshot",
+): void {
   const { pluginId, tileId, target, html, ttlMs } = render;
+  recordMemoryUi(html.length, source);
+  if (source === "live" && target !== "popup" && suppressMemoryStateUpdate())
+    return;
   const store = useSmabar.getState();
   if (target === "popup") {
     if (allowPopup) {

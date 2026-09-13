@@ -33,22 +33,23 @@ applyTheme(readThemeDocument(defaultTheme).tokens);
 installKitBehaviour();
 
 const role = currentAppRole();
-if ("__TAURI_INTERNALS__" in window) {
-  // First, so a failure in any of the three below is still recorded.
-  installGlobalErrorReporting();
-  logWebviewCapabilities();
-  void initTauriSurface(role as SurfaceRole).catch(reportError);
-}
-
 const root = document.getElementById("root");
 if (root === null) {
   throw new Error("missing #root element in index.html");
 }
-createRoot(root).render(
-  <StrictMode>
-    <App role={role} />
-  </StrictMode>,
-);
+const mounted = new Promise<void>((resolve) => {
+  createRoot(root).render(
+    <StrictMode>
+      <App role={role} onMounted={resolve} />
+    </StrictMode>,
+  );
+});
+
+if ("__TAURI_INTERNALS__" in window) {
+  installGlobalErrorReporting();
+  logWebviewCapabilities();
+  void initTauriSurface(role as SurfaceRole).catch(reportError);
+}
 
 async function initTauriSurface(surface: SurfaceRole): Promise<void> {
   await initSurface(surface);
@@ -70,5 +71,6 @@ async function initTauriSurface(surface: SurfaceRole): Promise<void> {
     await initDragDrop(surface);
     await initUpdates(false);
   }
+  await mounted;
   await markSurfaceReady();
 }

@@ -18,12 +18,13 @@ use crate::providers::ProviderHub;
 
 use super::activation::{self, DeactivatedMap};
 use super::await_status::StatusWatcher;
+use super::events::PluginEvents;
 pub(super) use super::lifecycle_guard::lifecycle_guard;
 use super::logfile::PluginDiagnostics;
 use super::manifest::{MANIFEST_FILE, PluginManifest, PluginRuntime};
 use super::provision::{self, RuntimeProvisioner};
 use super::runner::{PluginCommand, RunCtx, run_lifecycle};
-use super::status::{self, StatusMap, UiMap};
+use super::status::{self, StatusMap};
 use super::watcher::{config_change_loop, dir_change_loop, list_plugin_dirs, spawn_dir_watcher};
 use super::{PluginError, PluginEvent, PluginStatus, SupervisorOptions};
 use crate::util::lock_unpoisoned;
@@ -48,7 +49,7 @@ pub(super) struct Inner {
     hub: ProviderHub,
     pub(super) config: Arc<ConfigWatcher>,
     options: SupervisorOptions,
-    pub(super) events: broadcast::Sender<PluginEvent>,
+    pub(super) events: PluginEvents,
     /// Running (or finally-failed) plugins, keyed by manifest id.
     pub(super) plugins: Mutex<HashMap<String, PluginHandle>>,
     /// Serializes every asynchronous stop/start transition per plugin id.
@@ -68,9 +69,6 @@ pub(super) struct Inner {
     pub(super) runtime: RuntimeProvisioner,
     /// Process-lifetime dedupe for actionable malformed-input warnings.
     pub(super) diagnostics: PluginDiagnostics,
-    /// Last rendered HTML per (plugin, tile, target), fed by the same
-    /// tracking task; late/reloaded shells fetch it via `current_ui`.
-    pub(super) ui: UiMap,
     /// Keeps the plugins-dir watch alive; `None` when watching failed
     /// (plugins then only load at startup).
     pub(super) watcher: Mutex<Option<RecommendedWatcher>>,
@@ -109,7 +107,7 @@ impl PluginSupervisor {
         config: Arc<ConfigWatcher>,
         options: SupervisorOptions,
     ) -> Self {
-        let (events, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
+        let events = PluginEvents::new(EVENT_CHANNEL_CAPACITY);
         let plugins_dir = paths.plugins_dir();
         if let Err(error) = fs::create_dir_all(&plugins_dir) {
             tracing::warn!(%error, path = %plugins_dir.display(), "cannot create plugins directory");
@@ -117,12 +115,10 @@ impl PluginSupervisor {
         let (dir_tx, dir_rx) = mpsc::unbounded_channel();
         let watcher = spawn_dir_watcher(&plugins_dir, dir_tx);
         let statuses: StatusMap = Arc::new(Mutex::new(HashMap::new()));
-        let ui: UiMap = Arc::new(Mutex::new(HashMap::new()));
         // Subscribe before the first plugin starts so no event is lost.
         let status_task = tokio::spawn(status::track_events(
             events.subscribe(),
             Arc::clone(&statuses),
-            Arc::clone(&ui),
         ));
         let runtime = RuntimeProvisioner::new(paths.tools_dir(), options.uv_override.clone());
         let diagnostics = PluginDiagnostics::new(paths.logs_dir());
@@ -141,7 +137,6 @@ impl PluginSupervisor {
             statuses,
             runtime,
             diagnostics,
-            ui,
             watcher: Mutex::new(watcher),
         });
         let runtime_task = tokio::spawn(provision::nudge_on_ready(

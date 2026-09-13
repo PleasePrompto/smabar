@@ -75,9 +75,7 @@ impl SurfaceManager {
                 .context("failed to clear tooltip before opening flyout")?;
         }
         if ready {
-            window
-                .emit("surface-flyout", request)
-                .context("failed to deliver flyout request")?;
+            self.deliver_flyout(app, &request, true)?;
         }
         Ok(())
     }
@@ -198,13 +196,7 @@ impl SurfaceManager {
                 preserve_content = request.preserve_content,
                 "pinning flyout"
             );
-            window
-                .emit("surface-flyout", request.clone())
-                .context("failed to pin overlay flyout")?;
-        }
-        if let Some(bar) = app.get_webview_window(SurfaceRole::Bar.label()) {
-            bar.emit("flyout-pinned", request)
-                .context("failed to report pinned flyout to bar")?;
+            self.deliver_flyout(app, &request, false)?;
         }
         Ok(())
     }

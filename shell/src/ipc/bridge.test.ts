@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 import {
   useSmabar,
@@ -7,6 +7,8 @@ import {
   type ShortcutsState,
 } from "../store/bar";
 import { initBridge, needsKeyboardFocus, runtimeFailureNotice } from "./bridge";
+import { initMemoryProbe, memoryProbeIs } from "./memoryProbe";
+import { uiLog } from "./log";
 import {
   nativePointerIsInside,
   pushNativePointerSample,
@@ -20,6 +22,7 @@ const { invokeMock, listeners } = vi.hoisted(() => ({
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
+vi.mock("./log", () => ({ uiLog: vi.fn(), reportError: vi.fn() }));
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn((name: string, listener: Listener) => {
     listeners.set(name, listener);
@@ -29,8 +32,15 @@ vi.mock("@tauri-apps/api/event", () => ({
 
 beforeEach(() => {
   invokeMock.mockReset();
+  vi.mocked(uiLog).mockClear();
   listeners.clear();
   useSmabar.setState(useSmabar.getInitialState(), true);
+});
+
+afterEach(() => {
+  initMemoryProbe(null, "bar");
+  vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 test("keyboard-capable plugin controls request focus for the dock window", () => {
@@ -149,6 +159,199 @@ test("startup events and the newest shortcut refresh win asynchronous races", as
 
   expect(useSmabar.getState().shortcuts).toEqual(newer);
 });
+
+test.each(["bar", "overlay", "settings", "notifications"] as const)(
+  "%s only keeps the plugin HTML it needs, including events during startup",
+  async (role) => {
+    const initial = useSmabar.getInitialState();
+    const ui = deferred({
+      ...initial,
+      locale: {},
+      theme: {},
+      themeName: initial.theme,
+      plugins: {},
+      dataRoot: "/data",
+      embedRoot: "http://127.0.0.1:1",
+    });
+    const render = {
+      pluginId: "slow",
+      tileId: "tile",
+      target: role === "bar" ? "tile" : "flyout",
+      html: "old",
+    };
+    invokeMock.mockImplementation((command: string) => {
+      switch (command) {
+        case "get_ui_state":
+          return ui.promise;
+        case "get_plugin_ui":
+          return Promise.resolve([
+            render,
+            { ...render, target: "hover", html: "preview" },
+          ]);
+        case "get_plugins":
+        case "get_managed_popups":
+          return Promise.resolve([]);
+        case "get_runtime_status":
+          return Promise.resolve({ state: "ready" });
+        default:
+          return Promise.reject(new Error(`unexpected command: ${command}`));
+      }
+    });
+    const initialized = initBridge(role);
+    await vi.waitFor(() => {
+      expect(invokeMock).toHaveBeenCalledWith("get_ui_state");
+    });
+    const channel = role === "bar" ? "plugin-ui-bar" : "plugin-ui";
+    const listener = listeners.get(channel);
+    expect(listeners.has("plugin-ui-bar")).toBe(role === "bar");
+    // The overlay owns its on-demand listener after mounting. The bridge
+    // must not fetch or retain closed flyout content during startup.
+    expect(listeners.has("plugin-ui-overlay")).toBe(false);
+    expect(listeners.has("plugin-ui")).toBe(role === "notifications");
+    listener?.({ payload: { ...render, html: "new" } });
+    ui.resolve();
+    await initialized;
+    if (role === "bar") {
+      expect(invokeMock).toHaveBeenCalledWith("get_plugin_ui");
+      expect(useSmabar.getState().pluginUi).toEqual({
+        [`slow/tile/${render.target}`]: "new",
+        "slow/tile/hover": "preview",
+      });
+      listener?.({ payload: { ...render, html: "latest" } });
+      expect(useSmabar.getState().pluginUi[`slow/tile/${render.target}`]).toBe(
+        "latest",
+      );
+    } else {
+      expect(invokeMock).not.toHaveBeenCalledWith("get_plugin_ui");
+      expect(useSmabar.getState().pluginUi).toEqual({});
+    }
+    if (role === "notifications") {
+      listener?.({
+        payload: { ...render, target: "popup", html: "popup", ttlMs: null },
+      });
+      expect(useSmabar.getState().popupQueue.visible[0]?.html).toBe("popup");
+    }
+  },
+);
+
+test("the memory probe is active before initial plugin HTML is replayed", async () => {
+  const initial = useSmabar.getInitialState();
+  invokeMock.mockImplementation((command: string) => {
+    switch (command) {
+      case "get_ui_state":
+        return Promise.resolve({
+          ...initial,
+          memoryProbe: "no-dom",
+          locale: {},
+          theme: {},
+          themeName: initial.theme,
+          plugins: {},
+          dataRoot: "/data",
+          embedRoot: "http://127.0.0.1:1",
+        });
+      case "get_plugin_ui":
+        expect(memoryProbeIs("no-dom")).toBe(true);
+        return Promise.resolve([]);
+      case "get_plugins":
+        return Promise.resolve([]);
+      case "get_runtime_status":
+        return Promise.resolve({ state: "ready" });
+      default:
+        return Promise.reject(new Error(`unexpected command: ${command}`));
+    }
+  });
+  await initBridge("bar");
+  expect(invokeMock).toHaveBeenCalledWith("get_plugin_ui");
+});
+
+test.each(["bar", "notifications"] as const)(
+  "no-state counts received %s updates but freezes only persistent live state after warmup",
+  async (role) => {
+    vi.useFakeTimers();
+    const initial = useSmabar.getInitialState();
+    const render = {
+      pluginId: "slow",
+      tileId: "tile",
+      target: role === "bar" ? "tile" : "popup",
+      html: "initial",
+      ttlMs: null,
+    };
+    const snapshot = deferred([render]);
+    invokeMock.mockImplementation((command: string) => {
+      switch (command) {
+        case "get_ui_state":
+          return Promise.resolve({
+            ...initial,
+            memoryProbe: "no-state",
+            locale: {},
+            theme: {},
+            themeName: initial.theme,
+            plugins: {},
+            dataRoot: "/data",
+            embedRoot: "http://127.0.0.1:1",
+          });
+        case "get_plugin_ui":
+          return snapshot.promise;
+        case "get_plugins":
+        case "get_managed_popups":
+          return Promise.resolve([]);
+        case "get_runtime_status":
+          return Promise.resolve({ state: "ready" });
+        default:
+          return Promise.reject(new Error(`unexpected command: ${command}`));
+      }
+    });
+    const initialized = initBridge(role);
+    if (role === "bar") {
+      await vi.waitFor(() => {
+        expect(invokeMock).toHaveBeenCalledWith("get_plugin_ui");
+      });
+      // A delayed startup snapshot remains available even past the cutoff.
+      vi.advanceTimersByTime(30_000);
+      snapshot.resolve();
+    }
+    await initialized;
+    if (role === "bar") {
+      expect(useSmabar.getState().pluginUi).toEqual({
+        "slow/tile/tile": "initial",
+      });
+    } else {
+      vi.advanceTimersByTime(30_000);
+    }
+    vi.mocked(uiLog).mockClear();
+    const getState = vi.spyOn(useSmabar, "getState");
+    const channel = role === "bar" ? "plugin-ui-bar" : "plugin-ui";
+    emit(channel, { ...render, html: "received" });
+    emit(channel, { ...render, html: "latest" });
+    expect(getState.mock.calls.length > 0).toBe(role !== "bar");
+    getState.mockRestore();
+    if (role === "bar") {
+      expect(useSmabar.getState().pluginUi).toEqual({
+        "slow/tile/tile": "initial",
+      });
+      emit("plugin-status", { pluginId: "slow", status: "running" });
+      expect(useSmabar.getState().pluginStatus.slow?.status).toBe("running");
+      emit("plugin-added", {
+        pluginId: "slow",
+        name: "Slow",
+        tiles: [{ id: "tile", name: "Tile" }],
+      });
+      emit("plugin-removed", { pluginId: "slow" });
+      expect(useSmabar.getState().pluginUi).toEqual({});
+    } else {
+      expect(
+        useSmabar.getState().popupQueue.visible.map(({ html }) => html),
+      ).toEqual(["received", "latest"]);
+    }
+    vi.advanceTimersByTime(1_000);
+    expect(vi.mocked(uiLog).mock.calls.at(-1)?.[2]?.fields).toMatchObject({
+      liveEvents: 2,
+      liveHtmlUnits: 14,
+      snapshotEvents: role === "bar" ? 1 : 0,
+      suppressedStateUpdates: role === "bar" ? 2 : 0,
+    });
+  },
+);
 
 interface Deferred<T> {
   promise: Promise<T>;

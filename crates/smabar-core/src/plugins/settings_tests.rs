@@ -174,11 +174,12 @@ async fn settings_changed_during_initialize_window_are_pushed_after_running() {
         .insert("slowinit".to_string(), json!({"city": "Berlin"}));
     config.apply(new_config).expect("apply during initialize");
 
-    // After Running, the plugin must receive the new settings via
-    // settings.changed (rendered as "flyout").
+    // The running plugin must render the new settings. A delayed directory
+    // notification on Windows can restart it during initialize; that run
+    // legitimately receives the same settings in initialize (the tile).
     let html = loop {
-        if let PluginEvent::UiRender { target, html, .. } = next_event(&mut events).await
-            && target == "flyout"
+        if let PluginEvent::UiRender { html, .. } = next_event(&mut events).await
+            && html.contains("Berlin")
         {
             break html;
         }

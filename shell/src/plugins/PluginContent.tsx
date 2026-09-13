@@ -12,6 +12,12 @@ import { PluginTile } from "../components/PluginTile";
 import { t } from "../i18n/t";
 import { call } from "../ipc/call";
 import { reportError } from "../ipc/log";
+import {
+  memoryProbeIs,
+  recordMemoryClockStarts,
+  recordMemoryDomCommit,
+  useMemoryProbeHtml,
+} from "../ipc/memoryProbe";
 import { useSmabar, type TileChrome } from "../store/bar";
 import { brandingStyle, type BrandingStyle } from "./branding";
 import { captureChartMemory, clearChartMemory, enhanceCharts } from "./charts";
@@ -139,12 +145,13 @@ export function ShadowHost({
   style,
 }: ShadowHostProps) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const probeHtml = useMemoryProbeHtml(html);
   const {
     renderedHtml,
     applyPending: applyPendingRange,
     preserveHovered: preserveHoveredRange,
     bind: bindRangeActions,
-  } = useRangeActions(html, pluginId, tileId, popupInstanceId);
+  } = useRangeActions(probeHtml, pluginId, tileId, popupInstanceId);
   const memoryKey = `${pluginId}/${tileId}/${target}${memoryScope === undefined ? "" : `/${memoryScope}`}`;
   const renderedMemoryKey = useRef<string | undefined>(undefined);
 
@@ -197,6 +204,7 @@ export function ShadowHost({
       captureChartMemory(root, memoryKey);
     }
     root.replaceChildren(wrapper);
+    recordMemoryDomCommit(renderedHtml.length);
     renderedMemoryKey.current = memoryKey;
     // After replaceChildren: the <style> fallback must survive the swap.
     adoptKit(root);
@@ -209,7 +217,10 @@ export function ShadowHost({
     enhanceTooltips(wrapper);
     const stopMarquees = enhanceMarquees(wrapper);
     enhanceBadges(wrapper);
-    const stopClocks = enhanceClocks(wrapper);
+    const stopClocks = memoryProbeIs("no-clocks")
+      ? undefined
+      : enhanceClocks(wrapper);
+    if (stopClocks !== undefined) recordMemoryClockStarts(wrapper);
     const stopCarousels = enhanceCarousels(wrapper);
     const stopRotators = enhanceRotators(wrapper);
     enhanceTabs(wrapper);
@@ -244,7 +255,7 @@ export function ShadowHost({
       root.removeEventListener("submit", onSubmit, true);
       stopRangeActions();
       stopMarquees();
-      stopClocks();
+      stopClocks?.();
       stopCarousels();
       stopRotators();
     };

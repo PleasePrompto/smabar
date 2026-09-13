@@ -192,15 +192,8 @@ async fn exec_plugin_initializes_renders_dispatches_and_shuts_down() {
 
     // Late subscribers (a shell that attaches or reloads after these pushes)
     // replay the cached renders instead of waiting for the next push. The
-    // tracking task runs concurrently — poll briefly until it caught up.
-    let mut ui = supervisor.current_ui();
-    for _ in 0..50 {
-        if ui.len() == 2 {
-            break;
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
-        ui = supervisor.current_ui();
-    }
+    // snapshot is already current when a subscriber receives the render.
+    let ui = supervisor.current_ui();
     assert_eq!(ui.len(), 2, "tile + flyout renders must be cached");
     assert!(ui.iter().any(|s| s.plugin_id == "testplug"
         && s.tile_id == "w1"

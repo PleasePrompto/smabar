@@ -115,7 +115,7 @@ pub enum FlyoutMode {
     Pinned,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OverlayFlyoutRequest {
     pub generation: u64,

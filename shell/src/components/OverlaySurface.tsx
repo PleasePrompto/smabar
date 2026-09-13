@@ -5,7 +5,9 @@ import { getTile } from "./registry";
 import { flyoutContentFor } from "./overlay/model";
 import { t } from "../i18n/t";
 import { cleanupListeners } from "../ipc/listeners";
+import type { PluginUiEvent } from "../ipc/bridge";
 import { reportError } from "../ipc/log";
+import { recordMemoryUi, suppressMemoryStateUpdate } from "../ipc/memoryProbe";
 import {
   closeFlyoutSurface,
   pinFlyoutSurface,
@@ -47,7 +49,7 @@ function hasEmbed(html: string | undefined): boolean {
   return html?.toLowerCase().includes("<iframe") === true;
 }
 
-export function OverlaySurface() {
+export function OverlaySurface({ onReady }: { onReady?: () => void }) {
   const registryVersion = useSmabar((state) => state.registryVersion);
   const [request, setRequest] = useState<FlyoutRequest | null>(null);
   const [placement, setPlacement] = useState<FlyoutPlacement | null>(null);
@@ -55,7 +57,10 @@ export function OverlaySurface() {
   const [contentSettled, setContentSettled] = useState(true);
   const rootRef = useRef<HTMLDivElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
-  const requestRef = useRef<FlyoutRequest | null>(null);
+  // A closed generation remains as a tombstone: a staged open can arrive late.
+  const requestRef = useRef<
+    FlyoutRequest | { generation: number; mode: null } | null
+  >(null);
   const contentFrame = useRef(0);
   // The last geometry handed to the core. A plugin re-rendering its open
   // flyout every second must not re-run the native place/reveal chain (a
@@ -75,25 +80,69 @@ export function OverlaySurface() {
   const html = flyoutContentFor(request?.mode ?? null, hoverHtml, flyoutHtml);
 
   useEffect(() => {
-    const cleanup = cleanupListeners([
+    let disposed = false;
+    const registrations = [
+      listen<PluginUiEvent & { generation: number }>(
+        "plugin-ui-overlay",
+        ({ payload }) => {
+          recordMemoryUi(payload.html.length, "live");
+          if (suppressMemoryStateUpdate()) return;
+          const current = requestRef.current;
+          if (
+            current?.mode == null ||
+            current.generation !== payload.generation ||
+            current.tileId !== `plugin:${payload.pluginId}:${payload.tileId}` ||
+            (payload.target !== "hover" && payload.target !== "flyout")
+          )
+            return;
+          useSmabar
+            .getState()
+            .setPluginUi(
+              `${payload.pluginId}/${payload.tileId}/${payload.target}`,
+              payload.html,
+            );
+        },
+      ),
       listen<number>("flyout-pin-requested", (event) => {
         const current = requestRef.current;
-        if (current?.generation === event.payload) pinPreview(current);
+        if (current?.generation === event.payload && current.mode !== null)
+          pinPreview(current);
       }),
       listen<FlyoutRequest>("surface-flyout", (event) => {
+        const { content, ...nextRequest } = event.payload;
+        for (const html of Object.values(content ?? {})) {
+          if (html !== null) recordMemoryUi(html.length, "snapshot");
+        }
         const current = requestRef.current;
         // Rapid flyout switches run their staging concurrently in the core,
         // so an older request can be delivered after its replacement.
-        if (current !== null && event.payload.generation < current.generation)
+        if (
+          current !== null &&
+          (nextRequest.generation < current.generation ||
+            (nextRequest.generation === current.generation &&
+              (current.mode === null || current.tileId !== nextRequest.tileId)))
+        )
           return;
+        if (content !== undefined) {
+          const definition = getTile(nextRequest.tileId);
+          const pluginUi: Record<string, string> = {};
+          if (definition !== undefined) {
+            const key = `${definition.pluginId}/${definition.tile.id}`;
+            for (const target of ["hover", "flyout"] as const) {
+              const html = content[target];
+              if (html !== null) pluginUi[`${key}/${target}`] = html;
+            }
+          }
+          useSmabar.setState({ pluginUi });
+        }
         const upgrading =
-          current?.generation === event.payload.generation &&
+          current?.generation === nextRequest.generation &&
           current.mode === "peek" &&
-          event.payload.mode === "pinned";
-        const replacing = upgrading && event.payload.preserveContent !== true;
+          nextRequest.mode === "pinned";
+        const replacing = upgrading && nextRequest.preserveContent !== true;
         // Only staged replacements need another native place/reveal chain.
         if (!upgrading || replacing) lastMeasure.current = "";
-        requestRef.current = event.payload;
+        requestRef.current = nextRequest;
         window.cancelAnimationFrame(contentFrame.current);
         setContentSettled(!replacing);
         if (replacing) {
@@ -101,32 +150,45 @@ export function OverlaySurface() {
             setContentSettled(true);
           });
         }
-        setRequest(event.payload);
+        setRequest(nextRequest);
         setPlacement((current) =>
-          current?.generation === event.payload.generation ? current : null,
+          current?.generation === nextRequest.generation ? current : null,
         );
         setClosing(false);
       }),
       listen<FlyoutPlacement>("overlay-placement", (event) => {
-        setPlacement(event.payload);
+        const current = requestRef.current;
+        if (
+          current?.generation === event.payload.generation &&
+          current.mode !== null
+        )
+          setPlacement(event.payload);
       }),
       listen<FlyoutRequest>("flyout-closed", (event) => {
-        if (requestRef.current?.generation === event.payload.generation) {
-          requestRef.current = null;
-        }
-        setRequest((current) =>
-          current?.generation === event.payload.generation ? null : current,
-        );
-        setPlacement((current) =>
-          current?.generation === event.payload.generation ? null : current,
-        );
+        const current = requestRef.current;
+        if (current !== null && event.payload.generation < current.generation)
+          return;
+        requestRef.current = {
+          generation: event.payload.generation,
+          mode: null,
+        };
+        useSmabar.setState({ pluginUi: {} });
+        setRequest(null);
+        setPlacement(null);
       }),
-    ]);
+    ];
+    const cleanup = cleanupListeners(registrations);
+    void Promise.all(registrations)
+      .then(() => {
+        if (!disposed) onReady?.();
+      })
+      .catch(reportError);
     return () => {
+      disposed = true;
       window.cancelAnimationFrame(contentFrame.current);
       cleanup();
     };
-  }, []);
+  }, [onReady]);
 
   useLayoutEffect(() => {
     const element = rootRef.current;

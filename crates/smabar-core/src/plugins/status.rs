@@ -10,10 +10,8 @@ use tokio::sync::broadcast;
 use super::activation;
 use super::manifest::PluginManifest;
 use super::supervisor::PluginSupervisor;
-use crate::util::{lock_unpoisoned, now_ms};
+use crate::util::lock_unpoisoned;
 
-#[cfg(test)]
-use super::PluginTileDef;
 use super::{PluginEvent, PluginStatus};
 
 /// Latest tracked lifecycle state of one plugin id (or plugin folder name,
@@ -25,13 +23,6 @@ pub(super) struct StatusEntry {
 }
 
 pub(super) type StatusMap = Arc<Mutex<HashMap<String, StatusEntry>>>;
-
-/// Last persistent render per (plugin id, tile id, target), with the
-/// millisecond timestamp of that render. Late subscribers fetch
-/// tile/flyout/hover state instead of waiting for the plugin's next push, and
-/// a reload reply can tell which tiles rendered in THIS start. Transient
-/// popups are deliberately never replayed.
-pub(super) type UiMap = Arc<Mutex<HashMap<(String, String, String), (String, u64)>>>;
 
 /// One cached tile render, from [`super::PluginSupervisor::current_ui`].
 #[derive(Debug, Clone)]
@@ -96,45 +87,39 @@ impl PluginSupervisor {
 
     /// Last rendered HTML of every tile target, sorted for determinism.
     pub fn current_ui(&self) -> Vec<UiSnapshot> {
-        let mut snapshots: Vec<UiSnapshot> = lock_unpoisoned(&self.inner.ui)
-            .iter()
-            .map(|((plugin_id, tile_id, target), (html, _))| UiSnapshot {
-                plugin_id: plugin_id.clone(),
-                tile_id: tile_id.clone(),
-                target: target.clone(),
-                html: html.clone(),
-            })
-            .collect();
-        snapshots.sort_by(|a, b| {
-            (&a.plugin_id, &a.tile_id, &a.target).cmp(&(&b.plugin_id, &b.tile_id, &b.target))
-        });
-        snapshots
+        self.inner.events.current_ui()
+    }
+
+    /// Atomically captures persistent UI and subscribes to subsequent events.
+    /// A render concurrent with this call is either reflected in the snapshot
+    /// or received afterward, never lost between the two. Popups are not replayed.
+    pub fn subscribe_with_ui(&self) -> (Vec<UiSnapshot>, broadcast::Receiver<PluginEvent>) {
+        self.inner.events.subscribe_with_ui()
+    }
+
+    /// Drains the receiver's retained events and captures persistent UI at the
+    /// same publication boundary. Forward the returned lifecycle/popup events
+    /// in order, apply the authoritative snapshot, then continue this receiver.
+    /// Events already overwritten by the broadcast channel cannot be recovered.
+    pub fn resync_ui(
+        &self,
+        receiver: &mut broadcast::Receiver<PluginEvent>,
+    ) -> (Vec<UiSnapshot>, Vec<PluginEvent>) {
+        self.inner.events.resync_ui(receiver)
     }
 
     /// Tile ids of `plugin_id` whose tile rendered at or after `since_ms`,
     /// sorted. The reload reply uses it to say which declared tiles are
     /// still blank after a start.
     pub fn tiles_rendered_since(&self, plugin_id: &str, since_ms: u64) -> Vec<String> {
-        let mut tiles: Vec<String> = lock_unpoisoned(&self.inner.ui)
-            .iter()
-            .filter(|((id, _, target), (_, at))| {
-                id == plugin_id && target == "tile" && *at >= since_ms
-            })
-            .map(|((_, tile, _), _)| tile.clone())
-            .collect();
-        tiles.sort();
-        tiles
+        self.inner.events.tiles_rendered_since(plugin_id, since_ms)
     }
 }
 
-/// Upserts `Status` events into the status map, caches `UiRender` HTML, and
-/// drops a plugin's entries on `Removed`. Ends when the supervisor (the
-/// event sender) is dropped.
-pub(super) async fn track_events(
-    mut rx: broadcast::Receiver<PluginEvent>,
-    statuses: StatusMap,
-    ui: UiMap,
-) {
+/// Upserts `Status` events and drops a plugin's status on `Removed`.
+/// UI is already cached synchronously before publication. Ends when the
+/// supervisor (the event sender) is dropped.
+pub(super) async fn track_events(mut rx: broadcast::Receiver<PluginEvent>, statuses: StatusMap) {
     loop {
         match rx.recv().await {
             Ok(PluginEvent::Status {
@@ -144,32 +129,10 @@ pub(super) async fn track_events(
             }) => {
                 lock_unpoisoned(&statuses).insert(plugin_id, StatusEntry { status, error });
             }
-            Ok(PluginEvent::UiRender {
-                plugin_id,
-                tile_id,
-                target,
-                html,
-                ttl_ms: _,
-            }) => {
-                if target != "popup" {
-                    lock_unpoisoned(&ui).insert((plugin_id, tile_id, target), (html, now_ms()));
-                }
-            }
-            Ok(PluginEvent::Added {
-                plugin_id, tiles, ..
-            }) => {
-                // A restart re-emits Added with the CURRENT manifest, so this
-                // is where a manifest that dropped a tile is noticed. Without
-                // the purge, current_ui() keeps serving the dead tile's HTML
-                // to every webview that attaches later.
-                lock_unpoisoned(&ui).retain(|(id, tile, _), _| {
-                    *id != plugin_id || tiles.iter().any(|declared| declared.id == *tile)
-                });
-            }
             Ok(PluginEvent::Removed { plugin_id }) => {
                 lock_unpoisoned(&statuses).remove(&plugin_id);
-                lock_unpoisoned(&ui).retain(|(id, _, _), _| *id != plugin_id);
             }
+            Ok(PluginEvent::UiRender { .. } | PluginEvent::Added { .. }) => {}
             Err(broadcast::error::RecvError::Lagged(skipped)) => {
                 tracing::warn!(
                     skipped,
@@ -339,56 +302,5 @@ mod tests {
             Some(std::path::Path::new("/p/off"))
         );
         assert_eq!(infos[1].status, PluginStatus::Starting);
-    }
-
-    #[tokio::test]
-    async fn a_restart_forgets_the_ui_of_tiles_the_manifest_dropped() {
-        let (tx, rx) = broadcast::channel(16);
-        let statuses: StatusMap = Arc::new(Mutex::new(HashMap::new()));
-        let ui: UiMap = Arc::new(Mutex::new(HashMap::new()));
-        let tracker = tokio::spawn(track_events(rx, Arc::clone(&statuses), Arc::clone(&ui)));
-
-        let added = |tiles: Vec<&str>| PluginEvent::Added {
-            plugin_id: "demo".to_string(),
-            name: "Demo".to_string(),
-            icon_data_url: None,
-            tiles: tiles
-                .into_iter()
-                .map(|id| PluginTileDef {
-                    id: id.to_string(),
-                    name: id.to_string(),
-                    has_flyout: false,
-                    tile: None,
-                    tile_scale: None,
-                    icon_svg: None,
-                    use_plugin_icon: false,
-                    accent: None,
-                    accent_2: None,
-                    accent_fg: None,
-                })
-                .collect(),
-            settings_schema: None,
-        };
-        let render = |tile: &str| PluginEvent::UiRender {
-            plugin_id: "demo".to_string(),
-            tile_id: tile.to_string(),
-            target: "tile".to_string(),
-            html: "<b>x</b>".to_string(),
-            ttl_ms: None,
-        };
-        tx.send(added(vec!["one", "two"])).expect("send added");
-        tx.send(render("one")).expect("send render");
-        tx.send(render("two")).expect("send render");
-        // The manifest now declares only "one" — "two" must not survive, or
-        // current_ui() would keep serving a tile that no longer exists.
-        tx.send(added(vec!["one"])).expect("send shrunken added");
-        drop(tx);
-        tracker.await.expect("tracker ends with the sender");
-
-        let cached: Vec<String> = lock_unpoisoned(&ui)
-            .keys()
-            .map(|(_, tile, _)| tile.clone())
-            .collect();
-        assert_eq!(cached, vec!["one".to_string()]);
     }
 }

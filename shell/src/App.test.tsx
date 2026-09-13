@@ -11,7 +11,9 @@ const { applyTokens, finalizeOverlayClear, renderBar, renderOverlay } =
     applyTokens: vi.fn(),
     finalizeOverlayClear: vi.fn(() => Promise.resolve()),
     renderBar: vi.fn(() => null),
-    renderOverlay: vi.fn<() => ReactNode>(() => null),
+    renderOverlay: vi.fn<(props: { onReady?: () => void }) => ReactNode>(
+      () => null,
+    ),
   }));
 
 vi.mock("./components/bar/BarShell", () => ({ BarShell: renderBar }));
@@ -27,7 +29,7 @@ vi.mock("./components/overlay/Tooltip", () => ({
 }));
 vi.mock("./components/PluginPopup", () => ({ PluginPopup: () => null }));
 vi.mock("./components/settings/SettingsPanel", () => ({
-  SettingsPanel: () => null,
+  SettingsPanel: () => <div data-settings />,
 }));
 vi.mock("./components/Toast", () => ({ Toast: () => null }));
 vi.mock("./components/NotificationSurface", () => ({
@@ -98,4 +100,36 @@ test("reports when the overlay DOM has been cleared", async () => {
   });
 
   expect(finalizeOverlayClear).toHaveBeenCalledOnce();
+});
+
+test("settings signal readiness only after their lazy content mounts", async () => {
+  const mounted = vi.fn(() => {
+    expect(container.querySelector("[data-settings]")).not.toBeNull();
+  });
+  await act(async () => {
+    root.render(<App role="settings" onMounted={mounted} />);
+    await Promise.resolve();
+  });
+  await vi.waitFor(() => {
+    expect(mounted).toHaveBeenCalledOnce();
+  });
+  expect(renderBar).not.toHaveBeenCalled();
+});
+
+test("overlay readiness waits for its listeners and locale keeps the same surface", () => {
+  const mounted = vi.fn();
+  act(() => {
+    root.render(<App role="overlay" onMounted={mounted} />);
+  });
+  const surface = container.querySelector("[data-overlay]");
+  expect(surface).not.toBeNull();
+  expect(mounted).not.toHaveBeenCalled();
+  renderOverlay.mock.calls[0]?.[0].onReady?.();
+  expect(mounted).toHaveBeenCalledOnce();
+  act(() => {
+    useSmabar.getState().bumpLocaleVersion();
+  });
+  expect(container.querySelector("[data-overlay]")).toBe(surface);
+  expect(renderOverlay).toHaveBeenCalledTimes(2);
+  expect(mounted).toHaveBeenCalledOnce();
 });

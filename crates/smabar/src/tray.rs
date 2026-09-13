@@ -170,10 +170,14 @@ pub(crate) fn release_platform_state() {
     }
 }
 
-fn open_settings(app: &AppHandle, section: &str) {
-    if let Err(error) = crate::surfaces::open_settings_from_app(app, section) {
-        tracing::warn!(%error, %section, "failed to open settings from the tray");
-    }
+fn open_settings(app: &AppHandle, section: &'static str) {
+    let app = app.clone();
+    // Creating WebView2 from a synchronous event handler can deadlock Windows.
+    tauri::async_runtime::spawn(async move {
+        if let Err(error) = crate::surfaces::open_settings_from_app(&app, section) {
+            tracing::warn!(%error, %section, "failed to open settings from the tray");
+        }
+    });
 }
 
 fn show_and_focus(app: &AppHandle) {
@@ -184,7 +188,7 @@ fn show_and_focus(app: &AppHandle) {
     if let Err(error) = window.unminimize() {
         tracing::warn!(%error, "failed to unminimize the bar from the tray");
     }
-    if let Err(error) = window.show() {
+    if let Err(error) = crate::platform::show_surface(&window) {
         tracing::warn!(%error, "failed to show the bar from the tray");
     }
     if let Err(error) = crate::platform::window::focus(&window) {

@@ -13,6 +13,26 @@ use crate::commands::AppState;
 use crate::platform::display::DisplaySnapshot;
 
 impl SurfaceManager {
+    /// Queue restoration under the same lock that records a settings open.
+    /// A concurrent reopen then queues its show afterwards, never before a
+    /// stale capture hide. Monitor staging also keeps settings_group present.
+    pub(crate) fn restore_hidden_settings_capture(
+        &self,
+        window: &WebviewWindow,
+    ) -> anyhow::Result<()> {
+        if window.label() != SurfaceRole::Settings.label() {
+            return Ok(());
+        }
+        let lifecycle = self
+            .lifecycle
+            .lock()
+            .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?;
+        if lifecycle.settings_group.is_none() {
+            crate::platform::set_capture_webview_active(window, false)?;
+        }
+        Ok(())
+    }
+
     pub(super) fn settings_open(&self) -> anyhow::Result<bool> {
         self.lifecycle
             .lock()
@@ -131,9 +151,7 @@ pub(super) fn raise_settings(window: &WebviewWindow) -> anyhow::Result<()> {
     window
         .unminimize()
         .context("failed to unminimize the settings window")?;
-    window
-        .show()
-        .context("failed to show the settings window")?;
+    crate::platform::show_surface(window).context("failed to show the settings window")?;
     window
         .set_focus()
         .context("failed to focus the settings window")

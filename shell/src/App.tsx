@@ -1,4 +1,4 @@
-import { Fragment, useEffect } from "react";
+import { Fragment, lazy, Suspense, useEffect } from "react";
 
 import { BarShell } from "./components/bar/BarShell";
 import { DesktopBackground } from "./components/DesktopBackground";
@@ -6,7 +6,6 @@ import { DevFixture } from "./components/DevFixture";
 import { ContextMenuLayer } from "./components/overlay/ContextMenuLayer";
 import { TooltipLayer } from "./components/overlay/Tooltip";
 import { PluginPopup } from "./components/PluginPopup";
-import { SettingsPanel } from "./components/settings/SettingsPanel";
 import { Toast } from "./components/Toast";
 import { NotificationSurface } from "./components/NotificationSurface";
 import { OverlaySurface } from "./components/OverlaySurface";
@@ -21,8 +20,21 @@ import type { AppRole } from "./ipc/surface";
 // is only for browser-based development.
 const isTauri = "__TAURI_INTERNALS__" in window;
 
-export function App({ role = "browser" }: { role?: AppRole }) {
-  // Locale switches remount the tree so every t() call re-evaluates.
+const SettingsPanel = lazy(() =>
+  import("./components/settings/SettingsPanel").then((module) => ({
+    default: module.SettingsPanel,
+  })),
+);
+
+export function App({
+  role = "browser",
+  onMounted,
+}: {
+  role?: AppRole;
+  onMounted?: () => void;
+}) {
+  // Locale switches rerender every surface. Keep the overlay's live request
+  // and listeners mounted so a locale update cannot lose its opening snapshot.
   const localeVersion = useSmabar((s) => s.localeVersion);
   useEffect(() => {
     // Tokens affect the DOM directly. A React subscription here used to
@@ -54,7 +66,7 @@ export function App({ role = "browser" }: { role?: AppRole }) {
   } else if (role === "overlay") {
     content = (
       <>
-        <OverlaySurface />
+        <OverlaySurface onReady={onMounted} />
         <ContextMenuLayer surface="overlay" />
         <OverlayTooltip />
         <TooltipLayer inline />
@@ -65,12 +77,23 @@ export function App({ role = "browser" }: { role?: AppRole }) {
     content = <BrowserPreview />;
   }
   return (
-    <Fragment key={localeVersion}>
+    <Fragment key={role === "overlay" ? role : localeVersion}>
       {!isTauri && import.meta.env.DEV && <DesktopBackground />}
-      {content}
+      <Suspense fallback={null}>
+        {content}
+        {role !== "overlay" && <Mounted onMounted={onMounted} />}
+      </Suspense>
       {role === "browser" && <DevFixture />}
     </Fragment>
   );
+}
+
+/** A surface is ready only after its content, including lazy chunks, mounted. */
+function Mounted({ onMounted }: { onMounted?: () => void }) {
+  useEffect(() => {
+    onMounted?.();
+  }, [onMounted]);
+  return null;
 }
 
 function OverlayClearBarrier() {

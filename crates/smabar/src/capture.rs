@@ -17,6 +17,7 @@ use tauri::{AppHandle, Emitter, EventTarget, Manager, State};
 use tokio::sync::{mpsc, oneshot};
 
 use crate::platform;
+use crate::surfaces::{SurfaceManager, SurfaceRole};
 
 /// How long the shell gets to measure and answer. Shorter than the MCP-side
 /// timeout so a stuck shell still releases the capture stage in time.
@@ -126,6 +127,19 @@ pub type BarEnvelope = (BarRequest, oneshot::Sender<Result<BarResponse, BarError
 
 async fn screenshot(app: &AppHandle, target: &str, scale: u8) -> Result<BarResponse, BarError> {
     for attempt in 0..TARGET_RETRY_COUNT {
+        // A settings webview now starts on first use. Sending before its
+        // capture listener is ready loses the event and times out the request.
+        if capture_window(app, target).is_none() {
+            return Err(BarError::Disconnected);
+        }
+        if !app
+            .state::<SurfaceManager>()
+            .is_ready(capture_role(target))
+            .map_err(|error| BarError::Failed(error.to_string()))?
+        {
+            tokio::time::sleep(TARGET_RETRY_DELAY).await;
+            continue;
+        }
         let result = capture_once(app, target, scale).await;
         if !matches!(result, Err(BarError::UnknownTarget { .. }))
             || attempt + 1 == TARGET_RETRY_COUNT
@@ -142,53 +156,53 @@ async fn screenshot(app: &AppHandle, target: &str, scale: u8) -> Result<BarRespo
 async fn capture_once(app: &AppHandle, target: &str, scale: u8) -> Result<BarResponse, BarError> {
     let state = app.state::<Arc<CaptureState>>();
     let (window, id, rx) = state.begin(capture_window(app, target))?;
-    if let Err(error) = window.emit_to(
-        EventTarget::webview_window(window.label()),
-        "bar-capture",
-        CaptureRequestEvent {
-            id,
-            target: target.to_string(),
-        },
-    ) {
-        // begin()/forget() must stay symmetrical on every path, even this
-        // shutdown-adjacent one — otherwise a dead oneshot sender leaks.
-        state.forget(id);
-        return Err(BarError::Failed(error.to_string()));
-    }
-
-    let reply = match await_reply(&state, id, rx).await {
-        Ok(reply) => reply,
-        Err(error) => {
-            // The shell may still be preparing a retried target. Cancel that
-            // transaction too, so it cannot stage layout after our timeout.
-            let _ = window.emit_to(
+    let outcome = async {
+        // Wake a retained hidden settings webview before the shell stages and
+        // paints its DOM. Its parent window remains hidden.
+        platform::set_capture_webview_active(&window, true)
+            .map_err(|error| BarError::Failed(format!("{error:#}")))?;
+        window
+            .emit_to(
                 EventTarget::webview_window(window.label()),
-                "bar-capture-release",
-                id,
-            );
-            return Err(error);
-        }
-    };
-    // Whatever happens from here, the shell must get its layout back.
-    let outcome = render(&window, target, scale, &reply).await;
+                "bar-capture",
+                CaptureRequestEvent {
+                    id,
+                    target: target.to_string(),
+                },
+            )
+            .map_err(|error| BarError::Failed(error.to_string()))?;
+        let reply = await_reply(&state, id, rx).await?;
+        render(&window, target, scale, &reply).await
+    }
+    .await;
+    // Release on every outcome, including failed wake/emit and timed-out
+    // staging. Queue DOM cleanup before restoring controller visibility.
+    state.forget(id);
     let _ = window.emit_to(
         EventTarget::webview_window(window.label()),
         "bar-capture-release",
         id,
     );
-    outcome
+    let restored = app
+        .state::<SurfaceManager>()
+        .restore_hidden_settings_capture(&window)
+        .map_err(|error| BarError::Failed(format!("{error:#}")));
+    if let Err(error) = &restored {
+        tracing::error!(%error, "failed to restore settings visibility after capture");
+    }
+    outcome.and_then(|response| restored.map(|()| response))
 }
 
 fn capture_window(app: &AppHandle, target: &str) -> Option<tauri::WebviewWindow> {
-    app.get_webview_window(capture_label(target))
+    app.get_webview_window(capture_role(target).label())
 }
 
-fn capture_label(target: &str) -> &'static str {
+fn capture_role(target: &str) -> SurfaceRole {
     match target {
-        "flyout" => "overlay",
-        "settings" => "settings",
-        "popup" => "notifications",
-        _ => "bar",
+        "flyout" => SurfaceRole::Overlay,
+        "settings" => SurfaceRole::Settings,
+        "popup" => SurfaceRole::Notifications,
+        _ => SurfaceRole::Bar,
     }
 }
 
@@ -324,10 +338,10 @@ mod tests {
 
     #[test]
     fn target_roles_are_stable() {
-        assert_eq!(capture_label("flyout"), "overlay");
-        assert_eq!(capture_label("overlay"), "bar");
-        assert_eq!(capture_label("settings"), "settings");
-        assert_eq!(capture_label("popup"), "notifications");
-        assert_eq!(capture_label("plugin:clock:clock"), "bar");
+        assert_eq!(capture_role("flyout"), SurfaceRole::Overlay);
+        assert_eq!(capture_role("overlay"), SurfaceRole::Bar);
+        assert_eq!(capture_role("settings"), SurfaceRole::Settings);
+        assert_eq!(capture_role("popup"), SurfaceRole::Notifications);
+        assert_eq!(capture_role("plugin:clock:clock"), SurfaceRole::Bar);
     }
 }

@@ -8,7 +8,7 @@ use tauri::{AppHandle, State, WebviewWindow};
 
 use super::AppState;
 use crate::platform;
-use crate::platform::strut::{self, DockEdge};
+use crate::platform::strut::DockEdge;
 use crate::surfaces::{SurfaceManager, SurfaceSize};
 
 const EDGE_RELOCATION_FRAME: Duration = Duration::from_millis(20);
@@ -58,16 +58,12 @@ pub async fn set_bar_geometry(
         tokio::time::sleep(EDGE_RELOCATION_FRAME).await;
     }
     let dock = reservation_for_behavior(config.layout.behavior, edge, rect);
-    let placement = surfaces
-        .update_bar_geometry(&app, &window, rect, surface, &config)
-        .await
-        .and_then(|frame| {
-            strut::apply(
-                &window,
-                dock,
-                Some(tauri::PhysicalPosition::new(frame.x, frame.y)),
-            )
-        });
+    let placement = match surfaces.update_bar_geometry(&window, rect, surface, &config) {
+        // An edge change is visible at once; slider reports settle first.
+        Ok(frame) if relocating => surfaces.reserve_bar_space(&app, &window, dock, frame).await,
+        Ok(frame) => surfaces.defer_bar_reservation(&app, &window, dock, frame),
+        Err(error) => Err(error),
+    };
     if concealed {
         tokio::time::sleep(EDGE_RELOCATION_FRAME).await;
     }

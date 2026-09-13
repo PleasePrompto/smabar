@@ -31,6 +31,8 @@ pub(super) struct Lifecycle {
     pub(super) bar_offset: u32,
     pub(super) bar_visible_height: u32,
     pub(super) bar_motion_generation: u64,
+    /// Bumped per reservation request; a deferred application checks it.
+    pub(super) bar_reservation_generation: u64,
     pub(super) notification_measure: Option<NotificationMeasure>,
     pub(super) overlay_generation: u64,
     /// `overlay_generation` at the overlay's last focus gain. Focus-loss

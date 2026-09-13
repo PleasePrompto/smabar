@@ -8,15 +8,21 @@ use tauri::{AppHandle, Emitter, Manager, State, WebviewWindow};
 
 use super::model::SurfaceSize;
 use super::{SurfaceManager, SurfaceRole};
+use crate::platform::strut::DockEdge;
 
 const MOTION_TICK: Duration = Duration::from_millis(16);
 const MAX_MOTION_MS: u32 = 2_000;
 const MAX_VISIBLE_HEIGHT: u32 = 64;
+/// A size slider reports many geometries per second; the reservation moves
+/// every desktop window, so it follows once the reports stop.
+const RESERVATION_SETTLE: Duration = Duration::from_millis(150);
 
 impl SurfaceManager {
-    pub(crate) async fn update_bar_geometry(
+    /// Resizes and places the bar window at once (the live preview while a
+    /// slider moves). Reservation and notification anchors follow through
+    /// `reserve_bar_space` or `defer_bar_reservation`.
+    pub(crate) fn update_bar_geometry(
         &self,
-        app: &AppHandle,
         window: &WebviewWindow,
         rect: Rect,
         surface: SurfaceSize,
@@ -86,8 +92,86 @@ impl SurfaceManager {
             )?;
             tracing::info!(?frame, scale, "bar surface resized to content");
         }
-        self.reposition_notifications(app, config).await?;
         Ok(placed_frame)
+    }
+
+    /// Applies the reservation now; a pending deferred application is dropped.
+    pub(crate) async fn reserve_bar_space(
+        &self,
+        app: &AppHandle,
+        window: &WebviewWindow,
+        dock: Option<(DockEdge, Rect)>,
+        frame: ScreenRect,
+    ) -> anyhow::Result<()> {
+        self.next_bar_reservation()?;
+        self.apply_bar_reservation(app, window, dock, frame).await
+    }
+
+    /// Applies the reservation once the geometry reports settle; only the
+    /// newest request survives.
+    pub(crate) fn defer_bar_reservation(
+        &self,
+        app: &AppHandle,
+        window: &WebviewWindow,
+        dock: Option<(DockEdge, Rect)>,
+        frame: ScreenRect,
+    ) -> anyhow::Result<()> {
+        let generation = self.next_bar_reservation()?;
+        let app = app.clone();
+        let window = window.clone();
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(RESERVATION_SETTLE).await;
+            let manager = app.state::<SurfaceManager>();
+            match manager.bar_reservation_is_current(generation) {
+                Ok(true) => {}
+                Ok(false) => return,
+                Err(error) => {
+                    tracing::error!(%error, "surface state unavailable; the settled bar reservation was not applied");
+                    return;
+                }
+            }
+            if let Err(error) = manager
+                .apply_bar_reservation(&app, &window, dock, frame)
+                .await
+            {
+                tracing::error!(%error, "failed to apply the settled bar reservation; resize the bar or switch the layout behavior to retry");
+            }
+        });
+        Ok(())
+    }
+
+    async fn apply_bar_reservation(
+        &self,
+        app: &AppHandle,
+        window: &WebviewWindow,
+        dock: Option<(DockEdge, Rect)>,
+        frame: ScreenRect,
+    ) -> anyhow::Result<()> {
+        crate::platform::strut::apply(
+            window,
+            dock,
+            Some(tauri::PhysicalPosition::new(frame.x, frame.y)),
+        )?;
+        let config = app.state::<crate::commands::AppState>().config();
+        self.reposition_notifications(app, &config).await
+    }
+
+    fn next_bar_reservation(&self) -> anyhow::Result<u64> {
+        let mut lifecycle = self
+            .lifecycle
+            .lock()
+            .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?;
+        lifecycle.bar_reservation_generation = lifecycle.bar_reservation_generation.wrapping_add(1);
+        Ok(lifecycle.bar_reservation_generation)
+    }
+
+    fn bar_reservation_is_current(&self, generation: u64) -> anyhow::Result<bool> {
+        Ok(self
+            .lifecycle
+            .lock()
+            .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?
+            .bar_reservation_generation
+            == generation)
     }
 
     pub(crate) async fn prepare_bar_relocation(

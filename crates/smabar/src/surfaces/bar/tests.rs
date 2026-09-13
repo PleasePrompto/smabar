@@ -173,3 +173,12 @@ fn bar_rect_uses_the_new_native_frame_during_an_edge_change() {
         }
     );
 }
+
+#[test]
+fn only_the_newest_deferred_reservation_is_current() {
+    let manager = SurfaceManager::new(None, String::new());
+    let first = manager.next_bar_reservation().unwrap();
+    let second = manager.next_bar_reservation().unwrap();
+    assert!(!manager.bar_reservation_is_current(first).unwrap());
+    assert!(manager.bar_reservation_is_current(second).unwrap());
+}

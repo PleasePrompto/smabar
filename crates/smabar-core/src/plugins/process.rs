@@ -9,6 +9,7 @@ use tokio::process::{Child, Command};
 use crate::platform::{ProcessSignal, signal_process_group};
 
 use super::SupervisorOptions;
+use super::logfile::PluginLog;
 use super::manifest::{PluginManifest, PluginRuntime};
 
 /// A spawned plugin: the child handle plus the process group it leads.
@@ -29,6 +30,14 @@ impl PluginProcess {
     }
 }
 
+impl Drop for PluginProcess {
+    fn drop(&mut self) {
+        // Also runs when startup is cancelled: uv build subprocesses must not
+        // outlive the plugin. Child's kill_on_drop kills and reaps the leader.
+        self.signal_group(ProcessSignal::Kill);
+    }
+}
+
 /// Errors while preparing or spawning a plugin process.
 #[derive(Debug, Error)]
 pub(crate) enum SpawnError {
@@ -42,6 +51,8 @@ pub(crate) enum SpawnError {
     /// error if that invariant is ever violated.
     #[error("manifest is missing the {0} for its runtime")]
     MissingLaunchInfo(&'static str),
+    #[error(transparent)]
+    Python(#[from] super::python::PrepareError),
     /// The OS refused to start the process.
     #[error("failed to spawn {program}: {source}")]
     Spawn {
@@ -61,18 +72,15 @@ pub(crate) enum SpawnError {
 ///
 /// Returns the child plus its process-group id, which is `None` on platforms
 /// without process groups. The plugin leads its own group so stopping it can
-/// take its whole tree down: for python plugins the direct child is `uv`, and
-/// anything the plugin itself spawns is a grandchild that a plain child kill
-/// would orphan.
-pub(crate) fn spawn_plugin(
+/// take its whole tree down, including commands started by the plugin itself.
+pub(crate) async fn spawn_plugin(
     manifest: &PluginManifest,
     dir: &Path,
     data_dir: &Path,
     options: &SupervisorOptions,
+    log: &mut PluginLog,
 ) -> Result<PluginProcess, SpawnError> {
-    let mut command = base_command(manifest, options)?;
-    let grouped = crate::platform::detach_into_own_process_group(command.as_std_mut());
-    crate::platform::configure_no_window(command.as_std_mut());
+    let mut command = base_command(manifest, dir, data_dir, options, log).await?;
     command
         .current_dir(dir)
         .env("SMABAR_PLUGIN_ID", &manifest.id)
@@ -80,8 +88,15 @@ pub(crate) fn spawn_plugin(
         .env("SMABAR_PLUGIN_DATA_DIR", data_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .kill_on_drop(true);
+        .stderr(Stdio::piped());
+    spawn_command(command)
+}
+
+/// Shared by plugin execution and its short-lived environment preparation.
+pub(super) fn spawn_command(mut command: Command) -> Result<PluginProcess, SpawnError> {
+    let grouped = crate::platform::detach_into_own_process_group(command.as_std_mut());
+    crate::platform::configure_no_window(command.as_std_mut());
+    command.kill_on_drop(true);
     crate::platform::render::scrub_child_env(command.as_std_mut());
     let program = command
         .as_std()
@@ -97,9 +112,12 @@ pub(crate) fn spawn_plugin(
     Ok(PluginProcess { child, group })
 }
 
-fn base_command(
+async fn base_command(
     manifest: &PluginManifest,
+    dir: &Path,
+    data_dir: &Path,
     options: &SupervisorOptions,
+    log: &mut PluginLog,
 ) -> Result<Command, SpawnError> {
     match manifest.runtime {
         PluginRuntime::Exec => {
@@ -117,8 +135,9 @@ fn base_command(
                 .as_deref()
                 .ok_or(SpawnError::MissingLaunchInfo("entry"))?;
             let uv = resolve_uv(options.uv_override.as_deref())?;
-            let mut command = Command::new(uv);
-            command.arg("run").arg("--script").arg(entry);
+            let mut command =
+                super::python::command(&uv, entry, dir, data_dir, &manifest.id, options, log)
+                    .await?;
             if let Some(sdk_path) = &options.sdk_path {
                 command.env("PYTHONPATH", python_path_with(sdk_path));
             }
@@ -145,7 +164,7 @@ pub(super) fn resolve_uv(uv_override: Option<&Path>) -> Result<PathBuf, SpawnErr
 }
 
 /// The SDK path, followed by any inherited `PYTHONPATH` entries.
-fn python_path_with(sdk_path: &Path) -> std::ffi::OsString {
+pub(super) fn python_path_with(sdk_path: &Path) -> std::ffi::OsString {
     let mut parts = vec![sdk_path.to_path_buf()];
     if let Some(existing) = std::env::var_os("PYTHONPATH") {
         parts.extend(std::env::split_paths(&existing));
@@ -160,8 +179,8 @@ fn python_path_with(sdk_path: &Path) -> std::ffi::OsString {
 mod tests {
     use super::*;
 
-    #[test]
-    fn python_command_sets_managed_python_install_dir() {
+    #[tokio::test]
+    async fn python_command_sets_managed_python_install_dir() {
         let manifest: PluginManifest = serde_json::from_str(
             r#"{"id":"x","name":"X","version":"1","protocolVersion":1,
                 "runtime":"python","entry":"plugin.py",
@@ -174,7 +193,12 @@ mod tests {
             ..SupervisorOptions::default()
         };
 
-        let command = base_command(&manifest, &options).expect("build python command");
+        let dir = tempfile::tempdir().expect("temp dir");
+        std::fs::write(dir.path().join("plugin.py"), "pass\n").expect("script");
+        let mut log = PluginLog::open(dir.path(), "x");
+        let command = base_command(&manifest, dir.path(), dir.path(), &options, &mut log)
+            .await
+            .expect("build python command");
         let install_dir = command
             .as_std()
             .get_envs()
@@ -200,12 +224,15 @@ mod group_tests {
         )
         .expect("parse manifest");
         let dir = tempfile::tempdir().expect("temp dir");
+        let mut log = PluginLog::open(dir.path(), "g");
         let process = spawn_plugin(
             &manifest,
             dir.path(),
             dir.path(),
             &SupervisorOptions::default(),
+            &mut log,
         )
+        .await
         .expect("spawn");
         assert!(
             process.group.is_some(),

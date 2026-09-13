@@ -1,6 +1,6 @@
 //! Managed Python runtime provisioning: an explicit, observable
 //! `uv python install` instead of the invisible one inside the first
-//! `uv run`.
+//! script environment preparation.
 //!
 //! The provisioner is the single authority on the runtime's state. Plugin
 //! starts call [`RuntimeProvisioner::ensure`] before spawning, the headless
@@ -72,7 +72,7 @@ pub enum RuntimeStatus {
 /// `cpython-<version>*` directory containing `bin/python3` (Unix layout) or
 /// `python.exe` (Windows layout) — both are checked so no platform `cfg` is
 /// needed. A false negative only costs a redundant idempotent install; a
-/// false positive is healed by `uv run`'s own lazy provisioning fallback.
+/// false positive is healed by uv's own script-environment provisioning.
 pub(crate) fn runtime_present(tools_dir: &Path) -> bool {
     let Ok(entries) = std::fs::read_dir(tools_dir) else {
         return false;

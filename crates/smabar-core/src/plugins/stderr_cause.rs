@@ -62,7 +62,8 @@ impl StderrCause {
         match self.last() {
             Some(cause)
                 if reason.starts_with("plugin closed stdout")
-                    || reason.starts_with("initialize failed") =>
+                    || reason.starts_with("initialize failed")
+                    || reason.starts_with("uv exited with") =>
             {
                 format!("{cause} — {reason}")
             }

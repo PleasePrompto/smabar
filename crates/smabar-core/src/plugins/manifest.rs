@@ -42,7 +42,7 @@ pub enum ManifestError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum PluginRuntime {
-    /// `uv run --script <entry>` — Python with PEP 723 inline dependencies.
+    /// Python with uv-managed PEP 723 inline dependencies.
     Python,
     /// The manifest's `command` array, verbatim.
     Exec,

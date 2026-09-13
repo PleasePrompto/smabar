@@ -35,7 +35,7 @@ sysinfo = "0.38.4"
 thiserror = "2.0.20"
 # rt-multi-thread: config/watcher_tests.rs runs on the multi-thread flavor; Linux
 # inherited the feature from zbus, a standalone Windows test build did not.
-tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "process", "io-util", "net"] }
+tokio = { version = "1.53.1", features = ["rt", "rt-multi-thread", "sync", "time", "macros", "process", "io-util", "net", "fs"] }
 tokio-util = "0.7.19"
 tracing = "0.1.44"
 tracing-appender = "0.2.5"

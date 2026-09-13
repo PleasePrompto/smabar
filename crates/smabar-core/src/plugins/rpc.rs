@@ -285,13 +285,16 @@ pub(crate) fn spawn_stderr_reader(
 }
 
 #[derive(Debug, PartialEq, Eq)]
-enum BoundedLine {
+pub(super) enum BoundedLine {
     Line(String),
     TooLong,
     Eof,
 }
 
-async fn read_bounded_line<R>(reader: &mut R, buffer: &mut Vec<u8>) -> std::io::Result<BoundedLine>
+pub(super) async fn read_bounded_line<R>(
+    reader: &mut R,
+    buffer: &mut Vec<u8>,
+) -> std::io::Result<BoundedLine>
 where
     R: AsyncBufRead + Unpin,
 {

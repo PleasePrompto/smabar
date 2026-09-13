@@ -234,6 +234,44 @@ pub async fn set_bar_transition_opaque(
     }
 }
 
+/// Hides an idle surface, including its WebView2 controller on Windows.
+pub fn hide_surface(window: &WebviewWindow) -> anyhow::Result<()> {
+    #[cfg(windows)]
+    {
+        windows::window::hide_surface(window)
+    }
+    #[cfg(not(windows))]
+    {
+        window.hide().context("failed to hide surface")
+    }
+}
+
+/// Resumes a surface's webview before showing its native window.
+pub fn show_surface(window: &WebviewWindow) -> anyhow::Result<()> {
+    #[cfg(windows)]
+    {
+        windows::window::show_surface(window)
+    }
+    #[cfg(not(windows))]
+    {
+        window.show().context("failed to show surface")
+    }
+}
+
+/// Windows settings keep their DOM while closed, but their controller needs
+/// to render before capture staging. Other surfaces and platforms need no change.
+pub fn set_capture_webview_active(window: &WebviewWindow, active: bool) -> anyhow::Result<()> {
+    #[cfg(windows)]
+    {
+        windows::window::set_capture_webview_active(window, active)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = (window, active);
+        Ok(())
+    }
+}
+
 /// Conceals transient content before its DOM and native frame are replaced.
 /// X11 keeps the window mapped so WebKitGTK can paint the new buffer;
 /// Wayland and other platforms withdraw it until placement.
@@ -248,6 +286,10 @@ pub async fn stage_transient_update(window: &WebviewWindow) -> anyhow::Result<()
         let transient = window.clone();
         window
             .run_on_main_thread(move || {
+                #[cfg(windows)]
+                let result = windows::window::stage_surface(&transient)
+                    .map_err(|error| format!("{error:#}"));
+                #[cfg(not(windows))]
                 let result = transient.hide().map_err(|error| format!("{error:#}"));
                 let _ = send.send(result);
             })
@@ -282,7 +324,7 @@ pub fn transient_presentation_token(window: &WebviewWindow) -> anyhow::Result<u6
 /// `token` still names the newest staged content.
 pub fn present_transient(window: &WebviewWindow, token: u64) -> anyhow::Result<()> {
     #[cfg(not(target_os = "macos"))]
-    window.show().context("failed to show transient surface")?;
+    show_surface(window).context("failed to show transient surface")?;
     #[cfg(target_os = "macos")]
     macos::window::present_transient(window)?;
     #[cfg(target_os = "linux")]
@@ -306,9 +348,7 @@ pub fn hide_transient_after_paint(window: &WebviewWindow, token: u64) -> anyhow:
     #[cfg(not(target_os = "linux"))]
     {
         let _ = token;
-        window
-            .hide()
-            .context("failed to hide cleared transient surface")
+        hide_surface(window).context("failed to hide cleared transient surface")
     }
 }
 

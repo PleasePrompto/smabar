@@ -143,8 +143,7 @@ impl SurfaceManager {
             .context("failed to conceal bar before monitor change")?;
         let move_result = async {
             if settings_was_visible && let Some(window) = settings.as_ref() {
-                window
-                    .hide()
+                crate::platform::hide_surface(window)
                     .context("failed to conceal settings before monitor change")?;
             }
             if notifications_were_visible && let Some(window) = notifications.as_ref() {
@@ -171,8 +170,7 @@ impl SurfaceManager {
                 let geometry = app.state::<AppState>().config().settings_window;
                 crate::platform::window::place_settings_surface(settings, &effective, geometry)?;
                 if settings_was_visible {
-                    settings
-                        .show()
+                    crate::platform::show_surface(settings)
                         .context("failed to reveal settings after monitor change")?;
                     settings
                         .set_focus()
@@ -200,7 +198,7 @@ impl SurfaceManager {
                 let _ = crate::platform::set_bar_transition_opaque(&bar, true).await;
             }
             if settings_was_visible && let Some(window) = settings {
-                let _ = window.show();
+                let _ = crate::platform::show_surface(&window);
             }
             if notifications_were_visible
                 && let Some(window) = notifications

@@ -122,15 +122,61 @@ pub async fn set_bar_transition_opaque(
     opaque: bool,
 ) -> anyhow::Result<bool> {
     if opaque {
-        window
-            .show()
-            .context("failed to reveal bar after relocation")?;
+        show_surface(window)?;
     } else {
-        window
-            .hide()
-            .context("failed to conceal bar before relocation")?;
+        stage_surface(window)?;
     }
     Ok(true)
+}
+
+/// Tauri's window hide only changes the parent HWND. Hide its webview too so
+/// WebView2 can throttle rendering and release caches while the surface is idle.
+pub fn hide_surface(window: &WebviewWindow) -> anyhow::Result<()> {
+    window.hide().context("failed to hide surface window")?;
+    window
+        .as_ref()
+        .hide()
+        .context("failed to hide surface webview")
+}
+
+/// Resume the child webview before exposing its parent HWND.
+pub fn show_surface(window: &WebviewWindow) -> anyhow::Result<()> {
+    window
+        .as_ref()
+        .show()
+        .context("failed to show surface webview")?;
+    window.show().context("failed to show surface window")
+}
+
+/// A replacement must measure and paint while its parent stays concealed.
+/// Wry's webview show affects its child HWND, not the top-level window.
+pub fn stage_surface(window: &WebviewWindow) -> anyhow::Result<()> {
+    window
+        .hide()
+        .context("failed to conceal surface before replacement")?;
+    window
+        .as_ref()
+        .show()
+        .context("failed to resume surface webview for replacement")
+}
+
+/// Settings retain capturable DOM while closed. Wake only their child webview;
+/// the parent HWND stays hidden throughout a background screenshot.
+pub fn set_capture_webview_active(window: &WebviewWindow, active: bool) -> anyhow::Result<()> {
+    if window.label() != SurfaceRole::Settings.label() {
+        return Ok(());
+    }
+    if active {
+        window
+            .as_ref()
+            .show()
+            .context("failed to wake settings webview for capture")
+    } else {
+        window
+            .as_ref()
+            .hide()
+            .context("failed to restore hidden settings webview after capture")
+    }
 }
 
 pub fn place_bar_surface(

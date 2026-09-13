@@ -49,17 +49,19 @@ if port_busy; then
   exit 1
 fi
 
-# 2. On X11, wait until no smabar window is left on screen (max 10 s).
+# 2. On X11, wait until no smabar window is left on screen (max 10 s). Match
+# the WM_CLASS instance: a title match also hits a file manager showing a
+# folder named smabar.
 if [[ "$platform" == Linux ]] && command -v xdotool >/dev/null 2>&1; then
   for _ in $(seq 1 20); do
-    if ! xdotool search --name '^smabar$' >/dev/null 2>&1; then
+    if ! xdotool search --classname '^smabar$' >/dev/null 2>&1; then
       break
     fi
     sleep 0.5
   done
-  if xdotool search --name '^smabar$' >/dev/null 2>&1; then
+  if xdotool search --classname '^smabar$' >/dev/null 2>&1; then
     echo "error: stale smabar window(s) still on screen — refusing to start a second instance" >&2
-    xdotool search --name '^smabar$' | while read -r w; do
+    xdotool search --classname '^smabar$' | while read -r w; do
       xdotool getwindowgeometry "$w" | tr '\n' ' ' >&2
       echo >&2
     done

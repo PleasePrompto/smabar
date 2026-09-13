@@ -1,4 +1,5 @@
-//! Linux DRM discovery for WebKit's automatic render selection.
+//! Linux DRM discovery for WebKit's automatic render selection, plus the
+//! JavaScriptCore JIT switch for the web process.
 
 use std::path::Path;
 
@@ -15,15 +16,20 @@ pub fn prepare(mode: RenderingMode) -> RenderPlan {
         .copied()
         .filter(|name| std::env::var_os(name).is_some())
         .collect();
-    let plan = render::plan(
+    let mut plan = render::plan(
         mode,
         &nodes,
         Path::new(render::MESA_VENDOR_FILE).is_file(),
         &preset,
     );
+    plan.env.extend(render::jsc_env(jsc_preset()));
     // SAFETY: main calls this before logging, GTK, or any other thread starts.
     unsafe { plan.apply() };
     plan
+}
+
+fn jsc_preset() -> bool {
+    std::env::vars_os().any(|(name, _)| name.to_string_lossy().starts_with("JSC_"))
 }
 
 fn render_nodes(class_dir: &Path, device_dir: &Path) -> Vec<RenderNode> {

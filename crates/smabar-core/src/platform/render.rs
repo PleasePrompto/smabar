@@ -6,6 +6,10 @@
 //! desktop's native WebKit renderer. Virtio disables GTK's GL presentation,
 //! whose fences can block the UI thread during Wayland surface movement.
 //! Mesa software is the fallback when there is no DRM render node.
+//!
+//! The same pre-thread environment turns JavaScriptCore's JIT off: the shell
+//! runs little JavaScript, and interpreting it costs the web process less
+//! memory than JIT code plus its executable pool (ADR 0018).
 
 use std::path::PathBuf;
 use std::process::Command;
@@ -19,6 +23,7 @@ pub const DEVICE_VAR: &str = "WEBKIT_WEB_RENDER_DEVICE_FILE";
 pub const MESA_VENDOR_FILE: &str = "/usr/share/glvnd/egl_vendor.d/50_mesa.json";
 pub const NVIDIA_DRIVER: &str = "nvidia";
 pub const GTK_GL_VAR: &str = "GDK_GL";
+pub const JSC_JIT_VAR: &str = "JSC_useJIT";
 
 const SOFTWARE_VARS: [&str; 3] = [
     "LIBGL_ALWAYS_SOFTWARE",
@@ -136,6 +141,16 @@ pub fn plan(
             },
             _ => native(None),
         },
+    }
+}
+
+/// JavaScriptCore reads `JSC_<option>` from the web process environment. A
+/// user who set any `JSC_*` variable keeps full control.
+pub fn jsc_env(preset: bool) -> Vec<(&'static str, String)> {
+    if preset {
+        Vec::new()
+    } else {
+        vec![(JSC_JIT_VAR, "false".to_string())]
     }
 }
 
@@ -324,6 +339,12 @@ mod tests {
         let explicit = plan(RenderingMode::Native, &hybrid, true, &[]);
         assert_eq!(explicit.applied, Applied::Native);
         assert!(explicit.env.is_empty());
+    }
+
+    #[test]
+    fn jit_stays_off_unless_the_user_set_a_jsc_option() {
+        assert_eq!(jsc_env(false), vec![(JSC_JIT_VAR, "false".to_string())]);
+        assert!(jsc_env(true).is_empty());
     }
 
     #[test]

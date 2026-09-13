@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Fetches the pinned uv release for one target triple into crates/smabar/binaries
+# (bundled as the plugin runtime), verifying archive and binary against the
+# SHA-256 pins below. Called by `just build`, the CI bundle job and msix-pack.ps1.
 set -euo pipefail
 
 UV_VERSION=0.12.5

@@ -72,3 +72,36 @@ test("opening another plugin flyout does not render an unrelated tile", () => {
   });
   expect(unrelatedRender).not.toHaveBeenCalled();
 });
+
+test("pushed hover html re-renders the tile only when it appears or leaves", () => {
+  const Active = tile("active");
+  const activeRender = vi.fn();
+  act(() => {
+    root.render(
+      <Profiler id="active" onRender={activeRender}>
+        <Active />
+      </Profiler>,
+    );
+  });
+  activeRender.mockClear();
+
+  act(() => {
+    useSmabar.getState().setPluginUi("active/status/hover", "<b>1</b>");
+  });
+  expect(activeRender).toHaveBeenCalled();
+  activeRender.mockClear();
+
+  // Two thirds of the bar's live events are hover updates it never shows.
+  act(() => {
+    useSmabar.getState().setPluginUi("active/status/hover", "<b>2</b>");
+  });
+  act(() => {
+    useSmabar.getState().setPluginUi("active/status/hover", "<b>3</b>");
+  });
+  expect(activeRender).not.toHaveBeenCalled();
+
+  act(() => {
+    useSmabar.getState().setPluginUi("active/status/tile", "<b>x</b>");
+  });
+  expect(activeRender).toHaveBeenCalled();
+});

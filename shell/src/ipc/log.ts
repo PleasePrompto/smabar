@@ -23,10 +23,18 @@ let shipping = true;
 /** Message key → timestamp of the last shipment. */
 const lastSent = new Map<string, number>();
 
+/** Entries beyond this many trigger a sweep of expired keys on insert. */
+const DEDUPE_SWEEP_SIZE = 512;
+
 /** Test seam: forget the dedupe state and re-arm shipping. */
 export function resetUiLog(): void {
   shipping = true;
   lastSent.clear();
+}
+
+/** Test seam: how many distinct messages the dedupe memory holds. */
+export function uiLogDedupeSize(): number {
+  return lastSent.size;
 }
 
 /** True when this exact message may be sent again. */
@@ -34,8 +42,13 @@ function allow(key: string, now: number): boolean {
   const previous = lastSent.get(key);
   if (previous !== undefined && now - previous < DEDUPE_WINDOW_MS) return false;
   lastSent.set(key, now);
-  // The map only ever holds distinct messages; a shell that produces enough
-  // of those to matter has a bigger problem than memory.
+  // Expired keys would be sent again anyway, so dropping them changes
+  // nothing except that distinct messages cannot pile up forever.
+  if (lastSent.size > DEDUPE_SWEEP_SIZE) {
+    for (const [seen, sent] of lastSent) {
+      if (now - sent >= DEDUPE_WINDOW_MS) lastSent.delete(seen);
+    }
+  }
   return true;
 }
 

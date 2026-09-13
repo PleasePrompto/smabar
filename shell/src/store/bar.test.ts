@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, expect, test } from "vitest";
+import { beforeEach, expect, test, vi } from "vitest";
 
 import {
   DIVIDER_DEFAULT,
@@ -362,6 +362,17 @@ test("setPluginUi stores html under its target key", () => {
     "a/w/tile": "<b>y</b>",
     "a/w/flyout": "<i>z</i>",
   });
+});
+
+test("setPluginUi ignores html that is already shown", () => {
+  const listener = vi.fn();
+  useSmabar.getState().setPluginUi("a/w/tile", "<b>x</b>");
+  const unsubscribe = useSmabar.subscribe(listener);
+  useSmabar.getState().setPluginUi("a/w/tile", "<b>x</b>");
+  expect(listener).not.toHaveBeenCalled();
+  useSmabar.getState().setPluginUi("a/w/tile", "<b>y</b>");
+  expect(listener).toHaveBeenCalledTimes(1);
+  unsubscribe();
 });
 
 test("dropPluginUi forgets only the listed tiles of that plugin", () => {

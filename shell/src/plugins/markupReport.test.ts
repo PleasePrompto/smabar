@@ -2,6 +2,8 @@
 import { beforeEach, expect, test, vi } from "vitest";
 
 import {
+  MAX_PROBLEMS_PER_SLOT,
+  rememberProblems,
   reportMarkupDrops,
   reportUnknownKitClasses,
   resetMarkupReports,
@@ -228,4 +230,21 @@ test("unknown classes are deduplicated per tile and target", () => {
   reportUnknownKitClasses("clock", "a", "flyout", bad());
   reportUnknownKitClasses("clock", "b", "tile", bad());
   expect(logged).toHaveLength(3);
+});
+
+test("a value that changes every render cannot grow the memory without limit", () => {
+  const fresh: string[] = [];
+  for (let i = 0; i < MAX_PROBLEMS_PER_SLOT + 8; i += 1) {
+    fresh.push(
+      ...rememberProblems("kpiValue", "p/t/tile", [
+        `"v${String(i)}" (13 chars)`,
+      ]),
+    );
+  }
+  expect(fresh).toHaveLength(MAX_PROBLEMS_PER_SLOT);
+  // A clean render re-arms the slot as before.
+  expect(rememberProblems("kpiValue", "p/t/tile", [])).toEqual([]);
+  expect(
+    rememberProblems("kpiValue", "p/t/tile", ['"again" (13 chars)']),
+  ).toEqual(['"again" (13 chars)']);
 });

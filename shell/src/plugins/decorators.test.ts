@@ -237,3 +237,40 @@ test("activateTab tolerates unknown ids by hiding every panel", () => {
     true,
   );
 });
+
+test("rotator cleanup removes its hover listeners with the timers", () => {
+  vi.useFakeTimers();
+  try {
+    const root = container(
+      '<div data-rotator="up"><span>a</span><span>b</span></div>',
+    );
+    const element = root.querySelector<HTMLElement>("[data-rotator]");
+    expect(element).not.toBeNull();
+    if (element === null) return;
+    const removed = vi.spyOn(element, "removeEventListener");
+    const cleanup = enhanceRotators(root);
+    cleanup();
+    expect(removed.mock.calls.map(([type]) => type).sort()).toEqual([
+      "mouseenter",
+      "mouseleave",
+    ]);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("tabs stop switching once their cleanup ran", () => {
+  const root = container(
+    '<div data-tabs><button data-tab="a" class="sb-active">A</button>' +
+      '<button data-tab="b">B</button>' +
+      '<div data-tab-panel="a">1</div><div data-tab-panel="b">2</div></div>',
+  );
+  const cleanup = enhanceTabs(root);
+  const [a, b] = [...root.querySelectorAll<HTMLElement>("[data-tab]")];
+  b?.click();
+  expect(b?.classList.contains("sb-active")).toBe(true);
+  cleanup();
+  a?.click();
+  expect(b?.classList.contains("sb-active")).toBe(true);
+  expect(a?.classList.contains("sb-active")).toBe(false);
+});

@@ -7,6 +7,7 @@
  * replacement, the <style> fallback is re-appended per render.
  */
 
+import { uiLog } from "../ipc/log";
 import harvestedCss from "../styles/kit-components.css?inline";
 import kitCss from "../styles/ui-kit.css?inline";
 
@@ -58,6 +59,12 @@ export function adoptKit(root: ShadowRoot): void {
     return;
   }
   if (root.querySelector("style[data-sb-kit]") !== null) return;
+  // Every shipped engine supports constructable sheets; this branch re-inserts
+  // the whole kit per render, so its use must show up in the log.
+  uiLog(
+    "warn",
+    "kit stylesheet: constructable stylesheets unsupported; <style> fallback in use",
+  );
   const style = document.createElement("style");
   style.setAttribute("data-sb-kit", "");
   style.textContent = sheetCss;

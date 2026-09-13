@@ -374,6 +374,9 @@ export const useSmabar = create<SmabarState>((set, get) => ({
   },
   pluginUi: {},
   setPluginUi: (key, html) => {
+    // Replays and overlay snapshots may repeat what is already shown; an
+    // unchanged string must not wake every subscriber.
+    if (get().pluginUi[key] === html) return;
     set((s) => ({ pluginUi: { ...s.pluginUi, [key]: html } }));
   },
   dropPluginUi: (pluginId, tileIds) => {

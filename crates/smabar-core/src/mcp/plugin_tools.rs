@@ -240,7 +240,8 @@ impl SmabarMcp {
                        rejected or an input it ignored, with the supported alternative), \
                        \"shell\" (markup the sanitizer removed, an unknown sb-* class, inline \
                        style, an unnamed icon-only control, a raw locale key — with the fix; \
-                       once per distinct problem per surface, re-armed by a clean render); and \
+                       once per distinct problem per surface, at most 32 distinct problems per \
+                       surface, re-armed by a clean render); and \
                        `coreEntries`, what smabar said about the plugin (started, crashed, \
                        restart backoff, invalid manifest). A plugin that dies before its first \
                        line has only coreEntries. Without `id`: the bar's own log (target \

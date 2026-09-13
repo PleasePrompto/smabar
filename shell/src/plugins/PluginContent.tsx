@@ -2,6 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   type MouseEvent,
   type RefObject,
@@ -223,7 +224,7 @@ export function ShadowHost({
     if (stopClocks !== undefined) recordMemoryClockStarts(wrapper);
     const stopCarousels = enhanceCarousels(wrapper);
     const stopRotators = enhanceRotators(wrapper);
-    enhanceTabs(wrapper);
+    const stopTabs = enhanceTabs(wrapper);
     // The cover's natural height, read while the kit's max-height clamps it
     // (`safe center` keeps the overflow measurable). The bar row grows to the
     // tallest cover instead of cutting it off.
@@ -258,6 +259,7 @@ export function ShadowHost({
       stopClocks?.();
       stopCarousels();
       stopRotators();
+      stopTabs();
     };
   }, [
     renderedHtml,
@@ -365,18 +367,21 @@ export function PluginContent({
     tile.usePluginIcon === true ? definition.iconDataUrl : undefined;
   const flyoutId = `plugin:${pluginId}:${tileId}`;
   const uiKey = `${pluginId}/${tileId}`;
-  const branding = brandingStyle(tile);
+  // Branding resolves colours through DOM probes; only a new tile changes it.
+  const branding = useMemo(() => brandingStyle(tile), [tile]);
   const status = useSmabar((s) => s.pluginStatus[pluginId]);
   const tileHtml = useSmabar((s) => s.pluginUi[`${uiKey}/tile`]);
-  const hoverHtml = useSmabar((s) => s.pluginUi[`${uiKey}/hover`]);
+  // The bar only needs to know THAT hover html exists: selecting the string
+  // would re-render the tile on every pushed hover update it never shows.
+  const hasHover = useSmabar((s) => s.pluginUi[`${uiKey}/hover`] !== undefined);
   const hoverPeekEnabled = useSmabar((s) => s.effects.hoverPeek.enabled);
   // Pushed hover content makes the preview work even when the generic
   // hover-peek effect is globally disabled (explicit plugin override).
   const liveZone = useFlyoutTrigger(flyoutId, {
-    forcePeek: hoverHtml !== undefined,
+    forcePeek: hasHover,
   });
   const failed = status?.status === "failed";
-  const peekable = tile.hasFlyout === true || hoverHtml !== undefined;
+  const peekable = tile.hasFlyout === true || hasHover;
 
   const onTile = (
     event: MouseEvent<HTMLButtonElement>,
@@ -393,7 +398,7 @@ export function PluginContent({
       // tile centers its content inside.
       className="relative flex items-stretch gap-1.5"
       data-hover-flyout={
-        hoverHtml !== undefined || (hoverPeekEnabled && tile.hasFlyout === true)
+        hasHover || (hoverPeekEnabled && tile.hasFlyout === true)
           ? ""
           : undefined
       }

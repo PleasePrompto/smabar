@@ -7,6 +7,7 @@ import {
   reportError,
   resetUiLog,
   uiLog,
+  uiLogDedupeSize,
 } from "./log";
 
 const calls: { command: string; args?: Record<string, unknown> }[] = [];
@@ -101,4 +102,16 @@ test("anything a catch can receive turns into one readable line", () => {
   const circular: { self?: unknown } = {};
   circular.self = circular;
   expect(describeError(circular)).toBe("[object Object]");
+});
+
+test("expired dedupe entries are swept so distinct messages cannot pile up", () => {
+  for (let i = 0; i < 600; i += 1) uiLog("warn", `distinct ${String(i)}`);
+  expect(uiLogDedupeSize()).toBe(600);
+  vi.advanceTimersByTime(DEDUPE_WINDOW_MS + 1);
+  uiLog("warn", "one more");
+  expect(uiLogDedupeSize()).toBe(1);
+
+  // Inside the window a repeat is still dropped.
+  uiLog("warn", "one more");
+  expect(calls.filter((c) => c.args?.message === "one more")).toHaveLength(1);
 });

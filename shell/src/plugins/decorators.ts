@@ -379,12 +379,14 @@ export function enhanceRotators(root: ParentNode): () => void {
 
     const shift = rotatorShift(element.dataset.rotator);
     let paused = false;
-    element.addEventListener("mouseenter", () => {
+    const pause = () => {
       paused = true;
-    });
-    element.addEventListener("mouseleave", () => {
+    };
+    const resume = () => {
       paused = false;
-    });
+    };
+    element.addEventListener("mouseenter", pause);
+    element.addEventListener("mouseleave", resume);
 
     let index = 0;
     let settle = 0;
@@ -425,6 +427,8 @@ export function enhanceRotators(root: ParentNode): () => void {
     cleanups.push(() => {
       window.clearInterval(timer);
       window.clearTimeout(settle);
+      element.removeEventListener("mouseenter", pause);
+      element.removeEventListener("mouseleave", resume);
     });
   }
   return () => {

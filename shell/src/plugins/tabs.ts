@@ -10,20 +10,33 @@ export function activateTab(container: HTMLElement, id: string): void {
   }
 }
 
-/** Wires a data-tabs container to its local buttons and panels. */
-export function enhanceTabs(root: ParentNode): void {
+/**
+ * Wires a data-tabs container to its local buttons and panels. Returns a
+ * cleanup that detaches the click handlers again.
+ */
+export function enhanceTabs(root: ParentNode): () => void {
+  const cleanups: (() => void)[] = [];
   for (const container of root.querySelectorAll<HTMLElement>("[data-tabs]")) {
     const tabs = container.querySelectorAll<HTMLElement>("[data-tab]");
     const active =
       [...tabs].find((tab) => tab.classList.contains("sb-active")) ?? tabs[0];
     if (active === undefined) continue;
     activateTab(container, active.dataset.tab ?? "");
-    container.addEventListener("click", (event) => {
+    const onClick = (event: Event) => {
       if (!(event.target instanceof Element)) return;
       const tab = event.target.closest<HTMLElement>("[data-tab]");
       if (tab === null || !container.contains(tab)) return;
       const id = tab.dataset.tab;
       if (id !== undefined) activateTab(container, id);
+    };
+    container.addEventListener("click", onClick);
+    cleanups.push(() => {
+      container.removeEventListener("click", onClick);
     });
   }
+  return () => {
+    cleanups.forEach((cleanup) => {
+      cleanup();
+    });
+  };
 }

@@ -14,6 +14,14 @@ import type { SanitizerDrop } from "./sanitize";
 /** `kind|tile key` → every problem of that kind reported for the surface. */
 const reported = new Map<string, Set<string>>();
 
+/**
+ * Distinct problems remembered per slot. Lint problems carry rendered text,
+ * so a value that changes every render would otherwise grow this memory and
+ * the plugin log without limit; after the cap the slot stays silent until a
+ * clean render re-arms it.
+ */
+export const MAX_PROBLEMS_PER_SLOT = 32;
+
 /** Test seam: forget what has already been reported. */
 export function resetMarkupReports(): void {
   reported.clear();
@@ -41,6 +49,7 @@ export function rememberProblems(
   const fresh: string[] = [];
   for (const item of items) {
     if (seen.has(item)) continue;
+    if (seen.size >= MAX_PROBLEMS_PER_SLOT) break;
     seen.add(item);
     fresh.push(item);
   }

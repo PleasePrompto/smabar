@@ -68,8 +68,6 @@ def webkit_stats(root):
     import os
     found = subprocess.run(["pgrep", "-P", str(root), "-f", "WebKitWebProcess"], capture_output=True, text=True).stdout.split()
     if not found:
-        found = subprocess.run(["pgrep", "-f", "WebKitWebProcess"], capture_output=True, text=True).stdout.split()
-    if not found:
         return None
     wp = found[0]
     env = [e for e in Path(f"/proc/{wp}/environ").read_bytes().decode(errors="replace").split("\0") if e.startswith(("JSC_", "WEBKIT_", "LIBGL_", "LD_PRELOAD", "DUMP_HEAPTRACK"))]

@@ -61,6 +61,7 @@ impl SurfaceManager {
         };
         let ready = self.is_ready(SurfaceRole::Overlay)?;
         let window = self.ensure(app, SurfaceRole::Overlay, None)?;
+        crate::memory_probe::surface(app, "open", request.generation, Some(&request.tile_id));
         tracing::debug!(
             generation = request.generation,
             tile = %request.tile_id,
@@ -68,6 +69,7 @@ impl SurfaceManager {
             "opening flyout"
         );
         super::presentation::stage_transient_update(&window).await?;
+        crate::memory_probe::surface(app, "staged", request.generation, Some(&request.tile_id));
         tracing::debug!(generation = request.generation, "flyout staged");
         if tooltip_closed {
             window
@@ -223,6 +225,7 @@ impl SurfaceManager {
         let Some(closed) = closed else {
             return Ok(());
         };
+        crate::memory_probe::surface(app, "close", closed.generation, Some(&closed.tile_id));
         self.present_overlay(app).await?;
         if let Some(bar) = app.get_webview_window(SurfaceRole::Bar.label()) {
             bar.emit("flyout-closed", closed.clone())

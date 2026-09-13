@@ -14,8 +14,8 @@ import { t } from "../i18n/t";
 import { call } from "../ipc/call";
 import { reportError } from "../ipc/log";
 import {
+  beginMemoryHost,
   memoryProbeIs,
-  recordMemoryClockStarts,
   recordMemoryDomCommit,
   useMemoryProbeHtml,
 } from "../ipc/memoryProbe";
@@ -118,6 +118,8 @@ interface ShadowHostProps {
   allowEmbeds?: boolean;
   /** Distinguishes concurrent shell-owned instances of the same surface. */
   memoryScope?: string;
+  /** Native flyout generation, used only for diagnostic correlation. */
+  probeGeneration?: number;
   /** Managed toast identity; core rejects actions after its session ends. */
   popupInstanceId?: number;
   className?: string;
@@ -141,6 +143,7 @@ export function ShadowHost({
   tileScale,
   allowEmbeds = false,
   memoryScope,
+  probeGeneration,
   popupInstanceId,
   className,
   style,
@@ -173,6 +176,14 @@ export function ShadowHost({
   useLayoutEffect(() => {
     const host = hostRef.current;
     if (host === null) return;
+    const probe = beginMemoryHost({
+      pluginId,
+      tileId,
+      target,
+      scope: memoryScope,
+      generation: probeGeneration,
+      htmlUnits: renderedHtml.length,
+    });
     // Reuse the root across renders and StrictMode re-runs — a second
     // attachShadow on the same host throws.
     const root = host.shadowRoot ?? host.attachShadow({ mode: "open" });
@@ -221,7 +232,6 @@ export function ShadowHost({
     const stopClocks = memoryProbeIs("no-clocks")
       ? undefined
       : enhanceClocks(wrapper);
-    if (stopClocks !== undefined) recordMemoryClockStarts(wrapper);
     const stopCarousels = enhanceCarousels(wrapper);
     const stopRotators = enhanceRotators(wrapper);
     const stopTabs = enhanceTabs(wrapper);
@@ -252,6 +262,7 @@ export function ShadowHost({
       }
     };
     root.addEventListener("submit", onSubmit, true);
+    probe?.mounted(root, stopClocks !== undefined);
     return () => {
       root.removeEventListener("submit", onSubmit, true);
       stopRangeActions();
@@ -260,6 +271,7 @@ export function ShadowHost({
       stopCarousels();
       stopRotators();
       stopTabs();
+      probe?.cleanup();
     };
   }, [
     renderedHtml,
@@ -272,6 +284,8 @@ export function ShadowHost({
     preserveHoveredRange,
     bindRangeActions,
     memoryKey,
+    memoryScope,
+    probeGeneration,
     popupInstanceId,
   ]);
 

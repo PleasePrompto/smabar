@@ -40,6 +40,9 @@ class MemoryTests(unittest.TestCase):
             (proc / "20" / "smaps_rollup").unlink()
             result = memory.sample(10, proc)
             self.assertEqual([row["pid"] for row in result["processes"]], [10, 30])
+            self.assertEqual(
+                [row["start_ticks"] for row in result["processes"]], ["123", "123"]
+            )
             self.assertEqual(result["total"]["Pss"], 20)
             self.assertEqual(result["total"]["Rss"], 100)
             self.assertEqual(result["exited_during_sample"], [20])

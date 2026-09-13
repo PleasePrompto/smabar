@@ -275,10 +275,7 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
   const source = html === flyoutHtml ? "flyout" : "hover";
   const { direction = "up", pointerX = 0, x = 0, y = 0 } = placement ?? {};
   const peek = request.mode === "peek";
-  const motion =
-    direction === "down"
-      ? { originY: "0", shiftY: "-0.5rem", contentShiftY: "-0.1875rem" }
-      : { originY: "100%", shiftY: "0", contentShiftY: "0" };
+  const originY = direction === "down" ? "0" : "100%";
 
   return (
     <div
@@ -300,51 +297,52 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
         void reportOverlayPointer(false).catch(reportError);
       }}
     >
-      <div
-        className="surface-flyout relative rounded-[var(--sb-radius-l,0.875rem)] text-[color:var(--sb-text,#fff)]"
-        style={{
-          // Grows out of the tile it belongs to.
-          transformOrigin: `${String(pointerX)}px ${motion.originY}`,
-          animationName: closing ? "flyoutOut" : "flyoutY",
-          animationDuration: closing
-            ? `${String(CLOSE_DELAY_MS)}ms`
-            : "var(--sb-dur-normal)",
-          animationTimingFunction: "var(--sb-ease-out)",
-          animationFillMode: "both",
-          ["--flyout-shift-y" as string]: motion.shiftY,
-        }}
-        data-capture="flyout"
-        ref={flyoutRef}
-        onClick={(event) => {
-          event.stopPropagation();
-        }}
-        onAuxClick={(event) => {
-          event.stopPropagation();
-        }}
-      >
+      <div className="overlay-token-scope" data-direction={direction}>
         <div
-          className="surface-scroll flyout-content-transition overflow-y-auto p-4"
+          className="surface-flyout relative rounded-[var(--sb-radius-l,0.875rem)] text-[color:var(--sb-text,#fff)]"
           style={{
-            maxHeight: "calc(var(--sb-work-area-height) * 0.78)",
-            ["--flyout-content-shift" as string]: motion.contentShiftY,
+            // Grows out of the tile it belongs to.
+            transformOrigin: `${String(pointerX)}px ${originY}`,
+            animationName: closing ? "flyoutOut" : "flyoutY",
+            animationDuration: closing
+              ? `${String(CLOSE_DELAY_MS)}ms`
+              : "var(--sb-dur-normal)",
+            animationTimingFunction: "var(--sb-ease-out)",
+            animationFillMode: "both",
           }}
-          data-settled={contentSettled ? "" : undefined}
-          {...(peek ? { [SUPPRESS_DELEGATED_CLICK_ATTR]: "" } : {})}
+          data-capture="flyout"
+          ref={flyoutRef}
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+          onAuxClick={(event) => {
+            event.stopPropagation();
+          }}
         >
-          {definition !== undefined && html !== undefined ? (
-            <ShadowHost
-              key={definition.id}
-              pluginId={definition.pluginId}
-              tileId={definition.tile.id}
-              tileKey={definition.id}
-              html={html}
-              memoryScope={source}
-              allowEmbeds={request.mode === "pinned" && hasEmbed(html)}
-              style={brandingStyle(definition.tile)}
-            />
-          ) : (
-            <p className="text-xs text-faint">{t("plugin.noContent")}</p>
-          )}
+          <div
+            className="surface-scroll flyout-content-transition overflow-y-auto p-4"
+            style={{
+              maxHeight: "calc(var(--sb-work-area-height) * 0.78)",
+            }}
+            data-settled={contentSettled ? "" : undefined}
+            {...(peek ? { [SUPPRESS_DELEGATED_CLICK_ATTR]: "" } : {})}
+          >
+            {definition !== undefined && html !== undefined ? (
+              <ShadowHost
+                key={definition.id}
+                pluginId={definition.pluginId}
+                tileId={definition.tile.id}
+                tileKey={definition.id}
+                html={html}
+                memoryScope={source}
+                probeGeneration={request.generation}
+                allowEmbeds={request.mode === "pinned" && hasEmbed(html)}
+                style={brandingStyle(definition.tile)}
+              />
+            ) : (
+              <p className="text-xs text-faint">{t("plugin.noContent")}</p>
+            )}
+          </div>
         </div>
       </div>
     </div>

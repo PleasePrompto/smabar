@@ -12,6 +12,11 @@ const STATE_WARMUP_MS = 30_000;
 let mode: MemoryProbeMode | null = null;
 let timer: ReturnType<typeof setInterval> | undefined;
 let started = 0;
+let role: SurfaceRole = "bar";
+let session = 0;
+let nextHostInstance = 0;
+let activeHosts = 0;
+let activeClockEnhancers = 0;
 
 function emptyCounters() {
   return {
@@ -25,29 +30,49 @@ function emptyCounters() {
     suppressedStateUpdates: 0,
     suppressedDomUpdates: 0,
     clockStarts: 0,
+    clockStops: 0,
+    clockEnhancerStarts: 0,
+    clockEnhancerStops: 0,
+    hostMounts: 0,
+    hostCleanups: 0,
   };
 }
 
 let counters = emptyCounters();
 
 /** Includes open plugin shadow roots, without retaining any DOM references. */
-function elementCount(root: ParentNode): number {
+function domCounts(root: ParentNode) {
   const elements = root.querySelectorAll("*");
-  let count = elements.length;
+  const counts = {
+    domElements: elements.length,
+    domInputs: root.querySelectorAll("input").length,
+    domForms: root.querySelectorAll("form").length,
+    domShadowRoots: root instanceof ShadowRoot ? 1 : 0,
+  };
   for (const element of elements) {
-    if (element.shadowRoot !== null) count += elementCount(element.shadowRoot);
+    const shadow = element.shadowRoot;
+    if (shadow === null) continue;
+    const nested = domCounts(shadow);
+    counts.domElements += nested.domElements;
+    counts.domInputs += nested.domInputs;
+    counts.domForms += nested.domForms;
+    counts.domShadowRoots += nested.domShadowRoots;
   }
-  return count;
+  return counts;
 }
 
 /** Process-only diagnostic state; absent in ordinary launches. */
 export function initMemoryProbe(
   next: MemoryProbeMode | null | undefined,
-  role: SurfaceRole,
+  nextRole: SurfaceRole,
 ): void {
   clearInterval(timer);
   timer = undefined;
   mode = next ?? null;
+  role = nextRole;
+  session += 1;
+  activeHosts = 0;
+  activeClockEnhancers = 0;
   counters = emptyCounters();
   if (mode === null) return;
   started = performance.now();
@@ -58,9 +83,12 @@ export function initMemoryProbe(
       fields: {
         role,
         mode,
+        session,
         elapsedMs: Math.round(now - since),
         ...counters,
-        domElements: elementCount(document),
+        activeHosts,
+        activeClockEnhancers,
+        ...domCounts(document),
         visibility: document.visibilityState,
       },
     });
@@ -108,11 +136,75 @@ export function recordMemoryDomCommit(units: number): void {
   counters.committedHtmlUnits += units;
 }
 
-export function recordMemoryClockStarts(root: ParentNode): void {
-  if (mode === null) return;
-  counters.clockStarts += root.querySelectorAll(
-    "[data-clock], [data-clock-text]",
-  ).length;
+interface MemoryHostIdentity {
+  pluginId: string;
+  tileId: string;
+  target: "tile" | "flyout" | "popup";
+  scope: string | undefined;
+  generation: number | undefined;
+  htmlUnits: number;
+}
+
+/** One layout-effect setup/cleanup pair. Retains only identity and numbers. */
+export function beginMemoryHost(identity: MemoryHostIdentity) {
+  if (mode === null) return undefined;
+  const hostSession = session;
+  const instanceId = ++nextHostInstance;
+  const renderStarted = performance.now();
+  let mounted = false;
+  let disposed = false;
+  let clockEnhancers = 0;
+  let clockElements = 0;
+  let mountedCounts: ReturnType<typeof domCounts> | undefined;
+  const log = (phase: "mounted" | "cleanup") => {
+    uiLog("info", `memory probe host ${phase}`, {
+      deduplicate: false,
+      fields: {
+        role,
+        mode,
+        session: hostSession,
+        ...identity,
+        scope: identity.scope ?? null,
+        generation: identity.generation ?? null,
+        instanceId,
+        sinceStartMs: Math.round(performance.now() - started),
+        durationMs: Math.round(performance.now() - renderStarted),
+        ...mountedCounts,
+        clockElements,
+        clockEnhancers,
+        activeHosts,
+        activeClockEnhancers,
+      },
+    });
+  };
+  return {
+    mounted(root: ShadowRoot, clocksStarted: boolean): void {
+      if (disposed || mounted || hostSession !== session) return;
+      mountedCounts = domCounts(root);
+      clockEnhancers = clocksStarted ? 1 : 0;
+      clockElements = clocksStarted
+        ? root.querySelectorAll("[data-clock], [data-clock-text]").length
+        : 0;
+      mounted = true;
+      activeHosts += 1;
+      activeClockEnhancers += clockEnhancers;
+      counters.hostMounts += 1;
+      counters.clockStarts += clockElements;
+      counters.clockEnhancerStarts += clockEnhancers;
+      log("mounted");
+    },
+    cleanup(): void {
+      if (disposed) return;
+      disposed = true;
+      if (!mounted || hostSession !== session) return;
+      activeHosts -= 1;
+      activeClockEnhancers -= clockEnhancers;
+      counters.hostCleanups += 1;
+      counters.clockStops += clockElements;
+      counters.clockEnhancerStops += clockEnhancers;
+      log("cleanup");
+    },
+  };
 }
 
 /** Freeze this mounted host's first HTML; keep its original clock cleanup alive. */

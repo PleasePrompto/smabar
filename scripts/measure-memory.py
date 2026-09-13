@@ -86,10 +86,18 @@ def sample(root_pid: int, proc: Path = Path("/proc")) -> dict:
             totals[key] += value
             subtotal[key] += value
         rows.append(
-            {"pid": pid, "ppid": parent, "name": name, "group": group, **values}
+            {
+                "pid": pid,
+                "ppid": parent,
+                "start_ticks": started,
+                "name": name,
+                "group": group,
+                **values,
+            }
         )
     return {
         "timestamp": time.time(),
+        "monotonic_seconds": time.monotonic(),
         "root_pid": root_pid,
         "root_start_ticks": tree[root_pid][2],
         "unit": "KiB",

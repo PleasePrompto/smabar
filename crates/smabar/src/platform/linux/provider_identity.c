@@ -53,6 +53,10 @@ static void watch_page(WebKitWebExtension *extension, WebKitWebPage *page,
                        gpointer user_data) {
   (void)extension;
   (void)user_data;
+  /* The legacy form signals cache native DOM wrappers until the page closes,
+   * keeping removed plugin forms alive. The modern manager uses GC-owned values.
+   * WebKit >= 2.40 is already required by Tauri's linux-body feature. */
+  webkit_web_page_get_form_manager(page, NULL);
   g_signal_connect(page, "send-request", G_CALLBACK(identify_provider_request),
                    NULL);
 }

@@ -44,6 +44,18 @@
   border-color: transparent;
 }
 
+/* WebKit can reuse inherited token data across mounts on this static node.
+   Position and animation remain on the surrounding shell elements. */
+.overlay-token-scope {
+  --sb-bar-opacity: var(--sb-flyout-opacity);
+  --flyout-shift-y: 0;
+  --flyout-content-shift: 0;
+}
+.overlay-token-scope[data-direction="down"] {
+  --flyout-shift-y: -0.5rem;
+  --flyout-content-shift: -0.1875rem;
+}
+
 .surface-flyout {
   /* Nested kit cards use the bar-owned material tokens. Inside a flyout they
      must inherit the flyout's stronger opacity or the outer 90% surface still

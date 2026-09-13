@@ -1815,7 +1815,7 @@
 /* data-rotator: decorators.ts adds these classes; every child is one view,
    all stacked in the same grid cell so the container sizes to the tallest
    view. The base state is parked off-position without transition; only the
-   active/leaving states animate (--rotator-* are set by the enhancer). */
+   active/leaving states animate (the enhancer sets their transform directly). */
 .sb-rotator {
   display: grid;
   overflow: hidden;
@@ -1824,7 +1824,7 @@
   grid-area: 1 / 1;
   visibility: hidden;
   opacity: 0;
-  transform: translate(var(--rotator-x, 0), var(--rotator-y, 0));
+  transform: translate(0, 0);
 }
 .sb-rotator > .sb-rotator-active,
 .sb-rotator > .sb-rotator-leaving {

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# The ONLY way to start smabar in dev: kills every stray instance first,
-# verifies the desktop is clean, then starts exactly one.
-# (Patterns live in this file, not in a shell cmdline, so pkill/pgrep
-# cannot self-match the caller.)
+# The ONLY way to start smabar in dev: stop this checkout's stray processes,
+# verify the desktop/port guard, then start exactly one instance.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -12,7 +10,7 @@ case "$platform" in
   Darwin) port_tool=lsof ;;
   *) echo "error: use scripts\\dev.bat on Windows; unsupported dev host: $platform" >&2; exit 1 ;;
 esac
-for tool in "$port_tool" bun cargo "${SMABAR_UV:-uv}"; do
+for tool in "$port_tool" python3 bun cargo "${SMABAR_UV:-uv}"; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "error: $tool is missing; install the development tools listed in README.md" >&2
     exit 1
@@ -27,17 +25,9 @@ port_busy() {
   fi
 }
 
-# 1. Stop the tauri dev CLI first (it reaps its vite + app children) …
-pkill -f 'node_modules/.bin/tauri dev' 2>/dev/null || true
-# … then any orphaned app binaries …
-pkill -f 'target/debug/smabar' 2>/dev/null || true
-# … and orphaned vite dev servers of THIS repo (killing the CLI orphans its
-# beforeDevCommand child; a stale vite keeps port 5173 with a stale module
-# graph and the bar loads broken code from it).
-# pkill takes an extended regex; project paths (including +, brackets and
-# parentheses) must be literal. Escape once, including the .bin directory.
-vite_pattern=$(printf '%s' "$PWD/shell/node_modules/.bin/vite" | sed 's/[][\\.^$*+?(){}|]/\\&/g')
-pkill -f -- "$vite_pattern" 2>/dev/null || true
+# 1. Verify executable/cwd ownership before signaling this checkout's CLI,
+# app and orphaned Vite processes. Other checkouts remain untouched.
+python3 scripts/dev_processes.py stop-dev
 
 # Wait until port 5173 is actually free again.
 for _ in $(seq 1 20); do
@@ -54,17 +44,18 @@ fi
 # folder named smabar.
 if [[ "$platform" == Linux ]] && command -v xdotool >/dev/null 2>&1; then
   for _ in $(seq 1 20); do
-    if ! xdotool search --classname '^smabar$' >/dev/null 2>&1; then
+    if [[ -z "$(python3 scripts/dev_processes.py blocking-windows)" ]]; then
       break
     fi
     sleep 0.5
   done
-  if xdotool search --classname '^smabar$' >/dev/null 2>&1; then
+  windows=$(python3 scripts/dev_processes.py blocking-windows)
+  if [[ -n "$windows" ]]; then
     echo "error: stale smabar window(s) still on screen — refusing to start a second instance" >&2
-    xdotool search --classname '^smabar$' | while read -r w; do
+    while read -r w; do
       xdotool getwindowgeometry "$w" | tr '\n' ' ' >&2
       echo >&2
-    done
+    done <<< "$windows"
     exit 1
   fi
 fi

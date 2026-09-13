@@ -60,11 +60,18 @@ function allow(key: string, now: number): boolean {
 export function uiLog(
   level: UiLogLevel,
   message: string,
-  options: { fields?: Record<string, unknown>; pluginId?: string } = {},
+  options: {
+    fields?: Record<string, unknown>;
+    pluginId?: string;
+    /** Opt-in diagnostics need every lifecycle event, without adding keys. */
+    deduplicate?: boolean;
+  } = {},
 ): void {
   if (!shipping) return;
-  const key = `${options.pluginId ?? ""}|${level}|${message}`;
-  if (!allow(key, Date.now())) return;
+  if (options.deduplicate !== false) {
+    const key = `${options.pluginId ?? ""}|${level}|${message}`;
+    if (!allow(key, Date.now())) return;
+  }
   void call("ui_log", {
     level,
     message,

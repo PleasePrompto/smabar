@@ -143,35 +143,135 @@ test("rotator interval defaults and floor-clamps; shifts map directions", () => 
   expect(rotatorShift("right").exit).toEqual(["100%", "0"]);
 });
 
-test("rotator shows the first view and rolls to the next on schedule", () => {
+test.each([
+  ["up", "translate(0, -100%)", "translate(0, 100%)"],
+  ["down", "translate(0, 100%)", "translate(0, -100%)"],
+  ["left", "translate(-100%, 0)", "translate(100%, 0)"],
+  ["right", "translate(100%, 0)", "translate(-100%, 0)"],
+])(
+  "rotator rolls %s, pauses on hover and clears its movement",
+  (direction, exit, enter) => {
+    vi.useFakeTimers();
+    try {
+      const root = container(
+        `<div data-rotator="${direction}" data-rotator-interval="2000">` +
+          "<span>a</span><span>b</span><span>c</span></div>",
+      );
+      const element = root.querySelector<HTMLElement>("[data-rotator]");
+      const [a, b] = [...root.querySelectorAll("span")];
+      if (element === null || a === undefined || b === undefined)
+        throw new Error("rotator fixture is incomplete");
+      let entryTransform = "";
+      vi.spyOn(b, "offsetWidth", "get").mockImplementation(() => {
+        entryTransform = b.style.transform;
+        return 0;
+      });
+      const cleanup = enhanceRotators(root);
+      expect(a.classList.contains("sb-rotator-active")).toBe(true);
+
+      element.dispatchEvent(new MouseEvent("mouseenter"));
+      vi.advanceTimersByTime(2000);
+      expect(a.classList.contains("sb-rotator-active")).toBe(true);
+      expect(a.style.transform).toBe("");
+      element.dispatchEvent(new MouseEvent("mouseleave"));
+      vi.advanceTimersByTime(2000);
+      expect(a.classList.contains("sb-rotator-leaving")).toBe(true);
+      expect(a.style.transform).toBe(exit);
+      expect(entryTransform).toBe(enter);
+      expect(b.classList.contains("sb-rotator-active")).toBe(true);
+      expect(b.style.transform).toBe("");
+
+      // After settling, the leaver returns to the CSS baseline.
+      vi.advanceTimersByTime(500);
+      expect(a.classList.contains("sb-rotator-leaving")).toBe(false);
+      expect(a.style.transform).toBe("");
+
+      // Dispose during the following transition: neither timer may mutate it.
+      vi.advanceTimersByTime(1500);
+      expect(b.classList.contains("sb-rotator-leaving")).toBe(true);
+      const beforeCleanup = root.innerHTML;
+      cleanup();
+      vi.advanceTimersByTime(10_000);
+      expect(root.innerHTML).toBe(beforeCleanup);
+    } finally {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    }
+  },
+);
+
+test("reduced-motion rotators switch without a translated intermediate view", () => {
   vi.useFakeTimers();
   try {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    vi.spyOn(reduced, "matches", "get").mockReturnValue(true);
+    vi.spyOn(window, "matchMedia").mockReturnValue(reduced);
     const root = container(
-      '<div data-rotator="up" data-rotator-interval="2000">' +
-        "<span>a</span><span>b</span><span>c</span></div>",
+      '<div data-rotator="up"><span>a</span><span>b</span></div>',
     );
-    const cleanup = enhanceRotators(root);
     const [a, b] = [...root.querySelectorAll("span")];
-    expect(root.querySelector(".sb-rotator")).not.toBeNull();
-    expect(a?.classList.contains("sb-rotator-active")).toBe(true);
-
-    vi.advanceTimersByTime(2_050);
-    expect(a?.classList.contains("sb-rotator-leaving")).toBe(true);
-    expect(b?.classList.contains("sb-rotator-active")).toBe(true);
-
-    // After the settle timeout the leaver returns to the parked base state.
-    vi.advanceTimersByTime(500);
-    expect(a?.classList.contains("sb-rotator-leaving")).toBe(false);
-
+    if (a === undefined || b === undefined)
+      throw new Error("rotator fixture is incomplete");
+    const layout = vi.spyOn(b, "offsetWidth", "get");
+    const cleanup = enhanceRotators(root);
+    vi.advanceTimersByTime(4000);
+    expect(a.classList.contains("sb-rotator-active")).toBe(false);
+    expect(b.classList.contains("sb-rotator-active")).toBe(true);
+    expect(a.style.transform).toBe("");
+    expect(b.style.transform).toBe("");
+    expect(layout).not.toHaveBeenCalled();
     cleanup();
-    const active = root.querySelectorAll(".sb-rotator-active").length;
-    vi.advanceTimersByTime(10_000);
-    // Cleanup stopped the timer — nothing advances any more.
-    expect(root.querySelectorAll(".sb-rotator-active")).toHaveLength(active);
   } finally {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   }
 });
+
+test.each([false, true])(
+  "rotator preserves authored inline transforms with reduced motion %s",
+  (reducedMotion) => {
+    vi.useFakeTimers();
+    try {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+      vi.spyOn(reduced, "matches", "get").mockReturnValue(reducedMotion);
+      vi.spyOn(window, "matchMedia").mockReturnValue(reduced);
+      const root = container(
+        '<div data-rotator="up" data-rotator-interval="1500">' +
+          '<span style="transform: rotate(3deg) !important">a</span>' +
+          '<span style="transform: none">b</span>' +
+          '<span style="transform: scale(0.8) !important">c</span>' +
+          "<span>d</span></div>",
+      );
+      const authoredViews = [...root.querySelectorAll<HTMLElement>("[style]")];
+      const styles = () =>
+        authoredViews.map((view) => view.getAttribute("style"));
+      const before = styles();
+      const incoming = authoredViews[1];
+      if (incoming === undefined)
+        throw new Error("rotator fixture is incomplete");
+      vi.spyOn(incoming, "offsetWidth", "get").mockImplementation(() => {
+        // Author styles also survive the temporary entering position.
+        expect(styles()).toEqual(before);
+        return 0;
+      });
+      const cleanup = enhanceRotators(root);
+      expect(styles()).toEqual(before);
+      for (let cycle = 0; cycle < 4; cycle += 1) {
+        vi.advanceTimersByTime(1_500);
+        // Includes the third view, untouched by this cycle's transition.
+        expect(styles()).toEqual(before);
+      }
+      vi.advanceTimersByTime(400);
+      expect(styles()).toEqual(before);
+      cleanup();
+      vi.advanceTimersByTime(10_000);
+      expect(styles()).toEqual(before);
+    } finally {
+      vi.restoreAllMocks();
+      vi.useRealTimers();
+    }
+  },
+);
 
 test("a single-view rotator stays put without timers", () => {
   const root = container("<div data-rotator><span>only</span></div>");

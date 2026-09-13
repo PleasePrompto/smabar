@@ -11,7 +11,7 @@ just build   # release bundles for this machine
 
 | Script | Purpose | Called by | Run directly? |
 | --- | --- | --- | --- |
-| `dev.sh` | The only way to start smabar in dev on Linux/macOS: kills stray instances, checks the desktop is clean, starts exactly one. | `just dev`, `dev-render.sh`, `dev-store.sh`, `memory/` | Through `just dev`. |
+| `dev.sh`, `dev_processes.py` | The dev entry point on Linux/macOS: stops only this checkout's verified CLI/app/Vite processes, checks port and own/unknown windows, starts exactly one. Shared ownership checks also scope the memory harness. | `just dev`, `dev-render.sh`, `dev-store.sh`, `memory/` | Through `just dev`. |
 | `dev.bat` | The same for Windows. | `scripts\dev.bat` | Yes, on Windows. |
 | `dev-render.sh` | Dev start with an explicit Linux WebKit renderer (`auto`, `nvidia`, `software`) for stale-frame checks. | Linux testing docs | Yes, one variant at a time. |
 | `dev-store.sh` | Local update server on 127.0.0.1:8787 serving `.dev-store/`, so the updater can be tested without a public release (ADR 0009). | `just dev-store` | Through `just`. |
@@ -27,6 +27,6 @@ just build   # release bundles for this machine
 | `release.py` | Builds the update release tree: verified artifacts plus `latest.json` (ADR 0009). | CI job Build (release), `just dev-store-release` | Through CI or `just`. |
 | `release-r2.py` | Publishes verified release bytes to R2; existing version objects stay immutable. | CI workflow Publish updates | No, CI only. |
 | `measure-memory.py`, `measure-memory.ps1` | Sample a process tree's memory as JSONL (Linux in KiB, Windows in bytes). | `memory/`, memory testing docs | Yes, for diagnosis. |
-| `memory/` | Linux memory harness: cycle windows, inspector accounting, quit loop. See `memory/README.md`. | Manual diagnosis | Yes, for diagnosis. |
-| `test_dev.py`, `test_installer_assets.py`, `test_memory.py`, `test_release.py` | unittest suites for the scripts beside them; offline, no running app. | `just check-py` | Through `just`. |
+| `memory/` | Linux memory harness: cycle windows, inspector accounting, quit loop, opt-in native allocation profiler and offline trace/PAS analysis. See `memory/README.md`. | Manual diagnosis | Yes, for diagnosis. |
+| `test_dev.py`, `test_installer_assets.py`, `test_memory.py`, `test_memory_analysis.py`, `test_pas_tool.py`, `test_release.py` | unittest suites for the scripts beside them; offline, no running app. | `just check-py` | Through `just`. |
 | `test_memory.ps1` | Windows checks of the memory sampler, offline. | Manual on Windows | Yes. |

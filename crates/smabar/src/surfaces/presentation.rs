@@ -118,6 +118,14 @@ impl SurfaceManager {
         let interactive = menu.is_some() || flyout.is_some();
         // Tao's Linux cursor-routing request expects a mapped GDK window.
         crate::platform::present_transient(&window, token).context("failed to present overlay")?;
+        if let Some(active) = flyout.as_ref() {
+            crate::memory_probe::surface(
+                app,
+                "present-scheduled",
+                active.request.generation,
+                Some(&active.request.tile_id),
+            );
+        }
         window
             .set_ignore_cursor_events(!interactive)
             .context("failed to update overlay pointer routing")?;
@@ -137,20 +145,26 @@ impl SurfaceManager {
         // Unmapping a WebKit surface that is about to show replacement content
         // stalls its accelerated buffer and can resurrect the previous frame.
         let token = crate::platform::transient_presentation_token(&window)?;
-        let empty = {
+        let (empty, clear_generation) = {
             let lifecycle = self
                 .lifecycle
                 .lock()
                 .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?;
-            lifecycle.active_flyout.is_none()
-                && lifecycle.active_menu.is_none()
-                && lifecycle.active_tooltip.is_none()
+            (
+                lifecycle.active_flyout.is_none()
+                    && lifecycle.active_menu.is_none()
+                    && lifecycle.active_tooltip.is_none(),
+                lifecycle.overlay_generation,
+            )
         };
         if !empty {
             return Ok(());
         }
         crate::platform::hide_transient_after_paint(&window, token)
             .context("failed to hide cleared overlay")?;
+        // A newer open can invalidate the queued hide; log the generation
+        // whose empty state authorized it, not a later lifecycle snapshot.
+        crate::memory_probe::surface(app, "clear-scheduled", clear_generation, None);
         Ok(())
     }
 }

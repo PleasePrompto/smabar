@@ -1,8 +1,8 @@
 //! Persistent HTML stays native until its surface needs it. Cache changes and
 //! event publication share one lock, so opening content precedes live updates.
 //! Live updates only signal a surface, which pulls the pending HTML through a
-//! command: Tauri evaluates event payloads as script source that WebKit keeps,
-//! while command responses travel as IPC bytes.
+//! command. The platform's Tauri transport still determines how responses
+//! reach JavaScript; a pull is not evidence of avoiding evaluated source.
 
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};

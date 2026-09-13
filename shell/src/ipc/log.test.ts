@@ -68,6 +68,24 @@ test("messages that differ are not deduplicated away", () => {
   expect(calls).toHaveLength(3);
 });
 
+test("diagnostic events bypass dedupe without growing or changing its state", () => {
+  uiLog("info", "memory probe host mounted");
+  const before = uiLogDedupeSize();
+  for (let instanceId = 1; instanceId <= 50; instanceId += 1) {
+    uiLog("info", "memory probe host mounted", {
+      deduplicate: false,
+      fields: { instanceId },
+    });
+  }
+  uiLog("info", "memory probe host mounted");
+  expect(calls).toHaveLength(51);
+  expect(calls.at(-1)?.args?.fields).toEqual({ instanceId: 50 });
+  expect(uiLogDedupeSize()).toBe(before);
+
+  uiLog("info", "another diagnostic event", { deduplicate: false });
+  expect(uiLogDedupeSize()).toBe(before);
+});
+
 test("a failing ui_log disables shipping instead of looping", async () => {
   fail = true;
   uiLog("error", "first");

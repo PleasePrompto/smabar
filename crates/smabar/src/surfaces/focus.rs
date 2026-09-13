@@ -70,6 +70,9 @@ impl SurfaceManager {
             };
             dismissed
         };
+        if let Some(closed) = flyout_closed.as_ref() {
+            crate::memory_probe::surface(app, "close", closed.generation, Some(&closed.tile_id));
+        }
         self.report_bar_pointer(app)?;
         let app = app.clone();
         tauri::async_runtime::spawn(async move {

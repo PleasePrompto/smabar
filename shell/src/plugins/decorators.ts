@@ -344,15 +344,6 @@ export function rotatorInterval(raw: string | undefined): number {
   return Math.max(ROTATOR_MIN_INTERVAL_MS, Math.round(value));
 }
 
-const setShift = (element: HTMLElement, [x, y]: [string, string]): void => {
-  element.style.setProperty("--rotator-x", x);
-  element.style.setProperty("--rotator-y", y);
-};
-const clearShift = (element: HTMLElement): void => {
-  element.style.removeProperty("--rotator-x");
-  element.style.removeProperty("--rotator-y");
-};
-
 /**
  * Turns data-rotator containers into rolling view stacks: every direct
  * child is one view, all stacked in the same grid cell (the container
@@ -376,6 +367,19 @@ export function enhanceRotators(root: ParentNode): () => void {
     if (first === undefined) continue;
     first.classList.add("sb-rotator-active");
     if (items.length < 2) continue;
+
+    // Authored inline transforms already overrode kit motion; leave them intact.
+    const motionItems = new Set(
+      items.filter((item) => item.style.transform === ""),
+    );
+    // Motion must not inherit: changing custom properties here makes WebKit retain
+    // fresh descendant styles in its matched-declaration cache on every rotation.
+    const setShift = (item: HTMLElement, [x, y]: [string, string]): void => {
+      if (motionItems.has(item)) item.style.transform = `translate(${x}, ${y})`;
+    };
+    const clearShift = (item: HTMLElement): void => {
+      if (motionItems.has(item)) item.style.removeProperty("transform");
+    };
 
     const shift = rotatorShift(element.dataset.rotator);
     let paused = false;

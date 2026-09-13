@@ -4188,6 +4188,11 @@
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
+          "selector": ".overlay-token-scope",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/bar.css",
           "selector": ".surface-flyout",
           "fallbacks": []
         }

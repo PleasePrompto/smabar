@@ -1,24 +1,26 @@
+#!/usr/bin/env python3
 # Shared launch/quit helpers for the memory harness: start one app through
 # scripts/dev.sh with the chosen binary, wait for six running plugins, quit
 # through the tray menu over D-Bus.
 import os
 import re
 import subprocess
+import sys
 import time
 import urllib.error
 from pathlib import Path
+
 from mcp_client import Client
 
 # Repository root; every launch goes through scripts/dev.sh.
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from dev_processes import app_pids
+
 # Measurement output (logs, PSS samples, captures); git-ignored by default.
 OUT = Path(os.environ.get("SMABAR_MEMORY_OUT", ROOT / ".debug" / "memory"))
 OUT.mkdir(parents=True, exist_ok=True)
-
-def app_pids():
-    return [int(path.parent.name) for path in Path('/proc').glob('[0-9]*/comm')
-            if path.exists() and path.read_text().strip() == 'smabar']
 
 def quit_app(pid):
     text = subprocess.check_output(['gdbus', 'call', '--session', '--dest',

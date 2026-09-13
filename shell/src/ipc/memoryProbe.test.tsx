@@ -92,24 +92,35 @@ test("ordinary launches start no sampler; diagnostics report bounded interval to
   recordMemoryUi(7, "snapshot");
   recordMemoryDomCommit(7);
   vi.advanceTimersByTime(31_000);
-  expect(uiLog).toHaveBeenLastCalledWith("info", "memory probe shell sample", {
-    fields: {
-      role: "overlay",
-      mode: "observe",
-      elapsedMs: 31_000,
-      liveBatches: 1,
-      liveEvents: 1,
-      liveHtmlUnits: 2,
-      snapshotEvents: 1,
-      snapshotHtmlUnits: 7,
-      domCommits: 1,
-      committedHtmlUnits: 7,
-      suppressedStateUpdates: 0,
-      suppressedDomUpdates: 0,
-      clockStarts: 0,
-      domElements: document.querySelectorAll("*").length + 1,
-      visibility: document.visibilityState,
-    },
+  const sample = vi.mocked(uiLog).mock.calls.at(-1);
+  expect(sample?.slice(0, 2)).toEqual(["info", "memory probe shell sample"]);
+  expect(sample?.[2]?.fields?.session).toBeTypeOf("number");
+  expect(sample?.[2]?.fields).toMatchObject({
+    role: "overlay",
+    mode: "observe",
+    elapsedMs: 31_000,
+    liveBatches: 1,
+    liveEvents: 1,
+    liveHtmlUnits: 2,
+    snapshotEvents: 1,
+    snapshotHtmlUnits: 7,
+    domCommits: 1,
+    committedHtmlUnits: 7,
+    suppressedStateUpdates: 0,
+    suppressedDomUpdates: 0,
+    clockStarts: 0,
+    clockStops: 0,
+    clockEnhancerStarts: 0,
+    clockEnhancerStops: 0,
+    hostMounts: 0,
+    hostCleanups: 0,
+    activeHosts: 0,
+    activeClockEnhancers: 0,
+    domElements: document.querySelectorAll("*").length + 1,
+    domInputs: 0,
+    domForms: 0,
+    domShadowRoots: 1,
+    visibility: document.visibilityState,
   });
   vi.advanceTimersByTime(31_000);
   expect(vi.mocked(uiLog).mock.calls.at(-1)?.[2]?.fields).toMatchObject({
@@ -165,6 +176,10 @@ test.each([null, "observe", "no-state", "no-dom", "no-clocks"] as const)(
         domCommits: mode === "no-dom" ? 1 : 2,
         suppressedDomUpdates: mode === "no-dom" ? 1 : 0,
         clockStarts: mode === "no-clocks" ? 0 : mode === "no-dom" ? 1 : 2,
+        clockEnhancerStarts:
+          mode === "no-clocks" ? 0 : mode === "no-dom" ? 1 : 2,
+        activeClockEnhancers: mode === "no-clocks" ? 0 : 1,
+        activeHosts: 1,
       });
     }
   },
@@ -251,6 +266,12 @@ test("no-state receives open flyout updates without state work, while snapshots 
     });
   };
   emit("surface-flyout", request);
+  expect(vi.mocked(uiLog).mock.calls.at(-1)?.[2]?.fields).toMatchObject({
+    pluginId: "probe",
+    tileId: "main",
+    generation: 1,
+    scope: "flyout",
+  });
   await push([live]);
   expect(useSmabar.getState().pluginUi["probe/main/flyout"]).toBe("warmup");
   const content =

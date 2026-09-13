@@ -71,6 +71,7 @@ fn main() -> anyhow::Result<()> {
         .inspect_err(|error| tracing::error!(%error, "invalid memory probe; unset SMABAR_MEMORY_PROBE and restart"))?;
     if let Some(mode) = memory_probe.name() {
         tracing::warn!(
+            app_pid = std::process::id(),
             mode,
             "memory probe enabled for this process; unset SMABAR_MEMORY_PROBE and restart for normal operation"
         );

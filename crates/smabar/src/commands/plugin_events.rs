@@ -88,8 +88,8 @@ async fn collect_run(
 fn deliver_renders(app: &AppHandle, probe: &mut Counters, run: &[PluginEvent]) {
     let mut suppress = false;
     for event in run {
-        suppress |= matches!(event, PluginEvent::UiRender { target, html, .. }
-            if probe.suppress(target, html.len()));
+        suppress |= matches!(event, PluginEvent::UiRender { plugin_id, tile_id, target, html, .. }
+            if probe.suppress(plugin_id, tile_id, target, html.len()));
     }
     if let Err(error) = app
         .state::<SurfaceManager>()

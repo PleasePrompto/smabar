@@ -8,7 +8,7 @@ export type PulledPluginUi = PluginUiEvent & { generation?: number };
 
 /**
  * The core only signals pending plugin HTML; the array arrives as a command
- * response (IPC bytes), not as event script source that WebKit keeps. One
+ * response. Its transport still depends on the platform's IPC path. One
  * pull runs at a time; a signal during a pull queues exactly one more.
  */
 export function createPluginUiPull(

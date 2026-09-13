@@ -179,9 +179,13 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
       target: role === "bar" ? "tile" : "flyout",
       html: "old",
     };
-    // Persistent surfaces receive one array per run; popups stay single.
-    const live = (html: string) =>
-      role === "bar" ? [{ ...render, html }] : { ...render, html };
+    // Persistent surfaces get a signal and pull the run; popups stay single.
+    const takeQueue: unknown[][] = [];
+    const live = (html: string) => {
+      if (role !== "bar") return { ...render, html };
+      takeQueue.push([{ ...render, html }]);
+      return {};
+    };
     invokeMock.mockImplementation((command: string) => {
       switch (command) {
         case "get_ui_state":
@@ -191,6 +195,8 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
             render,
             { ...render, target: "hover", html: "preview" },
           ]);
+        case "take_plugin_ui":
+          return Promise.resolve(takeQueue.shift() ?? []);
         case "get_plugins":
         case "get_managed_popups":
           return Promise.resolve([]);
@@ -216,14 +222,18 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
     await initialized;
     if (role === "bar") {
       expect(invokeMock).toHaveBeenCalledWith("get_plugin_ui");
-      expect(useSmabar.getState().pluginUi).toEqual({
-        [`slow/tile/${render.target}`]: "new",
-        "slow/tile/hover": "preview",
+      await vi.waitFor(() => {
+        expect(useSmabar.getState().pluginUi).toEqual({
+          [`slow/tile/${render.target}`]: "new",
+          "slow/tile/hover": "preview",
+        });
       });
       listener?.({ payload: live("latest") });
-      expect(useSmabar.getState().pluginUi[`slow/tile/${render.target}`]).toBe(
-        "latest",
-      );
+      await vi.waitFor(() => {
+        expect(
+          useSmabar.getState().pluginUi[`slow/tile/${render.target}`],
+        ).toBe("latest");
+      });
     } else {
       expect(invokeMock).not.toHaveBeenCalledWith("get_plugin_ui");
       expect(useSmabar.getState().pluginUi).toEqual({});
@@ -279,8 +289,12 @@ test.each(["bar", "notifications"] as const)(
       html: "initial",
       ttlMs: null,
     };
-    const live = (html: string) =>
-      role === "bar" ? [{ ...render, html }] : { ...render, html };
+    const takeQueue: unknown[][] = [];
+    const live = (html: string) => {
+      if (role !== "bar") return { ...render, html };
+      takeQueue.push([{ ...render, html }]);
+      return {};
+    };
     const snapshot = deferred([render]);
     invokeMock.mockImplementation((command: string) => {
       switch (command) {
@@ -297,6 +311,8 @@ test.each(["bar", "notifications"] as const)(
           });
         case "get_plugin_ui":
           return snapshot.promise;
+        case "take_plugin_ui":
+          return Promise.resolve(takeQueue.shift() ?? []);
         case "get_plugins":
         case "get_managed_popups":
           return Promise.resolve([]);
@@ -328,6 +344,7 @@ test.each(["bar", "notifications"] as const)(
     const channel = role === "bar" ? "plugin-ui-bar" : "plugin-ui";
     emit(channel, live("received"));
     emit(channel, live("latest"));
+    await flushPulls();
     expect(getState.mock.calls.length > 0).toBe(role !== "bar");
     getState.mockRestore();
     if (role === "bar") {
@@ -382,6 +399,11 @@ function emit(name: string, payload: unknown): void {
   const listener = listeners.get(name);
   if (listener === undefined) throw new Error(`missing ${name} listener`);
   listener({ payload });
+}
+
+/** Two chained pulls need a handful of microtask turns, no timers. */
+async function flushPulls(): Promise<void> {
+  for (let turn = 0; turn < 16; turn += 1) await Promise.resolve();
 }
 
 function shortcuts(id: string): ShortcutsState {

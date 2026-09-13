@@ -34,6 +34,7 @@ import {
   suppressMemoryStateUpdate,
   type MemoryProbeMode,
 } from "./memoryProbe";
+import { createPluginUiPull } from "./pluginUiPull";
 import { initManagedPopups } from "./managedPopups";
 import { showNotice, type SurfaceRole } from "./surface";
 
@@ -292,13 +293,16 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
   );
   // Stored raw; sanitization happens where it renders (ShadowHost).
   if (keepsPluginHtml) {
-    // The core coalesces renders that arrive within 100 ms into one array
-    // per surface; React batches the resulting store updates into one render.
-    await listen<PluginUiEvent[]>(
+    // A signal per 100 ms run; the pull returns every pending render, and
+    // React batches the resulting store updates into one render.
+    const pull = createPluginUiPull((rendered) => {
+      recordMemoryBatch();
+      for (const render of rendered) routePluginUi(render, false, "live");
+    });
+    await listen<unknown>(
       `plugin-ui-${role}`,
-      afterStartup((payload) => {
-        recordMemoryBatch();
-        for (const render of payload) routePluginUi(render, false, "live");
+      afterStartup(() => {
+        pull();
       }),
     );
   } else if (role === "notifications") {

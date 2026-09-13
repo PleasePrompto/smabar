@@ -1,14 +1,34 @@
 //! Order flyout snapshots and live HTML with the existing native lifecycle.
 
 use anyhow::Context;
+use serde_json::Value;
 use smabar_core::plugins::{PluginEvent, UiSnapshot};
 use tauri::{AppHandle, Emitter, Manager};
 
-use super::{OverlayFlyoutRequest, SurfaceManager};
+use super::{OverlayFlyoutRequest, SurfaceManager, SurfaceRole};
 use crate::commands::AppState;
 
 impl SurfaceManager {
-    /// One run of events becomes at most one emit per surface.
+    /// Pending HTML for `role`, answered as a command response after a signal.
+    pub(crate) fn take_plugin_ui(
+        &self,
+        app: &AppHandle,
+        role: SurfaceRole,
+    ) -> anyhow::Result<Vec<Value>> {
+        let lifecycle = self
+            .lifecycle
+            .lock()
+            .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?;
+        Ok(app.state::<AppState>().plugin_delivery.take(
+            role,
+            lifecycle
+                .active_flyout
+                .as_ref()
+                .map(|active| &active.request),
+        ))
+    }
+
+    /// One run of events becomes at most one signal per surface.
     pub(crate) fn deliver_plugin_ui(
         &self,
         app: &AppHandle,

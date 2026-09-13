@@ -31,7 +31,7 @@ use smabar_core::platform::render::RenderPlan;
 use smabar_core::plugins::PluginSupervisor;
 use smabar_core::shortcuts::ShortcutsService;
 use smabar_core::store::StoreService;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 pub struct AppState {
     paths: SmabarPaths,
@@ -246,7 +246,7 @@ pub fn get_plugins(state: State<'_, AppState>) -> Vec<Value> {
 /// Last rendered HTML needed by the calling surface, shaped like live UI
 /// payloads. The shell calls this after attaching its listeners — renders
 /// pushed before the webview existed (startup, dev reload) are replayed here
-/// so slow-polling plugins don't leave empty tiles.
+/// so slow-polling plugins don't leave empty tiles. It counts as delivered.
 #[tauri::command]
 pub fn get_plugin_ui(window: tauri::WebviewWindow, state: State<'_, AppState>) -> Vec<Value> {
     if window.label() == crate::surfaces::SurfaceRole::Bar.label() {
@@ -254,6 +254,23 @@ pub fn get_plugin_ui(window: tauri::WebviewWindow, state: State<'_, AppState>) -
     } else {
         Vec::new()
     }
+}
+
+/// Pending live HTML for the calling surface, same shape as `get_plugin_ui`;
+/// surfaces call it after a `plugin-ui-*` signal. Returned renders count as
+/// delivered, so a failed call is repeated after the next signal.
+#[tauri::command]
+pub fn take_plugin_ui(
+    app: AppHandle,
+    window: tauri::WebviewWindow,
+    surfaces: State<'_, crate::surfaces::SurfaceManager>,
+) -> Result<Vec<Value>, String> {
+    let Some(role) = crate::surfaces::SurfaceRole::from_label(window.label()) else {
+        return Ok(Vec::new());
+    };
+    surfaces
+        .take_plugin_ui(&app, role)
+        .map_err(|error| format!("{error:#}"))
 }
 
 /// Every INSTALLED plugin with its lifecycle status — including the ones that

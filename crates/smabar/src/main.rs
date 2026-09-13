@@ -171,6 +171,7 @@ fn main() -> anyhow::Result<()> {
             commands::list_plugins,
             commands::remove_plugin,
             commands::get_plugin_ui,
+            commands::take_plugin_ui,
             commands::bar_geometry::set_bar_geometry,
             surfaces::bar::set_bar_revealed,
             commands::config::update_config,

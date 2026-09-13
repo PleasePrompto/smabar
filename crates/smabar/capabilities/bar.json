@@ -12,6 +12,7 @@
     "allow-plugin-action",
     "allow-get-plugins",
     "allow-get-plugin-ui",
+    "allow-take-plugin-ui",
     "allow-get-shortcuts",
     "allow-update-config",
     "allow-pin-shortcut",

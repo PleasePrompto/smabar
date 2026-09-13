@@ -48,6 +48,22 @@ fn snapshot(plugin: &str, tile: &str, target: &str, html: &str) -> UiSnapshot {
     }
 }
 
+pub(super) fn targets(payload: &[Value]) -> Vec<(&str, &str)> {
+    payload
+        .iter()
+        .map(|item| {
+            (
+                item["target"].as_str().unwrap(),
+                item["html"].as_str().unwrap(),
+            )
+        })
+        .collect()
+}
+
+fn channels(events: &Emitted) -> Vec<&str> {
+    events.iter().map(|(channel, _)| channel.as_str()).collect()
+}
+
 #[test]
 fn closed_updates_open_at_the_latest_one_shot_without_another_render() {
     let delivery = PluginDelivery::default();
@@ -106,6 +122,11 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
         )
         .unwrap();
     assert!(events.is_empty());
+    assert!(
+        delivery
+            .take(SurfaceRole::Overlay, Some(&active))
+            .is_empty()
+    );
     delivery
         .handle(
             &render("demo", "one", "flyout", "B"),
@@ -114,11 +135,20 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
         )
         .unwrap();
     assert_eq!(
-        events[0],
-        (
-            "plugin-ui-overlay".into(),
-            json!([{ "pluginId": "demo", "tileId": "one", "target": "flyout", "html": "B", "generation": 1 }])
-        )
+        events,
+        vec![("plugin-ui-overlay".to_string(), json!({ "generation": 1 }))]
+    );
+    let taken = delivery.take(SurfaceRole::Overlay, Some(&active));
+    assert_eq!(
+        taken,
+        vec![
+            json!({ "pluginId": "demo", "tileId": "one", "target": "flyout", "html": "B", "generation": 1 })
+        ]
+    );
+    assert!(
+        delivery
+            .take(SurfaceRole::Overlay, Some(&active))
+            .is_empty()
     );
     events.clear();
 
@@ -130,7 +160,11 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
             record(&mut events),
         )
         .unwrap();
-    assert!(events.is_empty());
+    assert!(
+        events.is_empty(),
+        "a generation that has not opened is silent"
+    );
+    assert!(delivery.take(SurfaceRole::Overlay, Some(&next)).is_empty());
     delivery.open(&next, true, record(&mut events)).unwrap();
     assert_eq!(events[0].1["content"]["flyout"], "C");
     events.clear();
@@ -141,6 +175,16 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
             record(&mut events),
         )
         .unwrap();
+    assert_eq!(channels(&events), ["plugin-ui-bar", "plugin-ui-overlay"]);
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Bar, None)),
+        [("hover", "preview")]
+    );
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Overlay, Some(&next))),
+        [("hover", "preview")]
+    );
+    events.clear();
     delivery
         .handle(
             &render("demo", "one", "tile", "bar"),
@@ -148,10 +192,10 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
             record(&mut events),
         )
         .unwrap();
-    let channels: Vec<_> = events.iter().map(|(channel, _)| channel.as_str()).collect();
+    assert_eq!(channels(&events), ["plugin-ui-bar"]);
     assert_eq!(
-        channels,
-        ["plugin-ui-bar", "plugin-ui-overlay", "plugin-ui-bar"]
+        targets(&delivery.take(SurfaceRole::Bar, None)),
+        [("tile", "bar")]
     );
 }
 
@@ -227,7 +271,7 @@ fn pinning_without_content_keeps_the_existing_delivery_state() {
 }
 
 #[test]
-fn failures_keep_the_latest_html_unsent_until_a_successful_retry() {
+fn failures_keep_the_latest_html_pending_until_it_is_pulled() {
     let delivery = PluginDelivery::default();
     let active = request(1, "demo", "one");
     let mut events = Vec::new();
@@ -266,7 +310,11 @@ fn failures_keep_the_latest_html_unsent_until_a_successful_retry() {
     delivery
         .handle(&changed, Some(&active), record(&mut events))
         .unwrap();
-    assert_eq!(events[0].1[0]["html"], "C");
+    assert_eq!(channels(&events), ["plugin-ui-overlay"]);
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Overlay, Some(&active))),
+        [("flyout", "C")]
+    );
     events.clear();
     let tile = render("demo", "one", "tile", "bar");
     assert!(
@@ -276,13 +324,15 @@ fn failures_keep_the_latest_html_unsent_until_a_successful_retry() {
     );
     assert_eq!(delivery.bar_snapshot()[0]["html"], "bar");
     delivery.handle(&tile, None, record(&mut events)).unwrap();
-    delivery.handle(&tile, None, record(&mut events)).unwrap();
-    assert_eq!(events.len(), 1);
+    assert!(events.is_empty(), "the snapshot delivered this tile");
     delivery.invalidate();
     delivery.handle(&tile, None, record(&mut events)).unwrap();
-    delivery.open(&active, true, record(&mut events)).unwrap();
-    assert_eq!(events.len(), 3);
-    assert_eq!(events[2].1["content"]["flyout"], "C");
+    assert_eq!(channels(&events), ["plugin-ui-bar"]);
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Bar, None)),
+        [("tile", "bar")]
+    );
+    events.clear();
     let hover = render("demo", "one", "hover", "preview");
     assert!(
         delivery
@@ -294,12 +344,23 @@ fn failures_keep_the_latest_html_unsent_until_a_successful_retry() {
             })
             .is_err()
     );
-    events.clear();
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Bar, None)),
+        [("hover", "preview")]
+    );
     delivery
         .handle(&hover, Some(&active), record(&mut events))
         .unwrap();
-    assert_eq!(events.len(), 1, "the bar already received this hover");
-    assert_eq!(events[0].0, "plugin-ui-overlay");
+    assert_eq!(
+        channels(&events),
+        ["plugin-ui-overlay"],
+        "the bar already pulled this hover"
+    );
+    assert_eq!(
+        targets(&delivery.take(SurfaceRole::Overlay, Some(&active))),
+        [("flyout", "C"), ("hover", "preview")],
+        "invalidate re-pends the pulled flyout as well"
+    );
 }
 
 #[test]
@@ -318,14 +379,14 @@ fn reset_and_replay_restore_bar_and_active_one_shot_details() {
     assert_eq!(bar.len(), 2);
     assert_eq!(bar[0]["target"], "hover");
     assert_eq!(bar[1]["target"], "tile");
+    assert!(delivery.take(SurfaceRole::Bar, None).is_empty());
     delivery.replay(Some(&active), record(&mut events)).unwrap();
-    assert_eq!(events.len(), 2, "the bar replay is one array");
-    assert_eq!(events[0].0, "plugin-ui-bar");
-    assert_eq!(events[0].1.as_array().map(Vec::len), Some(2));
+    assert_eq!(channels(&events), ["plugin-ui-bar", "surface-flyout"]);
     assert_eq!(
         events[1].1["content"],
         json!({ "hover": "preview", "flyout": "full" })
     );
+    assert_eq!(delivery.take(SurfaceRole::Bar, None).len(), 2);
     events.clear();
     delivery
         .handle(
@@ -346,6 +407,7 @@ fn reset_and_replay_restore_bar_and_active_one_shot_details() {
         .unwrap();
     assert!(events.is_empty());
     delivery.replay(Some(&active), record(&mut events)).unwrap();
+    assert_eq!(channels(&events), ["surface-flyout"]);
     assert_eq!(
         events[0].1["content"],
         json!({ "hover": null, "flyout": "new" })
@@ -386,6 +448,7 @@ fn lifecycle_keeps_surviving_content_and_invalidates_only_its_plugin() {
             )
             .unwrap();
     }
+    assert_eq!(delivery.take(SurfaceRole::Bar, None).len(), 2);
     events.clear();
     let added = PluginEvent::Added {
         plugin_id: "demo".to_string(),
@@ -395,22 +458,10 @@ fn lifecycle_keeps_surviving_content_and_invalidates_only_its_plugin() {
         settings_schema: None,
     };
     delivery.handle(&added, None, record(&mut events)).unwrap();
-    delivery
-        .handle(
-            &render("other", "one", "tile", "other"),
-            None,
-            record(&mut events),
-        )
-        .unwrap();
-    assert!(events.is_empty());
-    delivery
-        .handle(
-            &render("demo", "one", "tile", "bar"),
-            None,
-            record(&mut events),
-        )
-        .unwrap();
-    assert_eq!(events.len(), 1);
+    assert_eq!(channels(&events), ["plugin-ui-bar"]);
+    let taken = delivery.take(SurfaceRole::Bar, None);
+    assert_eq!(taken.len(), 1, "only the re-added plugin is pending again");
+    assert_eq!(taken[0]["pluginId"], "demo");
     delivery
         .open(&request(1, "demo", "two"), true, record(&mut events))
         .unwrap();

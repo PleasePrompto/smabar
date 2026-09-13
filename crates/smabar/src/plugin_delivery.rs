@@ -1,6 +1,8 @@
 //! Persistent HTML stays native until its surface needs it. Cache changes and
 //! event publication share one lock, so opening content precedes live updates.
-//! Each surface receives arrays: one emit carries a whole run of renders.
+//! Live updates only signal a surface, which pulls the pending HTML through a
+//! command: Tauri evaluates event payloads as script source that WebKit keeps,
+//! while command responses travel as IPC bytes.
 
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -26,7 +28,9 @@ pub(crate) fn persistent_ui_channel(role: SurfaceRole, target: &str) -> Option<&
 #[derive(Default)]
 struct Render {
     html: String,
+    /// The bar pulled this HTML or received it in its startup snapshot.
     bar_sent: bool,
+    /// The open flyout pulled this HTML or received it while opening.
     overlay_sent: bool,
 }
 
@@ -59,12 +63,49 @@ impl PluginDelivery {
         }
     }
 
+    /// Every bar render for the startup snapshot; it counts as delivered.
     pub(crate) fn bar_snapshot(&self) -> Vec<Value> {
         self.lock()
             .latest
-            .iter()
+            .iter_mut()
             .filter(|(key, _)| persistent_ui_channel(SurfaceRole::Bar, &key.2).is_some())
-            .map(|(key, render)| ui_payload(key, &render.html))
+            .map(|(key, render)| {
+                render.bar_sent = true;
+                ui_payload(key, &render.html)
+            })
+            .collect()
+    }
+
+    /// Pending HTML for `role`; it counts as delivered once returned, so a
+    /// failed pull is repeated after the next signal.
+    pub(crate) fn take(
+        &self,
+        role: SurfaceRole,
+        active: Option<&OverlayFlyoutRequest>,
+    ) -> Vec<Value> {
+        let mut state = self.lock();
+        let opened = state.overlay_generation;
+        let request = active.filter(|request| opened == Some(request.generation));
+        state
+            .latest
+            .iter_mut()
+            .filter_map(|(key, render)| {
+                persistent_ui_channel(role, &key.2)?;
+                match role {
+                    SurfaceRole::Bar if !render.bar_sent => {
+                        render.bar_sent = true;
+                        Some(ui_payload(key, &render.html))
+                    }
+                    SurfaceRole::Overlay if !render.overlay_sent => {
+                        let request = request.filter(|request| matches_flyout(key, request))?;
+                        render.overlay_sent = true;
+                        let mut payload = ui_payload(key, &render.html);
+                        payload["generation"] = json!(request.generation);
+                        Some(payload)
+                    }
+                    _ => None,
+                }
+            })
             .collect()
     }
 
@@ -77,10 +118,8 @@ impl PluginDelivery {
         }
     }
 
-    /// State changes of the whole run precede its emits: each surface gets
-    /// one array with the last HTML per key. Markers are set only after a
-    /// successful emit, so a failed bar emit leaves the run pending and skips
-    /// the overlay, a failed overlay emit leaves only the overlay pending.
+    /// State changes of the whole run precede one signal per surface with
+    /// pending HTML; the surface then pulls it with `take`.
     pub(crate) fn handle_many(
         &self,
         events: &[PluginEvent],
@@ -88,8 +127,6 @@ impl PluginDelivery {
         mut emit: impl FnMut(&str, Value) -> anyhow::Result<()>,
     ) -> anyhow::Result<()> {
         let mut state = self.lock();
-        // ponytail: linear dedupe, a run holds a handful of renders.
-        let mut touched: Vec<UiKey> = Vec::new();
         for event in events {
             match event {
                 PluginEvent::UiRender {
@@ -100,7 +137,7 @@ impl PluginDelivery {
                     ..
                 } if is_persistent(target) => {
                     let key = (plugin_id.clone(), tile_id.clone(), target.clone());
-                    let render = state.latest.entry(key.clone()).or_insert_with(|| Render {
+                    let render = state.latest.entry(key).or_insert_with(|| Render {
                         html: html.clone(),
                         ..Render::default()
                     });
@@ -108,9 +145,6 @@ impl PluginDelivery {
                         render.html.clone_from(html);
                         render.bar_sent = false;
                         render.overlay_sent = false;
-                    }
-                    if !touched.contains(&key) {
-                        touched.push(key);
                     }
                 }
                 PluginEvent::Added {
@@ -131,24 +165,7 @@ impl PluginDelivery {
                 _ => {}
             }
         }
-        let overlay = active.filter(|request| state.overlay_generation == Some(request.generation));
-        state.publish(
-            SurfaceRole::Bar,
-            touched.iter(),
-            None,
-            |render| &mut render.bar_sent,
-            &mut emit,
-        )?;
-        if let Some(request) = overlay {
-            state.publish(
-                SurfaceRole::Overlay,
-                touched.iter().filter(|key| matches_flyout(key, request)),
-                Some(request.generation),
-                |render| &mut render.overlay_sent,
-                &mut emit,
-            )?;
-        }
-        Ok(())
+        state.signal(active, &mut emit)
     }
 
     pub(crate) fn open(
@@ -169,14 +186,7 @@ impl PluginDelivery {
         for render in state.latest.values_mut() {
             render.bar_sent = false;
         }
-        let keys: Vec<UiKey> = state.latest.keys().cloned().collect();
-        state.publish(
-            SurfaceRole::Bar,
-            keys.iter(),
-            None,
-            |render| &mut render.bar_sent,
-            &mut emit,
-        )?;
+        state.signal(None, &mut emit)?;
         if let Some(request) = active {
             state.open(request, true, &mut emit)?;
         }
@@ -191,46 +201,32 @@ impl PluginDelivery {
 }
 
 impl DeliveryState {
-    /// Emits the unsent renders of `role` among `keys` as one array; the keys
-    /// are marked through `sent` only after the emit succeeded.
-    fn publish<'k>(
-        &mut self,
-        role: SurfaceRole,
-        keys: impl Iterator<Item = &'k UiKey>,
-        generation: Option<u64>,
-        sent: fn(&mut Render) -> &mut bool,
+    /// One tiny signal per surface with pending HTML. A failed signal keeps
+    /// the HTML pending; the next run signals again.
+    fn signal(
+        &self,
+        active: Option<&OverlayFlyoutRequest>,
         emit: &mut impl FnMut(&str, Value) -> anyhow::Result<()>,
     ) -> anyhow::Result<()> {
-        let mut channel = None;
-        let mut payload = Vec::new();
-        let mut published = Vec::new();
-        for key in keys {
-            let Some(name) = persistent_ui_channel(role, &key.2) else {
-                continue;
-            };
-            let Some(render) = self.latest.get_mut(key) else {
-                continue;
-            };
-            if *sent(render) {
-                continue;
-            }
-            let mut item = ui_payload(key, &render.html);
-            if let Some(generation) = generation {
-                item["generation"] = json!(generation);
-            }
-            payload.push(item);
-            published.push(key);
-            channel = Some(name);
+        if self.latest.iter().any(|(key, render)| {
+            !render.bar_sent && persistent_ui_channel(SurfaceRole::Bar, &key.2).is_some()
+        }) {
+            emit("plugin-ui-bar", json!({}))
+                .context("failed to signal pending plugin HTML to the bar")?;
         }
-        let Some(channel) = channel else {
-            return Ok(());
-        };
-        emit(channel, Value::Array(payload))
-            .with_context(|| format!("failed to deliver plugin HTML on {channel}"))?;
-        for key in published {
-            if let Some(render) = self.latest.get_mut(key) {
-                *sent(render) = true;
-            }
+        if let Some(request) =
+            active.filter(|request| self.overlay_generation == Some(request.generation))
+            && self.latest.iter().any(|(key, render)| {
+                !render.overlay_sent
+                    && matches_flyout(key, request)
+                    && persistent_ui_channel(SurfaceRole::Overlay, &key.2).is_some()
+            })
+        {
+            emit(
+                "plugin-ui-overlay",
+                json!({ "generation": request.generation }),
+            )
+            .context("failed to signal pending plugin HTML to the open flyout")?;
         }
         Ok(())
     }

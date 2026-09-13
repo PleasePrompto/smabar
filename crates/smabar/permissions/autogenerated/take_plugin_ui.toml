@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-take-plugin-ui"
+description = "Enables the take_plugin_ui command without any pre-configured scope."
+commands.allow = ["take_plugin_ui"]
+
+[[permission]]
+identifier = "deny-take-plugin-ui"
+description = "Denies the take_plugin_ui command without any pre-configured scope."
+commands.deny = ["take_plugin_ui"]

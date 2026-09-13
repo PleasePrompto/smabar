@@ -14,11 +14,16 @@ import { OverlaySurface } from "./OverlaySurface";
 
 type Listener = (event: { payload: unknown }) => void;
 
-const { listeners, reportMeasureMock, pinMock } = vi.hoisted(() => ({
-  listeners: new Map<string, Listener>(),
-  reportMeasureMock: vi.fn(() => Promise.resolve()),
-  pinMock: vi.fn(() => Promise.resolve()),
-}));
+const { listeners, reportMeasureMock, pinMock, invokeMock, takeQueue } =
+  vi.hoisted(() => ({
+    listeners: new Map<string, Listener>(),
+    reportMeasureMock: vi.fn(() => Promise.resolve()),
+    pinMock: vi.fn(() => Promise.resolve()),
+    invokeMock: vi.fn(),
+    takeQueue: [] as unknown[][],
+  }));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn((name: string, listener: Listener) => {
@@ -54,6 +59,13 @@ beforeEach(async () => {
   listeners.clear();
   reportMeasureMock.mockClear();
   pinMock.mockClear();
+  takeQueue.length = 0;
+  invokeMock.mockReset();
+  invokeMock.mockImplementation((command: string) =>
+    command === "take_plugin_ui"
+      ? Promise.resolve(takeQueue.shift() ?? [])
+      : Promise.reject(new Error(`unexpected command: ${command}`)),
+  );
   useSmabar.setState(useSmabar.getInitialState(), true);
   vi.mocked(recordMemoryUi).mockClear();
   registerTile({
@@ -90,7 +102,7 @@ afterEach(() => {
   ).IS_REACT_ACT_ENVIRONMENT = false;
 });
 
-test("ignores UI pushes from plugins outside the open flyout", () => {
+test("ignores UI pushes from plugins outside the open flyout", async () => {
   emit("surface-flyout", {
     generation: 1,
     tileId: "plugin:systeminfo:system",
@@ -99,7 +111,7 @@ test("ignores UI pushes from plugins outside the open flyout", () => {
   });
   const initialMeasures = reportMeasureMock.mock.calls.length;
 
-  emit("plugin-ui-overlay", [
+  await deliver([
     {
       generation: 1,
       pluginId: "crypto",
@@ -110,7 +122,7 @@ test("ignores UI pushes from plugins outside the open flyout", () => {
   ]);
   expect(reportMeasureMock).toHaveBeenCalledTimes(initialMeasures);
 
-  emit("plugin-ui-overlay", [
+  await deliver([
     {
       generation: 1,
       pluginId: "systeminfo",
@@ -324,7 +336,7 @@ test("keeps only the active tile's one-shot content, including empty HTML", () =
   });
 });
 
-test("rejects stale, wrong-tile and closed pushes while counting received traffic", () => {
+test("rejects stale, wrong-tile and closed pushes while counting received traffic", async () => {
   const push = {
     generation: 2,
     pluginId: "systeminfo",
@@ -332,7 +344,7 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     target: "flyout",
     html: "live",
   };
-  emit("plugin-ui-overlay", [push]);
+  await deliver([push]);
   expect(useSmabar.getState().pluginUi).toEqual({});
   emit("surface-flyout", {
     generation: 2,
@@ -340,17 +352,20 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     mode: "pinned",
     content: systemContent,
   });
-  emit("plugin-ui-overlay", [
-    { ...push, generation: 1 },
-    { ...push, generation: 3 },
-    { ...push, tileId: "other" },
-    { ...push, target: "tile" },
-    { ...push, target: "popup" },
-  ]);
+  await deliver(
+    [
+      { ...push, generation: 1 },
+      { ...push, generation: 3 },
+      { ...push, tileId: "other" },
+      { ...push, target: "tile" },
+      { ...push, target: "popup" },
+    ],
+    2,
+  );
   expect(useSmabar.getState().pluginUi).toEqual({
     "systeminfo/system/flyout": "SystemInfo content",
   });
-  emit("plugin-ui-overlay", [push]);
+  await deliver([push]);
   expect(host.querySelector("[data-plugin-id]")?.shadowRoot?.textContent).toBe(
     "live",
   );
@@ -359,14 +374,14 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     "systeminfo/system/flyout": "live",
   });
   emit("flyout-closed", { generation: 2 });
-  emit("plugin-ui-overlay", [push]);
+  await deliver([push]);
   expect(useSmabar.getState().pluginUi).toEqual({});
   expect(host.childElementCount).toBe(0);
   expect(
     vi
       .mocked(recordMemoryUi)
       .mock.calls.filter(([, source]) => source === "live"),
-  ).toHaveLength(8);
+  ).toHaveLength(6);
 });
 
 test.each([false, true])(
@@ -393,7 +408,7 @@ test.each([false, true])(
   },
 );
 
-test("an embed only starts when pinned and survives an identical active update", () => {
+test("an embed only starts when pinned and survives an identical active update", async () => {
   setEmbedRoot("http://127.0.0.1:1234/embed");
   const html =
     '<iframe src="https://www.youtube-nocookie.com/embed/example" title="Video"></iframe>';
@@ -413,7 +428,7 @@ test("an embed only starts when pinned and survives an identical active update",
   });
   const frame = shadow?.querySelector("iframe");
   expect(frame).not.toBeNull();
-  emit("plugin-ui-overlay", [
+  await deliver([
     {
       generation: 1,
       pluginId: "systeminfo",
@@ -491,5 +506,22 @@ function emit(name: string, payload: unknown): void {
   if (listener === undefined) throw new Error(`missing ${name} listener`);
   act(() => {
     listener({ payload });
+  });
+}
+
+/** Signals `generation`; the pull for it answers with `rendered`. */
+type Pushed = { generation: number } & Record<string, unknown>;
+
+async function deliver(
+  rendered: Pushed[],
+  generation = rendered[0]?.generation,
+): Promise<void> {
+  takeQueue.length = 0;
+  takeQueue.push(rendered);
+  const listener = listeners.get("plugin-ui-overlay");
+  if (listener === undefined) throw new Error("missing overlay listener");
+  await act(async () => {
+    listener({ payload: { generation } });
+    for (let turn = 0; turn < 8; turn += 1) await Promise.resolve();
   });
 }

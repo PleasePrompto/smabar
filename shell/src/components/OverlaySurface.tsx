@@ -5,13 +5,13 @@ import { getTile } from "./registry";
 import { flyoutContentFor } from "./overlay/model";
 import { t } from "../i18n/t";
 import { cleanupListeners } from "../ipc/listeners";
-import type { PluginUiEvent } from "../ipc/bridge";
 import { reportError } from "../ipc/log";
 import {
   recordMemoryBatch,
   recordMemoryUi,
   suppressMemoryStateUpdate,
 } from "../ipc/memoryProbe";
+import { createPluginUiPull } from "../ipc/pluginUiPull";
 import {
   closeFlyoutSurface,
   pinFlyoutSurface,
@@ -85,31 +85,35 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
 
   useEffect(() => {
     let disposed = false;
+    // The pull returns only renders of the open flyout's generation; the
+    // filter guards against a switch between signal and response.
+    const pull = createPluginUiPull((rendered) => {
+      recordMemoryBatch();
+      const current = requestRef.current;
+      for (const render of rendered) {
+        recordMemoryUi(render.html.length, "live");
+        if (suppressMemoryStateUpdate()) continue;
+        if (
+          current?.mode == null ||
+          current.generation !== render.generation ||
+          current.tileId !== `plugin:${render.pluginId}:${render.tileId}` ||
+          (render.target !== "hover" && render.target !== "flyout")
+        )
+          continue;
+        useSmabar
+          .getState()
+          .setPluginUi(
+            `${render.pluginId}/${render.tileId}/${render.target}`,
+            render.html,
+          );
+      }
+    });
     const registrations = [
-      listen<(PluginUiEvent & { generation: number })[]>(
-        "plugin-ui-overlay",
-        ({ payload }) => {
-          recordMemoryBatch();
-          const current = requestRef.current;
-          for (const render of payload) {
-            recordMemoryUi(render.html.length, "live");
-            if (suppressMemoryStateUpdate()) continue;
-            if (
-              current?.mode == null ||
-              current.generation !== render.generation ||
-              current.tileId !== `plugin:${render.pluginId}:${render.tileId}` ||
-              (render.target !== "hover" && render.target !== "flyout")
-            )
-              continue;
-            useSmabar
-              .getState()
-              .setPluginUi(
-                `${render.pluginId}/${render.tileId}/${render.target}`,
-                render.html,
-              );
-          }
-        },
-      ),
+      listen<{ generation: number }>("plugin-ui-overlay", ({ payload }) => {
+        const current = requestRef.current;
+        if (current?.mode != null && current.generation === payload.generation)
+          pull();
+      }),
       listen<number>("flyout-pin-requested", (event) => {
         const current = requestRef.current;
         if (current?.generation === event.payload && current.mode !== null)

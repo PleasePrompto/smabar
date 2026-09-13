@@ -17,9 +17,13 @@ import {
 import { uiLog } from "./log";
 
 type Listener = (event: { payload: unknown }) => void;
-const { listeners } = vi.hoisted(() => ({
+const { listeners, invokeMock, takeQueue } = vi.hoisted(() => ({
   listeners: new Map<string, Listener>(),
+  invokeMock: vi.fn(),
+  takeQueue: [] as unknown[][],
 }));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
 vi.mock("@tauri-apps/api/event", () => ({
   listen: vi.fn((name: string, listener: Listener) => {
@@ -234,8 +238,20 @@ test("no-state receives open flyout updates without state work, while snapshots 
     target: "flyout",
     html: "warmup",
   };
+  invokeMock.mockImplementation((command: string) =>
+    command === "take_plugin_ui"
+      ? Promise.resolve(takeQueue.shift() ?? [])
+      : Promise.reject(new Error(`unexpected command: ${command}`)),
+  );
+  const push = async (rendered: unknown[]) => {
+    takeQueue.push(rendered);
+    await act(async () => {
+      emit("plugin-ui-overlay", { generation: 1 });
+      for (let turn = 0; turn < 8; turn += 1) await Promise.resolve();
+    });
+  };
   emit("surface-flyout", request);
-  emit("plugin-ui-overlay", [live]);
+  await push([live]);
   expect(useSmabar.getState().pluginUi["probe/main/flyout"]).toBe("warmup");
   const content =
     host.querySelector("[data-plugin-id]")?.shadowRoot?.firstChild;
@@ -243,7 +259,7 @@ test("no-state receives open flyout updates without state work, while snapshots 
     vi.advanceTimersByTime(30_000);
   });
   const getState = vi.spyOn(useSmabar, "getState");
-  emit("plugin-ui-overlay", [{ ...live, html: "blocked" }]);
+  await push([{ ...live, html: "blocked" }]);
   expect(getState).not.toHaveBeenCalled();
   getState.mockRestore();
   expect(useSmabar.getState().pluginUi["probe/main/flyout"]).toBe("warmup");

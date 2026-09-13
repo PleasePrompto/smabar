@@ -32,6 +32,7 @@ fn main() {
             "plugin_action",
             "get_plugins",
             "get_plugin_ui",
+            "take_plugin_ui",
             "list_plugins",
             "remove_plugin",
             "set_bar_geometry",

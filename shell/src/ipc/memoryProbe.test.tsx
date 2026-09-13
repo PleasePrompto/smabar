@@ -9,6 +9,7 @@ import { registerTile, unregisterPluginTiles } from "../components/registry";
 import { useSmabar } from "../store/bar";
 import {
   initMemoryProbe,
+  recordMemoryBatch,
   recordMemoryDomCommit,
   recordMemoryUi,
   suppressMemoryStateUpdate,
@@ -82,6 +83,7 @@ test("ordinary launches start no sampler; diagnostics report bounded interval to
   initMemoryProbe("observe", "overlay");
   host.attachShadow({ mode: "open" }).innerHTML =
     "<span>private payload</span>";
+  recordMemoryBatch();
   recordMemoryUi(2, "live");
   recordMemoryUi(7, "snapshot");
   recordMemoryDomCommit(7);
@@ -91,6 +93,7 @@ test("ordinary launches start no sampler; diagnostics report bounded interval to
       role: "overlay",
       mode: "observe",
       elapsedMs: 31_000,
+      liveBatches: 1,
       liveEvents: 1,
       liveHtmlUnits: 2,
       snapshotEvents: 1,
@@ -232,7 +235,7 @@ test("no-state receives open flyout updates without state work, while snapshots 
     html: "warmup",
   };
   emit("surface-flyout", request);
-  emit("plugin-ui-overlay", live);
+  emit("plugin-ui-overlay", [live]);
   expect(useSmabar.getState().pluginUi["probe/main/flyout"]).toBe("warmup");
   const content =
     host.querySelector("[data-plugin-id]")?.shadowRoot?.firstChild;
@@ -240,7 +243,7 @@ test("no-state receives open flyout updates without state work, while snapshots 
     vi.advanceTimersByTime(30_000);
   });
   const getState = vi.spyOn(useSmabar, "getState");
-  emit("plugin-ui-overlay", { ...live, html: "blocked" });
+  emit("plugin-ui-overlay", [{ ...live, html: "blocked" }]);
   expect(getState).not.toHaveBeenCalled();
   getState.mockRestore();
   expect(useSmabar.getState().pluginUi["probe/main/flyout"]).toBe("warmup");
@@ -251,6 +254,7 @@ test("no-state receives open flyout updates without state work, while snapshots 
     vi.advanceTimersByTime(1_000);
   });
   expect(vi.mocked(uiLog).mock.calls.at(-1)?.[2]?.fields).toMatchObject({
+    liveBatches: 2,
     liveEvents: 2,
     liveHtmlUnits: 13,
     snapshotEvents: 1,

@@ -179,6 +179,9 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
       target: role === "bar" ? "tile" : "flyout",
       html: "old",
     };
+    // Persistent surfaces receive one array per run; popups stay single.
+    const live = (html: string) =>
+      role === "bar" ? [{ ...render, html }] : { ...render, html };
     invokeMock.mockImplementation((command: string) => {
       switch (command) {
         case "get_ui_state":
@@ -208,7 +211,7 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
     // must not fetch or retain closed flyout content during startup.
     expect(listeners.has("plugin-ui-overlay")).toBe(false);
     expect(listeners.has("plugin-ui")).toBe(role === "notifications");
-    listener?.({ payload: { ...render, html: "new" } });
+    listener?.({ payload: live("new") });
     ui.resolve();
     await initialized;
     if (role === "bar") {
@@ -217,7 +220,7 @@ test.each(["bar", "overlay", "settings", "notifications"] as const)(
         [`slow/tile/${render.target}`]: "new",
         "slow/tile/hover": "preview",
       });
-      listener?.({ payload: { ...render, html: "latest" } });
+      listener?.({ payload: live("latest") });
       expect(useSmabar.getState().pluginUi[`slow/tile/${render.target}`]).toBe(
         "latest",
       );
@@ -276,6 +279,8 @@ test.each(["bar", "notifications"] as const)(
       html: "initial",
       ttlMs: null,
     };
+    const live = (html: string) =>
+      role === "bar" ? [{ ...render, html }] : { ...render, html };
     const snapshot = deferred([render]);
     invokeMock.mockImplementation((command: string) => {
       switch (command) {
@@ -321,8 +326,8 @@ test.each(["bar", "notifications"] as const)(
     vi.mocked(uiLog).mockClear();
     const getState = vi.spyOn(useSmabar, "getState");
     const channel = role === "bar" ? "plugin-ui-bar" : "plugin-ui";
-    emit(channel, { ...render, html: "received" });
-    emit(channel, { ...render, html: "latest" });
+    emit(channel, live("received"));
+    emit(channel, live("latest"));
     expect(getState.mock.calls.length > 0).toBe(role !== "bar");
     getState.mockRestore();
     if (role === "bar") {
@@ -345,6 +350,7 @@ test.each(["bar", "notifications"] as const)(
     }
     vi.advanceTimersByTime(1_000);
     expect(vi.mocked(uiLog).mock.calls.at(-1)?.[2]?.fields).toMatchObject({
+      liveBatches: role === "bar" ? 2 : 0,
       liveEvents: 2,
       liveHtmlUnits: 14,
       snapshotEvents: role === "bar" ? 1 : 0,

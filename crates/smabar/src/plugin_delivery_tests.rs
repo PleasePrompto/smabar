@@ -1,17 +1,26 @@
-use std::sync::{Arc, Barrier, Mutex};
-
 use super::*;
 
-type Emitted = Vec<(String, Value)>;
+pub(super) type Emitted = Vec<(String, Value)>;
 
-fn record(events: &mut Emitted) -> impl FnMut(&str, Value) -> anyhow::Result<()> + '_ {
+impl PluginDelivery {
+    pub(super) fn handle(
+        &self,
+        event: &PluginEvent,
+        active: Option<&OverlayFlyoutRequest>,
+        emit: impl FnMut(&str, Value) -> anyhow::Result<()>,
+    ) -> anyhow::Result<()> {
+        self.handle_many(std::slice::from_ref(event), active, emit)
+    }
+}
+
+pub(super) fn record(events: &mut Emitted) -> impl FnMut(&str, Value) -> anyhow::Result<()> + '_ {
     |channel, payload| {
         events.push((channel.to_string(), payload));
         Ok(())
     }
 }
 
-fn render(plugin: &str, tile: &str, target: &str, html: &str) -> PluginEvent {
+pub(super) fn render(plugin: &str, tile: &str, target: &str, html: &str) -> PluginEvent {
     PluginEvent::UiRender {
         plugin_id: plugin.to_string(),
         tile_id: tile.to_string(),
@@ -21,7 +30,7 @@ fn render(plugin: &str, tile: &str, target: &str, html: &str) -> PluginEvent {
     }
 }
 
-fn request(generation: u64, plugin: &str, tile: &str) -> OverlayFlyoutRequest {
+pub(super) fn request(generation: u64, plugin: &str, tile: &str) -> OverlayFlyoutRequest {
     OverlayFlyoutRequest {
         generation,
         tile_id: format!("plugin:{plugin}:{tile}"),
@@ -108,7 +117,7 @@ fn live_delivery_requires_the_opened_generation_and_matching_tile() {
         events[0],
         (
             "plugin-ui-overlay".into(),
-            json!({ "pluginId": "demo", "tileId": "one", "target": "flyout", "html": "B", "generation": 1 })
+            json!([{ "pluginId": "demo", "tileId": "one", "target": "flyout", "html": "B", "generation": 1 }])
         )
     );
     events.clear();
@@ -257,7 +266,7 @@ fn failures_keep_the_latest_html_unsent_until_a_successful_retry() {
     delivery
         .handle(&changed, Some(&active), record(&mut events))
         .unwrap();
-    assert_eq!(events[0].1["html"], "C");
+    assert_eq!(events[0].1[0]["html"], "C");
     events.clear();
     let tile = render("demo", "one", "tile", "bar");
     assert!(
@@ -310,9 +319,11 @@ fn reset_and_replay_restore_bar_and_active_one_shot_details() {
     assert_eq!(bar[0]["target"], "hover");
     assert_eq!(bar[1]["target"], "tile");
     delivery.replay(Some(&active), record(&mut events)).unwrap();
-    assert_eq!(events.len(), 3);
+    assert_eq!(events.len(), 2, "the bar replay is one array");
+    assert_eq!(events[0].0, "plugin-ui-bar");
+    assert_eq!(events[0].1.as_array().map(Vec::len), Some(2));
     assert_eq!(
-        events[2].1["content"],
+        events[1].1["content"],
         json!({ "hover": "preview", "flyout": "full" })
     );
     events.clear();
@@ -420,50 +431,4 @@ fn lifecycle_keeps_surviving_content_and_invalidates_only_its_plugin() {
     let bar = delivery.bar_snapshot();
     assert_eq!(bar.len(), 1);
     assert_eq!(bar[0]["pluginId"], "other");
-}
-
-#[test]
-fn an_opening_emit_finishes_before_a_concurrent_live_update() {
-    let delivery = PluginDelivery::default();
-    let active = request(1, "demo", "one");
-    delivery
-        .handle(&render("demo", "one", "flyout", "A"), None, |_, _| Ok(()))
-        .unwrap();
-    let opening = Barrier::new(2);
-    let release = Barrier::new(2);
-    let output = Arc::new(Mutex::new(Emitted::new()));
-    std::thread::scope(|scope| {
-        let opener = scope.spawn(|| {
-            delivery
-                .open(&active, true, |channel, payload| {
-                    output.lock().unwrap().push((channel.into(), payload));
-                    opening.wait();
-                    release.wait();
-                    Ok(())
-                })
-                .unwrap();
-        });
-        opening.wait();
-        let update = scope.spawn(|| {
-            delivery
-                .handle(
-                    &render("demo", "one", "flyout", "B"),
-                    Some(&active),
-                    |channel, payload| {
-                        output.lock().unwrap().push((channel.into(), payload));
-                        Ok(())
-                    },
-                )
-                .unwrap();
-        });
-        release.wait();
-        opener.join().unwrap();
-        update.join().unwrap();
-    });
-    let events = output.lock().unwrap();
-    assert_eq!(events.len(), 2);
-    assert_eq!(events[0].0, "surface-flyout");
-    assert_eq!(events[0].1["content"]["flyout"], "A");
-    assert_eq!(events[1].0, "plugin-ui-overlay");
-    assert_eq!(events[1].1["html"], "B");
 }

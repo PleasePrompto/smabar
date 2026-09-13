@@ -29,6 +29,7 @@ import type { LegalChanged } from "./legal";
 import { reportError, uiLog } from "./log";
 import {
   initMemoryProbe,
+  recordMemoryBatch,
   recordMemoryUi,
   suppressMemoryStateUpdate,
   type MemoryProbeMode,
@@ -290,15 +291,24 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
     }),
   );
   // Stored raw; sanitization happens where it renders (ShadowHost).
-  if (keepsPluginHtml || role === "notifications") {
-    const applyUi = afterStartup<PluginUiEvent>((payload) => {
-      routePluginUi(payload, role === "notifications", "live");
+  if (keepsPluginHtml) {
+    // The core coalesces renders that arrive within 100 ms into one array
+    // per surface; React batches the resulting store updates into one render.
+    await listen<PluginUiEvent[]>(
+      `plugin-ui-${role}`,
+      afterStartup((payload) => {
+        recordMemoryBatch();
+        for (const render of payload) routePluginUi(render, false, "live");
+      }),
+    );
+  } else if (role === "notifications") {
+    const applyPopup = afterStartup<PluginUiEvent>((payload) => {
+      routePluginUi(payload, true, "live");
     });
-    const channel = keepsPluginHtml ? `plugin-ui-${role}` : "plugin-ui";
-    await listen<PluginUiEvent>(channel, (event) => {
+    await listen<PluginUiEvent>("plugin-ui", (event) => {
       // Filter before startup queuing as well: notification windows never
       // retain the persistent HTML of every plugin in the background.
-      if (keepsPluginHtml || event.payload.target === "popup") applyUi(event);
+      if (event.payload.target === "popup") applyPopup(event);
     });
   }
 

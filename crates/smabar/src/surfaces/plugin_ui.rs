@@ -8,18 +8,19 @@ use super::{OverlayFlyoutRequest, SurfaceManager};
 use crate::commands::AppState;
 
 impl SurfaceManager {
+    /// One run of events becomes at most one emit per surface.
     pub(crate) fn deliver_plugin_ui(
         &self,
         app: &AppHandle,
-        event: &PluginEvent,
+        events: &[PluginEvent],
         suppress_events: bool,
     ) -> anyhow::Result<()> {
         let lifecycle = self
             .lifecycle
             .lock()
             .map_err(|_| anyhow::anyhow!("surface lifecycle lock poisoned"))?;
-        app.state::<AppState>().plugin_delivery.handle(
-            event,
+        app.state::<AppState>().plugin_delivery.handle_many(
+            events,
             lifecycle
                 .active_flyout
                 .as_ref()

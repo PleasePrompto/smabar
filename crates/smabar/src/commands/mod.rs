@@ -1,5 +1,5 @@
 //! Tauri commands and core→shell events, split by concern. Plugin forwarding
-//! lives here in the module root.
+//! lives in `plugin_events`.
 
 // Public modules: `generate_handler!` needs the full path to a command (the
 // macro resolves hidden `__cmd__*` items next to the function, which plain
@@ -7,6 +7,7 @@
 pub mod bar_geometry;
 pub mod config;
 pub mod legal;
+mod plugin_events;
 pub mod runtime;
 pub mod shortcuts;
 pub mod store;
@@ -15,6 +16,7 @@ pub mod themes;
 pub mod update;
 
 pub use config::spawn_config_events;
+pub use plugin_events::spawn_plugin_events;
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -26,11 +28,10 @@ use smabar_core::config::{
 };
 use smabar_core::platform::WindowLevel;
 use smabar_core::platform::render::RenderPlan;
-use smabar_core::plugins::{PluginEvent, PluginSupervisor};
+use smabar_core::plugins::PluginSupervisor;
 use smabar_core::shortcuts::ShortcutsService;
 use smabar_core::store::StoreService;
-use tauri::{AppHandle, Emitter, Manager, State};
-use tokio::sync::broadcast::error::RecvError;
+use tauri::State;
 
 pub struct AppState {
     paths: SmabarPaths,
@@ -324,124 +325,6 @@ pub async fn plugin_action(
         .dispatch_action(&plugin_id, &tile_id, &action, value)
         .await
         .map_err(|error| error.to_string())
-}
-
-/// Forwards supervisor events, routing persistent HTML by surface role.
-pub fn spawn_plugin_events(
-    app: AppHandle,
-    supervisor: &PluginSupervisor,
-    mut rx: tokio::sync::broadcast::Receiver<PluginEvent>,
-) {
-    let supervisor = supervisor.clone();
-    let mut probe = crate::memory_probe::Counters::new(*app.state::<crate::memory_probe::Mode>());
-    tauri::async_runtime::spawn(async move {
-        loop {
-            match rx.recv().await {
-                Ok(event) => forward_plugin_event(&app, &mut probe, event).await,
-                Err(RecvError::Lagged(skipped)) => {
-                    tracing::warn!(skipped, "plugin event listener lagged");
-                    let (snapshot, pending) = supervisor.resync_ui(&mut rx);
-                    for event in pending {
-                        if !matches!(&event, PluginEvent::UiRender { target, .. } if target != "popup")
-                        {
-                            forward_plugin_event(&app, &mut probe, event).await;
-                        }
-                    }
-                    if let Err(error) = app
-                        .state::<crate::surfaces::SurfaceManager>()
-                        .replay_plugin_ui(&app, snapshot)
-                    {
-                        tracing::error!(%error, "failed to restore plugin UI after event lag; reload the affected window if it stays stale");
-                    }
-                }
-                Err(RecvError::Closed) => break,
-            }
-        }
-    });
-}
-
-async fn forward_plugin_event(
-    app: &AppHandle,
-    probe: &mut crate::memory_probe::Counters,
-    event: PluginEvent,
-) {
-    let suppress_events = matches!(&event, PluginEvent::UiRender { target, html, .. }
-        if probe.suppress(target, html.len()));
-    if let Err(error) = app
-        .state::<crate::surfaces::SurfaceManager>()
-        .deliver_plugin_ui(app, &event, suppress_events)
-    {
-        tracing::error!(%error, "failed to deliver current plugin UI; reload the affected window if it stays stale");
-    }
-    let (channel, payload) = match event {
-        PluginEvent::Added {
-            plugin_id,
-            name,
-            icon_data_url,
-            tiles,
-            settings_schema,
-        } => (
-            "plugin-added",
-            json!({
-                "pluginId": plugin_id,
-                "name": name,
-                "iconDataUrl": icon_data_url,
-                "tiles": tiles,
-                "settingsSchema": settings_schema,
-            }),
-        ),
-        PluginEvent::Removed { plugin_id } => ("plugin-removed", json!({ "pluginId": plugin_id })),
-        PluginEvent::Status {
-            plugin_id,
-            status,
-            error,
-        } => (
-            "plugin-status",
-            json!({ "pluginId": plugin_id, "status": status, "error": error }),
-        ),
-        PluginEvent::UiRender { ref target, .. } if target != "popup" => return,
-        PluginEvent::UiRender {
-            plugin_id,
-            tile_id,
-            target,
-            html,
-            ttl_ms,
-        } => {
-            if !app.state::<AppState>().config().popups.enabled {
-                return;
-            }
-            let mut payload = json!({
-                "pluginId": plugin_id,
-                "tileId": tile_id,
-                "target": target,
-                "html": html,
-            });
-            if let Some(ttl_ms) = ttl_ms {
-                payload["ttlMs"] = json!(ttl_ms);
-            }
-            if let Err(error) = app
-                .state::<crate::surfaces::SurfaceManager>()
-                .enqueue_popup(app, payload)
-                .await
-            {
-                tracing::error!(
-                    %error,
-                    %plugin_id,
-                    %tile_id,
-                    "failed to present plugin popup"
-                );
-            }
-            return;
-        }
-    };
-    if let Err(error) = app.emit(channel, payload) {
-        app.state::<AppState>().plugin_delivery.invalidate();
-        tracing::error!(
-            %error,
-            channel,
-            "failed to deliver plugin event to the shell; reload the affected window if its state stays stale"
-        );
-    }
 }
 
 #[cfg(test)]

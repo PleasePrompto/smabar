@@ -99,22 +99,26 @@ test("ignores UI pushes from plugins outside the open flyout", () => {
   });
   const initialMeasures = reportMeasureMock.mock.calls.length;
 
-  emit("plugin-ui-overlay", {
-    generation: 1,
-    pluginId: "crypto",
-    tileId: "crypto",
-    target: "flyout",
-    html: "unrelated",
-  });
+  emit("plugin-ui-overlay", [
+    {
+      generation: 1,
+      pluginId: "crypto",
+      tileId: "crypto",
+      target: "flyout",
+      html: "unrelated",
+    },
+  ]);
   expect(reportMeasureMock).toHaveBeenCalledTimes(initialMeasures);
 
-  emit("plugin-ui-overlay", {
-    generation: 1,
-    pluginId: "systeminfo",
-    tileId: "system",
-    target: "flyout",
-    html: "Updated system content",
-  });
+  emit("plugin-ui-overlay", [
+    {
+      generation: 1,
+      pluginId: "systeminfo",
+      tileId: "system",
+      target: "flyout",
+      html: "Updated system content",
+    },
+  ]);
   // The open flyout takes the push — but its box did not change, so the
   // native place/reveal chain is not re-run for it.
   expect(host.querySelector("[data-plugin-id]")?.shadowRoot?.textContent).toBe(
@@ -328,7 +332,7 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     target: "flyout",
     html: "live",
   };
-  emit("plugin-ui-overlay", push);
+  emit("plugin-ui-overlay", [push]);
   expect(useSmabar.getState().pluginUi).toEqual({});
   emit("surface-flyout", {
     generation: 2,
@@ -336,18 +340,17 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     mode: "pinned",
     content: systemContent,
   });
-  for (const update of [
+  emit("plugin-ui-overlay", [
     { ...push, generation: 1 },
     { ...push, generation: 3 },
     { ...push, tileId: "other" },
     { ...push, target: "tile" },
     { ...push, target: "popup" },
-  ])
-    emit("plugin-ui-overlay", update);
+  ]);
   expect(useSmabar.getState().pluginUi).toEqual({
     "systeminfo/system/flyout": "SystemInfo content",
   });
-  emit("plugin-ui-overlay", push);
+  emit("plugin-ui-overlay", [push]);
   expect(host.querySelector("[data-plugin-id]")?.shadowRoot?.textContent).toBe(
     "live",
   );
@@ -356,7 +359,7 @@ test("rejects stale, wrong-tile and closed pushes while counting received traffi
     "systeminfo/system/flyout": "live",
   });
   emit("flyout-closed", { generation: 2 });
-  emit("plugin-ui-overlay", push);
+  emit("plugin-ui-overlay", [push]);
   expect(useSmabar.getState().pluginUi).toEqual({});
   expect(host.childElementCount).toBe(0);
   expect(
@@ -410,13 +413,15 @@ test("an embed only starts when pinned and survives an identical active update",
   });
   const frame = shadow?.querySelector("iframe");
   expect(frame).not.toBeNull();
-  emit("plugin-ui-overlay", {
-    generation: 1,
-    pluginId: "systeminfo",
-    tileId: "system",
-    target: "flyout",
-    html,
-  });
+  emit("plugin-ui-overlay", [
+    {
+      generation: 1,
+      pluginId: "systeminfo",
+      tileId: "system",
+      target: "flyout",
+      html,
+    },
+  ]);
   expect(shadow?.querySelector("iframe")).toBe(frame);
 });
 

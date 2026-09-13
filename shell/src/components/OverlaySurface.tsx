@@ -7,7 +7,11 @@ import { t } from "../i18n/t";
 import { cleanupListeners } from "../ipc/listeners";
 import type { PluginUiEvent } from "../ipc/bridge";
 import { reportError } from "../ipc/log";
-import { recordMemoryUi, suppressMemoryStateUpdate } from "../ipc/memoryProbe";
+import {
+  recordMemoryBatch,
+  recordMemoryUi,
+  suppressMemoryStateUpdate,
+} from "../ipc/memoryProbe";
 import {
   closeFlyoutSurface,
   pinFlyoutSurface,
@@ -82,25 +86,28 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
   useEffect(() => {
     let disposed = false;
     const registrations = [
-      listen<PluginUiEvent & { generation: number }>(
+      listen<(PluginUiEvent & { generation: number })[]>(
         "plugin-ui-overlay",
         ({ payload }) => {
-          recordMemoryUi(payload.html.length, "live");
-          if (suppressMemoryStateUpdate()) return;
+          recordMemoryBatch();
           const current = requestRef.current;
-          if (
-            current?.mode == null ||
-            current.generation !== payload.generation ||
-            current.tileId !== `plugin:${payload.pluginId}:${payload.tileId}` ||
-            (payload.target !== "hover" && payload.target !== "flyout")
-          )
-            return;
-          useSmabar
-            .getState()
-            .setPluginUi(
-              `${payload.pluginId}/${payload.tileId}/${payload.target}`,
-              payload.html,
-            );
+          for (const render of payload) {
+            recordMemoryUi(render.html.length, "live");
+            if (suppressMemoryStateUpdate()) continue;
+            if (
+              current?.mode == null ||
+              current.generation !== render.generation ||
+              current.tileId !== `plugin:${render.pluginId}:${render.tileId}` ||
+              (render.target !== "hover" && render.target !== "flyout")
+            )
+              continue;
+            useSmabar
+              .getState()
+              .setPluginUi(
+                `${render.pluginId}/${render.tileId}/${render.target}`,
+                render.html,
+              );
+          }
         },
       ),
       listen<number>("flyout-pin-requested", (event) => {

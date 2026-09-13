@@ -15,6 +15,7 @@ let started = 0;
 
 function emptyCounters() {
   return {
+    liveBatches: 0,
     liveEvents: 0,
     liveHtmlUnits: 0,
     snapshotEvents: 0,
@@ -78,6 +79,12 @@ export function suppressMemoryStateUpdate(): boolean {
     return false;
   counters.suppressedStateUpdates += 1;
   return true;
+}
+
+/** One received `plugin-ui-*` event; its elements count as live events. */
+export function recordMemoryBatch(): void {
+  if (mode === null) return;
+  counters.liveBatches += 1;
 }
 
 /** Lengths are UTF-16 code units, not bytes or browser heap measurements. */

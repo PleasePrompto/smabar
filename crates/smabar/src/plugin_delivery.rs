@@ -1,5 +1,6 @@
 //! Persistent HTML stays native until its surface needs it. Cache changes and
 //! event publication share one lock, so opening content precedes live updates.
+//! Each surface receives arrays: one emit carries a whole run of renders.
 
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};
@@ -63,7 +64,7 @@ impl PluginDelivery {
             .latest
             .iter()
             .filter(|(key, _)| persistent_ui_channel(SurfaceRole::Bar, &key.2).is_some())
-            .map(|(key, render)| ui_payload(key, &render.html, None))
+            .map(|(key, render)| ui_payload(key, &render.html))
             .collect()
     }
 
@@ -76,69 +77,76 @@ impl PluginDelivery {
         }
     }
 
-    pub(crate) fn handle(
+    /// State changes of the whole run precede its emits: each surface gets
+    /// one array with the last HTML per key. Markers are set only after a
+    /// successful emit, so a failed bar emit leaves the run pending and skips
+    /// the overlay, a failed overlay emit leaves only the overlay pending.
+    pub(crate) fn handle_many(
         &self,
-        event: &PluginEvent,
+        events: &[PluginEvent],
         active: Option<&OverlayFlyoutRequest>,
         mut emit: impl FnMut(&str, Value) -> anyhow::Result<()>,
     ) -> anyhow::Result<()> {
         let mut state = self.lock();
-        match event {
-            PluginEvent::UiRender {
-                plugin_id,
-                tile_id,
-                target,
-                html,
-                ttl_ms,
-            } if is_persistent(target) => {
-                let key = (plugin_id.clone(), tile_id.clone(), target.clone());
-                let overlay_request = active.filter(|request| {
-                    state.overlay_generation == Some(request.generation)
-                        && matches_flyout(&key, request)
-                });
-                let render = state.latest.entry(key.clone()).or_insert_with(|| Render {
-                    html: html.clone(),
-                    ..Render::default()
-                });
-                if render.html != *html {
-                    render.html.clone_from(html);
-                    render.bar_sent = false;
-                    render.overlay_sent = false;
-                }
-                if !render.bar_sent
-                    && let Some(channel) = persistent_ui_channel(SurfaceRole::Bar, target)
-                {
-                    emit(channel, ui_payload(&key, &render.html, *ttl_ms))
-                        .context("failed to deliver plugin HTML to the bar")?;
-                    render.bar_sent = true;
-                }
-                if !render.overlay_sent
-                    && let Some(request) = overlay_request
-                    && let Some(channel) = persistent_ui_channel(SurfaceRole::Overlay, target)
-                {
-                    let mut payload = ui_payload(&key, &render.html, *ttl_ms);
-                    payload["generation"] = json!(request.generation);
-                    emit(channel, payload)
-                        .context("failed to deliver plugin HTML to the open flyout")?;
-                    render.overlay_sent = true;
-                }
-            }
-            PluginEvent::Added {
-                plugin_id, tiles, ..
-            } => {
-                state.latest.retain(|(id, tile, _), render| {
-                    if id != plugin_id {
-                        return true;
+        // ponytail: linear dedupe, a run holds a handful of renders.
+        let mut touched: Vec<UiKey> = Vec::new();
+        for event in events {
+            match event {
+                PluginEvent::UiRender {
+                    plugin_id,
+                    tile_id,
+                    target,
+                    html,
+                    ..
+                } if is_persistent(target) => {
+                    let key = (plugin_id.clone(), tile_id.clone(), target.clone());
+                    let render = state.latest.entry(key.clone()).or_insert_with(|| Render {
+                        html: html.clone(),
+                        ..Render::default()
+                    });
+                    if render.html != *html {
+                        render.html.clone_from(html);
+                        render.bar_sent = false;
+                        render.overlay_sent = false;
                     }
-                    render.bar_sent = false;
-                    render.overlay_sent = false;
-                    tiles.iter().any(|declared| declared.id == *tile)
-                });
+                    if !touched.contains(&key) {
+                        touched.push(key);
+                    }
+                }
+                PluginEvent::Added {
+                    plugin_id, tiles, ..
+                } => {
+                    state.latest.retain(|(id, tile, _), render| {
+                        if id != plugin_id {
+                            return true;
+                        }
+                        render.bar_sent = false;
+                        render.overlay_sent = false;
+                        tiles.iter().any(|declared| declared.id == *tile)
+                    });
+                }
+                PluginEvent::Removed { plugin_id } => {
+                    state.latest.retain(|(id, _, _), _| id != plugin_id);
+                }
+                _ => {}
             }
-            PluginEvent::Removed { plugin_id } => {
-                state.latest.retain(|(id, _, _), _| id != plugin_id);
-            }
-            _ => {}
+        }
+        let overlay = active.filter(|request| state.overlay_generation == Some(request.generation));
+        state.publish(
+            SurfaceRole::Bar,
+            touched.iter(),
+            None,
+            |render| &mut render.bar_sent,
+            &mut emit,
+        )?;
+        if let Some(request) = overlay {
+            state.publish(
+                SurfaceRole::Overlay,
+                touched.iter().filter(|key| matches_flyout(key, request)),
+                Some(request.generation),
+                |render| &mut render.overlay_sent,
+                &mut emit,
+            )?;
         }
         Ok(())
     }
@@ -161,13 +169,14 @@ impl PluginDelivery {
         for render in state.latest.values_mut() {
             render.bar_sent = false;
         }
-        for (key, render) in &mut state.latest {
-            if let Some(channel) = persistent_ui_channel(SurfaceRole::Bar, &key.2) {
-                emit(channel, ui_payload(key, &render.html, None))
-                    .context("failed to replay plugin HTML to the bar")?;
-                render.bar_sent = true;
-            }
-        }
+        let keys: Vec<UiKey> = state.latest.keys().cloned().collect();
+        state.publish(
+            SurfaceRole::Bar,
+            keys.iter(),
+            None,
+            |render| &mut render.bar_sent,
+            &mut emit,
+        )?;
         if let Some(request) = active {
             state.open(request, true, &mut emit)?;
         }
@@ -182,6 +191,50 @@ impl PluginDelivery {
 }
 
 impl DeliveryState {
+    /// Emits the unsent renders of `role` among `keys` as one array; the keys
+    /// are marked through `sent` only after the emit succeeded.
+    fn publish<'k>(
+        &mut self,
+        role: SurfaceRole,
+        keys: impl Iterator<Item = &'k UiKey>,
+        generation: Option<u64>,
+        sent: fn(&mut Render) -> &mut bool,
+        emit: &mut impl FnMut(&str, Value) -> anyhow::Result<()>,
+    ) -> anyhow::Result<()> {
+        let mut channel = None;
+        let mut payload = Vec::new();
+        let mut published = Vec::new();
+        for key in keys {
+            let Some(name) = persistent_ui_channel(role, &key.2) else {
+                continue;
+            };
+            let Some(render) = self.latest.get_mut(key) else {
+                continue;
+            };
+            if *sent(render) {
+                continue;
+            }
+            let mut item = ui_payload(key, &render.html);
+            if let Some(generation) = generation {
+                item["generation"] = json!(generation);
+            }
+            payload.push(item);
+            published.push(key);
+            channel = Some(name);
+        }
+        let Some(channel) = channel else {
+            return Ok(());
+        };
+        emit(channel, Value::Array(payload))
+            .with_context(|| format!("failed to deliver plugin HTML on {channel}"))?;
+        for key in published {
+            if let Some(render) = self.latest.get_mut(key) {
+                *sent(render) = true;
+            }
+        }
+        Ok(())
+    }
+
     fn open(
         &mut self,
         request: &OverlayFlyoutRequest,
@@ -229,19 +282,21 @@ fn matches_flyout(key: &UiKey, request: &OverlayFlyoutRequest) -> bool {
         == Some((key.0.as_str(), key.1.as_str()))
 }
 
-fn ui_payload(key: &UiKey, html: &str, ttl_ms: Option<u32>) -> Value {
-    let mut payload = json!({
+/// Persistent renders carry no popup lifetime; the shell reads `ttlMs` only
+/// for popups.
+fn ui_payload(key: &UiKey, html: &str) -> Value {
+    json!({
         "pluginId": key.0,
         "tileId": key.1,
         "target": key.2,
         "html": html,
-    });
-    if let Some(ttl_ms) = ttl_ms {
-        payload["ttlMs"] = json!(ttl_ms);
-    }
-    payload
+    })
 }
 
 #[cfg(test)]
 #[path = "plugin_delivery_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "plugin_delivery_batch_tests.rs"]
+mod batch_tests;

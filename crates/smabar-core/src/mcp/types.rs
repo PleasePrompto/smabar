@@ -424,7 +424,7 @@ pub struct BarUiStateParams {
     /// The tile whose flyout to open, e.g. `plugin:weather:current`.
     pub tile_id: Option<String>,
     /// For `open_settings`: the group to show — `bar`, `design`, `shortcuts`,
-    /// `plugins`, `system`, `legal`, or a page: `plugins/store` (Community
+    /// `plugins`, `system`, `system/updates`, `legal`, or a page: `plugins/store` (Community
     /// Store), `design/themes` (Community Themes). Default `bar`.
     pub group: Option<String>,
 }

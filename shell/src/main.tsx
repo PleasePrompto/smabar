@@ -15,6 +15,7 @@ import {
 } from "./ipc/surface";
 import { onStoreChanged, refreshCommunityBadge } from "./ipc/store";
 import { initUpdates } from "./ipc/update";
+import { initUpdateSync } from "./ipc/updateSync";
 import { initBarOverlayEvents } from "./ipc/overlay";
 import { applyTheme } from "./theme/apply";
 import { readThemeDocument } from "./theme/document";
@@ -56,20 +57,25 @@ async function initTauriSurface(surface: SurfaceRole): Promise<void> {
   if (surface === "bar") initInputShape();
   await initBridge(surface);
   await initCapture(surface);
+  try {
+    await initUpdateSync(surface);
+    if (surface === "bar") await initUpdates(true);
+  } catch (error) {
+    // Updates must not prevent the surface from completing startup.
+    reportError(error);
+  }
   if (surface === "bar") {
     await initBarOverlayEvents();
     await initDragDrop(surface);
-    await initUpdates(true);
-    // The core refreshes the catalog on its own timer and announces every
-    // change; the bar only counts. One initial count covers the events that
-    // fired before this listener existed.
+  } else if (surface === "settings") {
+    await initDragDrop(surface);
+  }
+  if (surface === "bar" || surface === "settings") {
+    // Cached reads only; the core owns catalog refreshes.
     await onStoreChanged(() => {
       void refreshCommunityBadge();
     });
     await refreshCommunityBadge();
-  } else if (surface === "settings") {
-    await initDragDrop(surface);
-    await initUpdates(false);
   }
   await mounted;
   await markSurfaceReady();

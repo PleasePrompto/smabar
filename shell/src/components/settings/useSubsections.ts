@@ -20,6 +20,7 @@ export interface Subsection {
   /** Position among the section's blocks — the click target's index. */
   index: number;
   label: string;
+  updateKey?: string;
 }
 
 /** Fewer than this and a sub-navigation is noise, not navigation. */
@@ -31,7 +32,17 @@ export function readSubsections(host: HTMLElement): Subsection[] {
     const label = block
       .querySelector(".settings-block-title")
       ?.textContent.trim();
-    return label === undefined || label === "" ? [] : [{ index, label }];
+    return label === undefined || label === ""
+      ? []
+      : [
+          {
+            index,
+            label,
+            ...(block.dataset.updateKey === undefined
+              ? {}
+              : { updateKey: block.dataset.updateKey }),
+          },
+        ];
   });
   return found.length >= MIN_ENTRIES ? found : [];
 }
@@ -60,7 +71,10 @@ export function useSubsections(
     const read = () => {
       const found = readSubsections(host);
       const key = found
-        .map((entry) => `${String(entry.index)}:${entry.label}`)
+        .map(
+          (entry) =>
+            `${String(entry.index)}:${entry.label}:${entry.updateKey ?? ""}`,
+        )
         .join("|");
       if (key === current) return;
       current = key;

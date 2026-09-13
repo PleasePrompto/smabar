@@ -38,8 +38,6 @@
     "allow-ui-log",
     "allow-get-runtime-status",
     "allow-retry-provisioning",
-    "allow-check-update",
-    "allow-install-update",
     "allow-store-overview",
     "allow-store-refresh",
     "allow-store-detail",

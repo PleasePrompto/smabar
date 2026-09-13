@@ -5,7 +5,6 @@ import {
   actionsFor,
   badgeFor,
   commitUrl,
-  countUpdates,
   filterEntries,
   formatStars,
   formatDate,
@@ -199,23 +198,6 @@ test("every state but available carries a badge key, blocks read as danger", () 
   expect(badgeFor("updateAvailable")?.key).toBe("settings.store.stateUpdate");
   expect(badgeFor("local")?.key).toBe("settings.store.stateLocal");
   expect(badgeFor("incompatible")?.tone).toBe("neutral");
-});
-
-test("the gear counts listed updates, themes included", () => {
-  const update = {
-    fromVersion: "1.0.0",
-    toVersion: "1.1.0",
-    contentChanged: false,
-  };
-  expect(
-    countUpdates([
-      entry("a", { installed: installed(), update }),
-      entry("b", { installed: installed() }),
-      entry("c", { kind: "theme", installed: installed(), update }),
-      entry("d"),
-    ]),
-  ).toBe(2);
-  expect(countUpdates([])).toBe(0);
 });
 
 test("links name the exact commit and narrow to the entry's path", () => {

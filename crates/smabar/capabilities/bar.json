@@ -25,6 +25,7 @@
     "allow-get-runtime-status",
     "allow-get-system-settings",
     "allow-check-update",
+    "allow-install-update",
     "allow-get-surface-context",
     "allow-surface-ready",
     "allow-open-settings",

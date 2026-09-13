@@ -15,8 +15,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 import { t } from "../../i18n/t";
 import { closeCurrentSurface } from "../../ipc/surface";
@@ -32,6 +31,8 @@ import { LegalTab } from "./LegalTab";
 import { ShortcutsTab } from "./ShortcutsTab";
 import { SystemTab } from "./SystemTab";
 import { PluginsTab } from "./PluginsTab";
+import { UpdateDot } from "./UpdateBadge";
+import { hasAppUpdate } from "../../ipc/updateSync";
 
 /**
  * The one group the panel shows while the terms of use are not accepted.
@@ -68,6 +69,31 @@ export function SettingsPanel({ preview = false }: { preview?: boolean }) {
 function PanelBody({ preview }: { preview: boolean }) {
   const group = useSmabar((state) => state.settingsGroup);
   const setGroup = useSmabar((state) => state.setSettingsGroup);
+  const detail = useSmabar((state) => state.settingsStoreEntry);
+  const updates = useSmabar((state) => state.communityUpdates);
+  const appUpdate = useSmabar(hasAppUpdate);
+  const updateCount = (key: string | undefined) => {
+    if (key === "app" || key === "system") return appUpdate ? 1 : 0;
+    if (key === "plugins" || key === "plugin" || key === "plugins/store")
+      return updates.filter((entry) => entry.kind === "plugin").length;
+    if (key === "design" || key === "theme" || key === "design/themes")
+      return updates.filter((entry) => entry.kind === "theme").length;
+    return updates.filter((entry) => `${entry.kind}:${entry.id}` === key)
+      .length;
+  };
+  const badgeLabel = (key: string | undefined) =>
+    updateCount(key) === 0
+      ? ""
+      : key === "app" || key === "system"
+        ? t("settings.update.badge")
+        : t("settings.store.badge").replace(
+            "{count}",
+            String(updateCount(key)),
+          );
+  const badge = (key: string | undefined) =>
+    updateCount(key) > 0 && <UpdateDot label={badgeLabel(key)} />;
+  const navLabel = (label: string, key: string | undefined) =>
+    updateCount(key) > 0 ? `${label} · ${badgeLabel(key)}` : label;
   // Only the browser preview sizes itself from the config; the native
   // window is sized by the window manager and the core remembers it, so
   // the selector yields a stable null there and never re-renders the panel.
@@ -88,6 +114,16 @@ function PanelBody({ preview }: { preview: boolean }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const subsections = useSubsections(bodyRef, current.id, page === null);
+  const scrolledToUpdate = useRef(false);
+  useEffect(() => {
+    if (group !== "system/updates") {
+      scrolledToUpdate.current = false;
+      return;
+    }
+    const entry = subsections.find((entry) => entry.updateKey === "app");
+    if (!scrolledToUpdate.current && entry !== undefined)
+      scrolledToUpdate.current = scrollToGroup(bodyRef.current, entry.index);
+  }, [group, subsections]);
   // Counted so the page entry can be clicked again from a detail page: the
   // group id does not change then, and remounting the page is what shows
   // the list.
@@ -116,6 +152,7 @@ function PanelBody({ preview }: { preview: boolean }) {
             : "settings-subnav-page"
         }
         aria-current={page?.id === entry.id ? "page" : undefined}
+        aria-label={navLabel(t(entry.labelKey), entry.id)}
         onClick={() => {
           pendingScroll.current = null;
           setGroup(entry.id);
@@ -123,6 +160,7 @@ function PanelBody({ preview }: { preview: boolean }) {
         }}
       >
         {t(entry.labelKey)}
+        {badge(entry.id)}
         <ChevronRight size="1em" aria-hidden="true" />
       </button>
     </li>
@@ -148,36 +186,6 @@ function PanelBody({ preview }: { preview: boolean }) {
   const beginDrag = () => {
     if (!native) return;
     void getCurrentWindow().startDragging().catch(reportError);
-  };
-  const resizeWithKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (preview || !("__TAURI_INTERNALS__" in window)) return;
-    const step = event.shiftKey ? 64 : 24;
-    const next = {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-    switch (event.key) {
-      case "ArrowLeft":
-        next.width -= step;
-        break;
-      case "ArrowRight":
-        next.width += step;
-        break;
-      case "ArrowUp":
-        next.height -= step;
-        break;
-      case "ArrowDown":
-        next.height += step;
-        break;
-      default:
-        return;
-    }
-    event.preventDefault();
-    void getCurrentWindow()
-      .setSize(
-        new LogicalSize(Math.max(640, next.width), Math.max(480, next.height)),
-      )
-      .catch(reportError);
   };
   const { Body } = current;
   const previewStyle: CSSProperties | undefined =
@@ -251,7 +259,7 @@ function PanelBody({ preview }: { preview: boolean }) {
                 <button
                   id={`settings-tab-${id}`}
                   type="button"
-                  aria-label={t(`settings.group.${id}`)}
+                  aria-label={navLabel(t(`settings.group.${id}`), id)}
                   aria-current={current.id === id ? "page" : undefined}
                   aria-controls="settings-content"
                   aria-expanded={
@@ -271,6 +279,7 @@ function PanelBody({ preview }: { preview: boolean }) {
                   <span className="settings-nav-label">
                     {t(`settings.group.${id}`)}
                   </span>
+                  {badge(id)}
                 </button>
                 {current.id === id && hasSubnav(id) && (
                   <ul
@@ -282,6 +291,7 @@ function PanelBody({ preview }: { preview: boolean }) {
                         <li>
                           <button
                             type="button"
+                            aria-label={navLabel(entry.label, entry.updateKey)}
                             onClick={() => {
                               if (page === null) {
                                 pendingScroll.current = null;
@@ -296,6 +306,7 @@ function PanelBody({ preview }: { preview: boolean }) {
                             }}
                           >
                             {entry.label}
+                            {badge(entry.updateKey)}
                           </button>
                         </li>
                         {pagesOf(id)
@@ -330,8 +341,11 @@ function PanelBody({ preview }: { preview: boolean }) {
               <Body />
             ) : (
               <StorePage
-                key={pageOpenings}
+                key={`${String(pageOpenings)}:${detail?.id ?? ""}`}
                 kind={page.kind}
+                initialEntryId={
+                  detail?.kind === page.kind ? detail.id : undefined
+                }
                 onBack={() => {
                   pendingScroll.current = null;
                   setGroup(current.id);
@@ -342,15 +356,6 @@ function PanelBody({ preview }: { preview: boolean }) {
         </div>
       </div>
       {native && <ResizeEdges />}
-      {native && (
-        <button
-          type="button"
-          className="settings-resize-control"
-          aria-label={t("settings.resize")}
-          title={t("settings.resize")}
-          onKeyDown={resizeWithKeyboard}
-        />
-      )}
     </div>
   );
 }

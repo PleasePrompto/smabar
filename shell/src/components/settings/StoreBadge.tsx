@@ -2,8 +2,9 @@ import type { ReactNode } from "react";
 
 import { t } from "../../i18n/t";
 import type { StoreEntry } from "../../ipc/store";
-import { badgeFor, stateOf, type BadgeTone } from "./storeModel";
+import { badgeFor, stateOf, updateLabel, type BadgeTone } from "./storeModel";
 import type { PluginProvenance } from "./pluginListModel";
+import { UpdateDot } from "./UpdateBadge";
 
 const TONE_CLASS: Record<BadgeTone, string> = {
   neutral: "sb-badge",
@@ -32,27 +33,37 @@ function Badge({
 
 /** The one-word state of a Community Store listing; nothing for "available". */
 export function StoreStateBadge({ entry }: { entry: StoreEntry }) {
-  const badge = badgeFor(stateOf(entry));
+  const state = stateOf(entry);
+  const badge = badgeFor(state);
   if (badge === null) return null;
   const reason = entry.installed?.blocked?.reason ?? entry.blocked?.reason;
+  const updateOnly = state === "updateAvailable" || state === "contentChanged";
   return (
-    <Badge
-      tone={badge.tone}
-      title={
-        reason === undefined
-          ? undefined
-          : t("settings.store.blockedBy").replace("{reason}", reason)
-      }
-    >
-      {t(badge.key).replace("{version}", entry.update?.toVersion ?? "")}
-    </Badge>
+    <>
+      <Badge
+        tone={updateOnly ? "warn" : badge.tone}
+        title={
+          reason === undefined
+            ? undefined
+            : t("settings.store.blockedBy").replace("{reason}", reason)
+        }
+      >
+        {updateOnly && <UpdateDot />}
+        {updateOnly ? updateLabel(entry) : t(badge.key)}
+      </Badge>
+      {entry.update !== null && !updateOnly && (
+        <span className="settings-store-update">
+          <UpdateDot />
+          {updateLabel(entry)}
+        </span>
+      )}
+    </>
   );
 }
 
 /**
  * Where an installed plugin came from, on its row of the Installed list —
- * and, for a Community Plugin, what the store knows beyond that: a newer
- * version, a local modification, a block.
+ * and its local modifications or block. Update links use the catalog overview.
  */
 export function OriginBadge({
   provenance,
@@ -73,7 +84,7 @@ export function OriginBadge({
   return (
     <>
       <Badge tone="neutral">{origin}</Badge>
-      {provenance.blocked !== null ? (
+      {provenance.blocked !== null && (
         <Badge
           tone="danger"
           title={t("settings.plugins.originBlocked").replace(
@@ -83,21 +94,6 @@ export function OriginBadge({
         >
           {t("settings.store.stateBlocked")}
         </Badge>
-      ) : (
-        provenance.update !== null && (
-          <Badge
-            tone="accent"
-            title={t("settings.plugins.originUpdate").replace(
-              "{version}",
-              provenance.update,
-            )}
-          >
-            {t("settings.store.stateUpdate").replace(
-              "{version}",
-              provenance.update,
-            )}
-          </Badge>
-        )
       )}
       {provenance.modified && (
         <Badge tone="warn">{t("settings.plugins.originModified")}</Badge>

@@ -1,4 +1,5 @@
 import type { PopupRequest, PopupStackState } from "../plugins/popupQueue";
+import type { StoreEntry, StoreKind } from "../ipc/store";
 import type {
   AppearanceConfig,
   EffectsConfig,
@@ -13,6 +14,7 @@ import type {
   SettingsWindowConfig,
   ShortcutsState,
   UpdateStatus,
+  UpdateInfo,
   ZOrder,
 } from "./types";
 
@@ -35,6 +37,7 @@ export interface SmabarState {
   /** Name of the active theme (`get_ui_state.themeName` / `theme-changed`). */
   theme: string;
   settingsGroup: string;
+  settingsStoreEntry: { kind: StoreKind; id: string } | null;
   settingsOpen: boolean;
   settingsWindow: SettingsWindowConfig;
   dropActive: boolean;
@@ -60,8 +63,10 @@ export interface SmabarState {
   runtimeStatus: RuntimeStatusInfo | null;
   updateStatus: UpdateStatus;
   updateChannel: "app" | "store" | null;
-  /** Community Plugins with a newer catalog version; feeds the gear badge. */
-  communityUpdates: number;
+  /** Last confirmed offer survives a failed/background check and permits retry. */
+  updateOffer: UpdateInfo | null;
+  dismissedUpdateVersion: string | null;
+  communityUpdates: StoreEntry[];
   /** The bundled terms of use are not accepted: the bar shows only the
    *  legal tile and the settings only the legal group. */
   legalRequired: boolean;
@@ -82,6 +87,7 @@ export interface SmabarState {
   setPluginOrder: (order: string[]) => void;
   setTheme: (theme: string) => void;
   setSettingsGroup: (group: string) => void;
+  openStoreEntry: (kind: StoreKind, id: string) => void;
   setSettingsOpen: (open: boolean) => void;
   setSettingsWindow: (size: SettingsWindowConfig) => void;
   setDropActive: (active: boolean) => void;
@@ -108,7 +114,7 @@ export interface SmabarState {
   setPluginStatus: (pluginId: string, info: PluginStatusInfo) => void;
   setRuntimeStatus: (info: RuntimeStatusInfo) => void;
   setUpdateStatus: (status: UpdateStatus) => void;
-  setCommunityUpdates: (count: number) => void;
+  setCommunityUpdates: (entries: StoreEntry[]) => void;
   setLegalRequired: (required: boolean) => void;
   setPluginSchema: (pluginId: string, info: PluginSchemaInfo | null) => void;
   setPluginSettings: (settings: Record<string, unknown>) => void;

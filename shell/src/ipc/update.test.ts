@@ -61,6 +61,7 @@ beforeEach(async () => {
   settleInstall = null;
   listeners.clear();
   useSmabar.setState({ updateChannel: "app" });
+  useSmabar.setState({ updateOffer: null, dismissedUpdateVersion: null });
   useSmabar.getState().setUpdateStatus({ state: "idle" });
   await initUpdateEvents();
   vi.useFakeTimers();
@@ -110,6 +111,29 @@ test("a failed check is a state carrying the reason, never a throw", async () =>
   const status = useSmabar.getState().updateStatus;
   expect(status.state === "failed" && status.phase).toBe("check");
   expect(status.state === "failed" && status.message).toContain("offline");
+});
+
+test("a failed background check retains the confirmed offer for badges and retry", async () => {
+  result = release;
+  await checkUpdate();
+  fail = true;
+  await checkUpdate();
+  expect(useSmabar.getState().updateOffer).toEqual(release);
+  expect(useSmabar.getState().updateStatus.state).toBe("failed");
+  fail = false;
+  result = null;
+  await checkUpdate();
+  expect(useSmabar.getState().updateOffer).toBeNull();
+});
+
+test("concurrent checks do not start a second request", async () => {
+  result = release;
+  const first = checkUpdate();
+  expect(useSmabar.getState().updateStatus.state).toBe("checking");
+  result = null;
+  await checkUpdate();
+  await first;
+  expect(useSmabar.getState().updateOffer).toEqual(release);
 });
 
 test("the first background check waits for the bar to come up", async () => {

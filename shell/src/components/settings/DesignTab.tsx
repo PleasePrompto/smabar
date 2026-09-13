@@ -36,6 +36,7 @@ import {
 import { BarChromePictogram } from "./Pictograms";
 import { setConfig, setConfigsSequentially } from "./persist";
 import { ThemeManager } from "./ThemeManager";
+import { UpdateDot } from "./UpdateBadge";
 import { themeDisplayName } from "./model";
 import { clearTokens, dropTokens, writeTokens } from "./tokens";
 
@@ -67,6 +68,7 @@ function ThemeSwatch({ colors }: { colors: ThemeSummary["colors"] }) {
 /** Theme, colours, and the look of the bar's own surface. */
 export function DesignTab() {
   const active = useSmabar((state) => state.theme);
+  const updates = useSmabar((state) => state.communityUpdates);
   const setGroup = useSmabar((state) => state.setSettingsGroup);
   const barChrome = useSmabar((state) => state.appearance.barChrome);
   const radius = useSmabar((state) =>
@@ -116,7 +118,7 @@ export function DesignTab() {
         ])
       }
     >
-      <SettingGroup title={t("settings.design.theme")}>
+      <SettingGroup title={t("settings.design.theme")} updateKey="theme">
         <SettingRow
           label={t("settings.appearance.theme")}
           description={t("settings.appearance.themeDescription")}
@@ -133,6 +135,9 @@ export function DesignTab() {
                 }}
               >
                 <ThemeSwatch colors={theme.colors} />
+                {updates.some(
+                  (entry) => entry.kind === "theme" && entry.id === theme.name,
+                ) && <UpdateDot />}
               </Choice>
             ))}
           </ChoiceGrid>

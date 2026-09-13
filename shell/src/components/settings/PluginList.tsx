@@ -9,6 +9,7 @@ import { MoveButtons } from "./controls";
 import { moveItem } from "./model";
 import { setConfig } from "./persist";
 import { OriginBadge } from "./StoreBadge";
+import { StoreUpdateLink } from "./UpdateBadge";
 import { useListReorder } from "./useListReorder";
 import type { PluginManagement } from "./usePluginManagement";
 import { PluginActions } from "./PluginActions";
@@ -100,6 +101,7 @@ function Row(props: RowProps) {
         {t(row.name)}
       </span>
       <OriginBadge provenance={row.provenance} />
+      <StoreUpdateLink kind="plugin" id={row.pluginId} compact />
       <State row={row} off={off} />
       {row.kind === "tile" && !off && (
         <MoveButtons

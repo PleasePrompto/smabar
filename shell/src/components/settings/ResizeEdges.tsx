@@ -1,4 +1,6 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { t } from "../../i18n/t";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 
 import { reportError } from "../../ipc/log";
 
@@ -19,6 +21,35 @@ const DIRECTIONS = [
 ] as const;
 
 export function ResizeEdges() {
+  const resizeWithKeyboard = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    const step = event.shiftKey ? 64 : 24;
+    const next = {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+    switch (event.key) {
+      case "ArrowLeft":
+        next.width -= step;
+        break;
+      case "ArrowRight":
+        next.width += step;
+        break;
+      case "ArrowUp":
+        next.height -= step;
+        break;
+      case "ArrowDown":
+        next.height += step;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    void getCurrentWindow()
+      .setSize(
+        new LogicalSize(Math.max(640, next.width), Math.max(480, next.height)),
+      )
+      .catch(reportError);
+  };
   return (
     <>
       {DIRECTIONS.map((direction) => (
@@ -36,6 +67,13 @@ export function ResizeEdges() {
           }}
         />
       ))}
+      <button
+        type="button"
+        className="settings-resize-control"
+        aria-label={t("settings.resize")}
+        title={t("settings.resize")}
+        onKeyDown={resizeWithKeyboard}
+      />
     </>
   );
 }

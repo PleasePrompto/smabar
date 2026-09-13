@@ -277,6 +277,13 @@ export interface InstalledPlugin {
 /** How this build applies a release; `null` shows it without a button. */
 export type UpdateInstaller = "app" | "system" | null;
 
+export interface UpdateInfo {
+  version: string;
+  notes: string | null;
+  date: string | null;
+  installer: UpdateInstaller;
+}
+
 /** Application update lifecycle: the last check, or the install it started. */
 export type UpdateStatus =
   | { state: "idle" | "checking" | "current" }

@@ -7,6 +7,8 @@ import { reportError } from "../ipc/log";
 import { useSmabar } from "../store/bar";
 import { PluginPopup } from "./PluginPopup";
 import { Toast } from "./Toast";
+import { AppUpdateNotification } from "./AppUpdateNotification";
+import { showUpdateNotification } from "../ipc/updateSync";
 import { cssLength } from "../theme/cssLength";
 
 interface Point {
@@ -21,6 +23,12 @@ interface Placement {
 
 export function NotificationSurface() {
   const visible = useSmabar((state) => state.popupQueue.visible);
+  const updateVisible = useSmabar(showUpdateNotification);
+  const updateStatus = useSmabar((state) => state.updateStatus);
+  const updateOffer = useSmabar((state) => state.updateOffer);
+  const updating =
+    updateStatus.state === "downloading" || updateStatus.state === "installing";
+  const hasPopups = visible.length > 0 || updateVisible;
   const notice = useSmabar((state) => state.notice);
   const popupPosition = useSmabar((state) => state.popups.position);
   const barPosition = useSmabar((state) => state.layout.position);
@@ -65,19 +73,30 @@ export function NotificationSurface() {
     return () => {
       observer.disconnect();
     };
-  }, [barPosition, notice, popupPosition, visible]);
+  }, [
+    barPosition,
+    notice,
+    popupPosition,
+    visible,
+    updateVisible,
+    updateStatus,
+    updateOffer,
+  ]);
 
   useEffect(() => {
-    if (visible.length > 0 || notice !== null) {
+    if (hasPopups || notice !== null) {
       hadContent.current = true;
       return;
     }
-    if (hadContent.current) void closeCurrentSurface().catch(reportError);
-  }, [notice, visible.length]);
+    // An empty measure hides the native window during installation. Keep its
+    // listener alive so a failed download can show the retry notification.
+    if (hadContent.current && !updating)
+      void closeCurrentSurface().catch(reportError);
+  }, [notice, hasPopups, updating]);
 
   return (
     <div className="relative size-full">
-      {visible.length > 0 && (
+      {hasPopups && (
         <div
           ref={popupRef}
           className="absolute"
@@ -86,7 +105,9 @@ export function NotificationSurface() {
             top: placement.popup?.y ?? 0,
           }}
         >
-          <PluginPopup />
+          <PluginPopup>
+            {updateVisible && <AppUpdateNotification />}
+          </PluginPopup>
         </div>
       )}
       {notice !== null && (

@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from "react";
 
 import { t } from "../i18n/t";
@@ -23,12 +24,12 @@ import { popupVertical, type PopupItem } from "../plugins/popupQueue";
  * are individually interactive (data-input-region) while the column
  * itself stays click-through.
  */
-export function PluginPopup() {
+export function PluginPopup({ children }: { children?: ReactNode }) {
   const visible = useSmabar((state) => state.popupQueue.visible);
   const position = useSmabar((state) => state.popups.position);
   const vertical = popupVertical(position);
 
-  if (visible.length === 0) return null;
+  if (visible.length === 0 && !children) return null;
 
   const style: CSSProperties = {
     // rem so notifications follow the global size slider like everything else.
@@ -47,6 +48,7 @@ export function PluginPopup() {
       {visible.map((item) => (
         <PopupToast key={item.id} item={item} />
       ))}
+      {children}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 
 import { useSmabar } from "../store/bar";
+import { refreshCommunityBadge } from "../ipc/store";
 
 /**
  * Browser-dev fixture: seeds sample shortcuts so the dock zone has content
@@ -26,6 +27,7 @@ function DevFixtureBody() {
     });
     void import("../ipc/fixtureStore").then(({ seedFixtureStoreInstalls }) => {
       seedFixtureStoreInstalls();
+      void refreshCommunityBadge();
     });
   }, []);
   return null;

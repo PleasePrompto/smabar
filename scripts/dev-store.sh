@@ -6,6 +6,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+if [[ "${1:-}" == "--preview" ]]; then
+  shift
+  exec python3 scripts/update-preview.py "$@"
+fi
+
 mkdir -p .dev-store/updates
 if [[ ! -f .dev-store/updates/latest.json ]]; then
   cat >.dev-store/updates/latest.json <<'JSON'

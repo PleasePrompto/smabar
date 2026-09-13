@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tauri_plugin_updater::{Update, UpdaterBuilder, UpdaterExt};
 
 use super::AppState;
@@ -89,7 +89,20 @@ async fn find_update(app: &AppHandle) -> Result<Option<Update>, String> {
 /// — package signatures are only verified when a download happens.
 #[tauri::command]
 pub async fn check_update(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
-    Ok(find_update(&app).await?.map(|update| {
+    let update = find_update(&app).await?;
+    if update.is_some() {
+        // Notifications are lazy; an app update must also work before any
+        // plugin has opened a popup. The new window requests the latest state.
+        app.state::<crate::surfaces::SurfaceManager>()
+            .prepare_notifications(&app)
+            .map_err(|error| {
+                tracing::warn!(%error, "failed to prepare the application update notification");
+                format!(
+                    "Cannot show the update notification: {error}; check again or restart smabar"
+                )
+            })?;
+    }
+    Ok(update.map(|update| {
         tracing::info!(version = %update.version, "a newer smabar release is available");
         UpdateInfo {
             version: update.version,

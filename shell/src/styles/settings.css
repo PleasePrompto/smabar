@@ -1,6 +1,8 @@
 /* Settings controls. Window composition lives in settings-window.css. */
 .settings-group-header {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   justify-content: space-between;
   gap: var(--sb-space-s);
@@ -14,6 +16,7 @@
    a single setting: forty identical borders carry no information at all. The
    settings inside are separated by a hairline, not by a gap plus a border. */
 .settings-block {
+  min-width: 0;
   /* The sub-navigation scrolls a block to the top of
      .settings-group-content, whose .surface-scroll mask fades exactly that
      much of it out — without this the block it just jumped to would arrive
@@ -188,6 +191,7 @@ details[open] > summary.settings-block-title > svg {
 .settings-row-control > * {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
 }
 .settings-row-control > :is(.sb-choice-grid, .sb-btn) {
   width: auto;
@@ -332,7 +336,7 @@ details[open] > summary.settings-block-title > svg {
   color: var(--sb-text-muted);
   font-size: var(--sb-fs-s);
   text-align: start;
-  white-space: nowrap;
+  white-space: normal;
 }
 .settings-panel .sb-choice:hover {
   color: var(--sb-text);
@@ -409,6 +413,54 @@ details[open] > summary.settings-block-title > svg {
 .settings-panel .sb-list > .sb-row {
   min-height: 2.25rem;
   padding-block: var(--sb-space-2xs);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Long names/paths must shrink the controls, never the window's scroll area. */
+.settings-panel
+  :is(.sb-btn, .sb-badge, .sb-select-native, .sb-input, .sb-inline) {
+  max-width: 100%;
+}
+.settings-panel :is(.sb-btn, .sb-badge) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.settings-panel .sb-btn > svg {
+  flex-shrink: 0;
+}
+.settings-panel [data-confirm-row] {
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
+}
+.settings-panel [data-confirm-row] > span {
+  flex: 1 1 12rem;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.settings-plugin-actions-compact:has([data-confirm-row]) {
+  flex: 1 1 100%;
+}
+
+.settings-update-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-inline: 0.25rem;
+  border-radius: 50%;
+  background: var(--sb-warning);
+}
+.settings-update-link,
+.settings-store-update {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+  min-width: 0;
+  color: var(--sb-warning);
+  font-size: var(--sb-fs-xs);
 }
 
 /* Truncation for the list rows of every settings list. Was three identical

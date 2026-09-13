@@ -1,20 +1,9 @@
 import { listen } from "@tauri-apps/api/event";
 
-import {
-  useSmabar,
-  type UpdateInstaller,
-  type UpdateStatus,
-} from "../store/bar";
+import { useSmabar, type UpdateStatus } from "../store/bar";
+import type { UpdateInfo } from "../store/types";
 import { call } from "./call";
 import { describeError, uiLog } from "./log";
-
-/** What `check_update` returns: the newer release, or null when current. */
-interface UpdateInfo {
-  version: string;
-  notes: string | null;
-  date: string | null;
-  installer: UpdateInstaller;
-}
 
 /** `install_update`'s answer on Linux; Windows exits and macOS restarts instead. */
 interface HandOff {
@@ -57,7 +46,11 @@ export async function initUpdates(background: boolean): Promise<void> {
 
 /** A running install owns the row; checks and a second install wait. */
 function busy(status: UpdateStatus): boolean {
-  return status.state === "downloading" || status.state === "installing";
+  return (
+    status.state === "checking" ||
+    status.state === "downloading" ||
+    status.state === "installing"
+  );
 }
 
 /**
@@ -70,14 +63,16 @@ export async function checkUpdate(): Promise<void> {
   if (store.updateChannel !== "app" || busy(store.updateStatus)) return;
   store.setUpdateStatus({ state: "checking" });
   let status: UpdateStatus;
+  let updateOffer = store.updateOffer;
   try {
     const info = await call<UpdateInfo | null>("check_update");
+    updateOffer = info;
     status =
       info === null ? { state: "current" } : { state: "available", ...info };
   } catch (error) {
     status = { state: "failed", phase: "check", message: describeError(error) };
   }
-  useSmabar.getState().setUpdateStatus(status);
+  useSmabar.setState({ updateStatus: status, updateOffer });
 }
 
 /**

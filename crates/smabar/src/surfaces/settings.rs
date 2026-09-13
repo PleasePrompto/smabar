@@ -168,6 +168,7 @@ pub(super) fn normalize_settings_group(group: &str) -> &'static str {
         "plugins/store" => "plugins/store",
         "design/themes" => "design/themes",
         "system" | "info" => "system",
+        "system/updates" => "system/updates",
         "legal" => "legal",
         _ => "bar",
     }
@@ -180,6 +181,7 @@ mod tests {
     #[test]
     fn settings_inputs_are_bounded_and_normalized() {
         assert_eq!(normalize_settings_group("info"), "system");
+        assert_eq!(normalize_settings_group("system/updates"), "system/updates");
         assert_eq!(normalize_settings_group("design"), "design");
         assert_eq!(normalize_settings_group("plugins"), "plugins");
         assert_eq!(normalize_settings_group("tiles"), "plugins");

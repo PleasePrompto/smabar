@@ -221,6 +221,13 @@ fn only_settings_can_accept_or_decline_the_terms() {
 fn update_surfaces_can_read_the_channel_before_scheduling_checks() {
     for (name, capability) in capabilities() {
         let permissions = capability["permissions"].as_array().expect("permissions");
+        for permission in ["allow-check-update", "allow-install-update"] {
+            assert_eq!(
+                permissions.iter().any(|value| value == permission),
+                name == "bar.json",
+                "{name}: {permission} must belong only to the update owner"
+            );
+        }
         let reads_channel = permissions
             .iter()
             .any(|value| value == "allow-get-system-settings");

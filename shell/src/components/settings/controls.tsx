@@ -42,9 +42,7 @@ export function ConfirmRow({
       aria-describedby={questionId}
     >
       <TriangleAlert size="1em" className="sb-crit" aria-hidden="true" />
-      <span id={questionId} style={{ flex: 1, minWidth: 0 }}>
-        {question}
-      </span>
+      <span id={questionId}>{question}</span>
       <button
         className="sb-btn sb-btn-ghost"
         autoFocus
@@ -157,14 +155,20 @@ export function SettingGroup({
   title,
   children,
   collapsible = false,
+  updateKey,
 }: {
   title: string;
   children: ReactNode;
   collapsible?: boolean;
+  updateKey?: string;
 }) {
   if (collapsible) {
     return (
-      <details className="settings-block" aria-label={title}>
+      <details
+        className="settings-block"
+        aria-label={title}
+        data-update-key={updateKey}
+      >
         <summary className="settings-block-title">
           <ChevronRight size="1em" aria-hidden="true" />
           {title}
@@ -174,7 +178,11 @@ export function SettingGroup({
     );
   }
   return (
-    <section className="settings-block" aria-label={title}>
+    <section
+      className="settings-block"
+      aria-label={title}
+      data-update-key={updateKey}
+    >
       <h3 className="settings-block-title">{title}</h3>
       <div className="settings-box">{children}</div>
     </section>

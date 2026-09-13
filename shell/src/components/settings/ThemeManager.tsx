@@ -10,6 +10,7 @@ import { ConfirmRow, SettingGroup, SettingRow } from "./controls";
 import { slugifyThemeName, themeDisplayName } from "./model";
 import { setConfigDebounced } from "./persist";
 import { ThemeImportSettings } from "./ThemeImportSettings";
+import { StoreUpdateLink } from "./UpdateBadge";
 
 interface ExportDirInfo {
   configured: string;
@@ -172,7 +173,7 @@ export function ThemeManager({
   return (
     // Its own settings block (and thus its own sub-navigation entry): one
     // single-purpose row each for save, saved list, export, and import.
-    <SettingGroup title={t("settings.themes.group")}>
+    <SettingGroup title={t("settings.themes.group")} updateKey="theme">
       {actionError !== null && (
         <div className="sb-crit" role="alert">
           {actionError}
@@ -275,6 +276,7 @@ export function ThemeManager({
                   <span className="sb-badge">
                     {t("settings.themes.custom")}
                   </span>
+                  <StoreUpdateLink kind="theme" id={theme.name} />
                   <button
                     className="sb-btn sb-btn-ghost sb-btn-icon"
                     aria-label={t("settings.themes.export")}

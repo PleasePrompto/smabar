@@ -53,20 +53,37 @@ test("the badge count is the number of listed updates", async () => {
     entries: [{ update }, { update: null }, { update }],
   });
   await refreshCommunityBadge();
-  expect(callMock).toHaveBeenCalledWith("store_overview");
-  expect(useSmabar.getState().communityUpdates).toBe(2);
+  expect(callMock).toHaveBeenCalledWith("store_overview", undefined);
+  expect(useSmabar.getState().communityUpdates).toHaveLength(2);
 });
 
 test("a failed overview leaves the count alone and is logged, never thrown", async () => {
-  useSmabar.getState().setCommunityUpdates(3);
+  callMock.mockResolvedValue({ entries: [{ update }, { update }, { update }] });
+  await refreshCommunityBadge();
   callMock.mockRejectedValue("catalog signature invalid");
   await expect(refreshCommunityBadge()).resolves.toBeUndefined();
-  expect(useSmabar.getState().communityUpdates).toBe(3);
+  expect(useSmabar.getState().communityUpdates).toHaveLength(3);
   expect(reportErrorMock).toHaveBeenCalledWith("catalog signature invalid");
 });
 
+test("a stale overview cannot restore a marker after a newer response removed it", async () => {
+  let finish: ((overview: unknown) => void) | undefined;
+  callMock.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const first = refreshCommunityBadge();
+  callMock.mockResolvedValue({ entries: [] });
+  await refreshCommunityBadge();
+  finish?.({ entries: [{ update }] });
+  await first;
+  expect(useSmabar.getState().communityUpdates).toEqual([]);
+});
+
 test("commands carry camelCase arguments exactly as the core expects", async () => {
-  callMock.mockResolvedValue({});
+  callMock.mockResolvedValue({ entries: [] });
   await installStorePlugin("pomodoro", "2.0.1", { confirmModified: true });
   expect(callMock).toHaveBeenCalledWith("store_install_plugin", {
     id: "pomodoro",

@@ -25,6 +25,8 @@ if errorlevel 1 (
 echo clean — starting single dev instance
 rem Dev Python tooling (bundled builds resolve both beside/from resources).
 set "SMABAR_SDK_PATH=%REPO%\sdk\python"
+rem Match dev.sh: application updates use the local dev server by default.
+if not defined SMABAR_UPDATE_ENDPOINT set "SMABAR_UPDATE_ENDPOINT=http://127.0.0.1:8787/updates/latest.json"
 if not defined SMABAR_UV (
   if exist "%REPO%\crates\smabar\binaries\uv-x86_64-pc-windows-msvc.exe" (
     set "SMABAR_UV=%REPO%\crates\smabar\binaries\uv-x86_64-pc-windows-msvc.exe"

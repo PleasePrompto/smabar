@@ -89,16 +89,20 @@ function CatalogStatus({
 export function StorePage({
   kind,
   onBack,
+  initialEntryId,
 }: {
   kind: StoreKind;
   onBack?: () => void;
+  initialEntryId?: string;
 }) {
   const language = useSmabar((state) => state.language);
   const { overview, refreshing, error, refresh, reload, apply } =
     useStoreOverview();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<StoreSortKey>(DEFAULT_STORE_SORT);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialEntryId ?? null,
+  );
   const page = useRef<HTMLElement>(null);
 
   const entries =

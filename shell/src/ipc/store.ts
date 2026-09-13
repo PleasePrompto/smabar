@@ -1,6 +1,5 @@
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 
-import { countUpdates } from "../components/settings/storeModel";
 import { useSmabar } from "../store/bar";
 import { call } from "./call";
 import { reportError } from "./log";
@@ -136,12 +135,28 @@ export interface StoreChanged {
 
 /** The cached overview; no network. */
 export function storeOverview(): Promise<StoreOverview> {
-  return call<StoreOverview>("store_overview");
+  return readOverview("store_overview");
 }
 
 /** Fetches the catalog again and answers with the overview it produced. */
 export function storeRefresh(): Promise<StoreOverview> {
-  return call<StoreOverview>("store_refresh");
+  return readOverview("store_refresh");
+}
+
+let overviewRead = 0;
+async function readOverview(
+  command: string,
+  args?: Record<string, unknown>,
+): Promise<StoreOverview> {
+  const request = ++overviewRead;
+  const overview = await call<StoreOverview>(command, args);
+  if (request === overviewRead)
+    useSmabar
+      .getState()
+      .setCommunityUpdates(
+        overview.entries.filter((entry) => entry.update !== null),
+      );
+  return overview;
 }
 
 export function storeDetail(
@@ -160,7 +175,7 @@ export function installStorePlugin(
   expectedVersion: string,
   options: { confirmModified: boolean },
 ): Promise<StoreOverview> {
-  return call<StoreOverview>("store_install_plugin", {
+  return readOverview("store_install_plugin", {
     id,
     expectedVersion,
     confirmModified: options.confirmModified,
@@ -171,7 +186,7 @@ export function installStoreTheme(
   name: string,
   expectedVersion: string,
 ): Promise<StoreOverview> {
-  return call<StoreOverview>("store_install_theme", { name, expectedVersion });
+  return readOverview("store_install_theme", { name, expectedVersion });
 }
 
 /** Outside the Tauri window there is no event bus; nothing to stop either. */
@@ -204,8 +219,7 @@ export function onStoreProgress(
  */
 export async function refreshCommunityBadge(): Promise<void> {
   try {
-    const overview = await storeOverview();
-    useSmabar.getState().setCommunityUpdates(countUpdates(overview.entries));
+    await storeOverview();
   } catch (error: unknown) {
     reportError(error);
   }

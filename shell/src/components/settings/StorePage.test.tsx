@@ -144,7 +144,7 @@ test("lists the catalog's plugins only, decisions first, then by name", async ()
     "5 of 5 entries shown",
   );
   expect(statuses()).toEqual([
-    "Update 1.3.0",
+    "Update available · 1.2.0 → 1.3.0",
     "Modified locally",
     "Blocked",
     "",

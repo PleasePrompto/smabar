@@ -64,7 +64,7 @@ export function PluginsTab() {
         ])
       }
     >
-      <SettingGroup title={t("settings.plugins.installed")}>
+      <SettingGroup title={t("settings.plugins.installed")} updateKey="plugin">
         <SettingRow
           label={t("settings.plugins.installed")}
           description={t("settings.plugins.listDescription")}

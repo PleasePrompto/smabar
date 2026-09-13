@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 
 import { t } from "../../i18n/t";
-import { checkUpdate, installUpdate } from "../../ipc/update";
+import { requestUpdate } from "../../ipc/updateSync";
+import { reportError } from "../../ipc/log";
 import { useSmabar, type UpdateStatus } from "../../store/bar";
 import { SettingGroup, SettingRow } from "./controls";
 import { formatDate, formatMebibytes } from "./storeModel";
@@ -41,7 +42,10 @@ function renderDetail(
                 type="button"
                 className="sb-btn sb-btn-primary self-start"
                 onClick={() => {
-                  void installUpdate(status.version);
+                  void requestUpdate({
+                    action: "install",
+                    version: status.version,
+                  }).catch(reportError);
                 }}
               >
                 {t("settings.update.install")}
@@ -118,13 +122,14 @@ function renderDetail(
  */
 export function UpdateGroup() {
   const status = useSmabar((state) => state.updateStatus);
+  const offer = useSmabar((state) => state.updateOffer);
   const language = useSmabar((state) => state.language);
   const checking = status.state === "checking";
   const busy =
     checking || status.state === "downloading" || status.state === "installing";
 
   return (
-    <SettingGroup title={t("settings.update.title")}>
+    <SettingGroup title={t("settings.update.title")} updateKey="app">
       <SettingRow
         label={t("settings.update.title")}
         description={t("settings.update.description")}
@@ -134,7 +139,7 @@ export function UpdateGroup() {
             className="sb-btn sb-btn-ghost"
             disabled={busy}
             onClick={() => {
-              void checkUpdate();
+              void requestUpdate({ action: "check" }).catch(reportError);
             }}
           >
             {checking
@@ -144,6 +149,9 @@ export function UpdateGroup() {
         }
       >
         {renderDetail(status, language)}
+        {offer !== null &&
+          status.state === "failed" &&
+          renderDetail({ state: "available", ...offer }, language)}
       </SettingRow>
     </SettingGroup>
   );

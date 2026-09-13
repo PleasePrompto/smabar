@@ -116,6 +116,7 @@ export const useSmabar = create<SmabarState>((set, get) => ({
   pluginOrder: [],
   theme: "default",
   settingsGroup: "bar",
+  settingsStoreEntry: null,
   settingsOpen: false,
   settingsWindow: { width: 960, height: 680, x: null, y: null },
   dropActive: false,
@@ -187,7 +188,13 @@ export const useSmabar = create<SmabarState>((set, get) => ({
     set({ theme });
   },
   setSettingsGroup: (group) => {
-    set({ settingsGroup: group });
+    set({ settingsGroup: group, settingsStoreEntry: null });
+  },
+  openStoreEntry: (kind, id) => {
+    set({
+      settingsGroup: kind === "plugin" ? "plugins/store" : "design/themes",
+      settingsStoreEntry: { kind, id },
+    });
   },
   setSettingsOpen: (open) => {
     set({ settingsOpen: open });
@@ -322,12 +329,14 @@ export const useSmabar = create<SmabarState>((set, get) => ({
   },
   updateStatus: { state: "idle" },
   updateChannel: null,
+  updateOffer: null,
+  dismissedUpdateVersion: null,
   setUpdateStatus: (status) => {
     set({ updateStatus: status });
   },
-  communityUpdates: 0,
-  setCommunityUpdates: (count) => {
-    set({ communityUpdates: count });
+  communityUpdates: [],
+  setCommunityUpdates: (entries) => {
+    set({ communityUpdates: entries });
   },
   legalRequired: false,
   setLegalRequired: (required) => {

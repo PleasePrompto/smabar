@@ -706,3 +706,28 @@
     transform: translate(-30px, 40px) scale(0.95);
   }
 }
+
+/* A host update uses the same measured notification column as plugin popups. */
+.app-update-notification {
+  position: relative;
+  padding: var(--sb-space-m);
+  padding-right: 3rem;
+  border-radius: var(--sb-radius-l);
+  color: var(--sb-text);
+  pointer-events: auto;
+  overflow-wrap: anywhere;
+}
+.app-update-notification > .notification-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+.app-update-notification p {
+  margin-block: var(--sb-space-s);
+  font-size: var(--sb-fs-s);
+  color: var(--sb-text-dim);
+}
+.app-update-notification .sb-btn {
+  max-width: 100%;
+  white-space: normal;
+}

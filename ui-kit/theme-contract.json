@@ -127,7 +127,6 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/settings/ColorSettings.tsx",
-        "shell/src/components/settings/SettingsButton.tsx",
         "shell/src/components/settings/model.ts",
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/plugins/branding.ts",
@@ -4925,6 +4924,7 @@
       "group": "typography",
       "dependencies": [],
       "consumers": [
+        "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
@@ -4934,6 +4934,11 @@
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
+        {
+          "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification p",
+          "fallbacks": []
+        },
         {
           "file": "shell/src/styles/kit-components.css",
           "selector": ".sb-badge",
@@ -5416,6 +5421,11 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-facts",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-update-link, .settings-store-update",
           "fallbacks": []
         },
         {
@@ -7513,11 +7523,17 @@
       "consumers": [
         "shell/src/components/OverlaySurface.tsx",
         "shell/src/components/PluginPopup.tsx",
+        "shell/src/styles/bar.css",
         "shell/src/styles/globals.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
+        {
+          "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification",
+          "fallbacks": []
+        },
         {
           "file": "shell/src/styles/kit-components.css",
           "selector": ".sb-card--soft",
@@ -8714,6 +8730,11 @@
         },
         {
           "file": "shell/src/styles/settings.css",
+          "selector": ".settings-update-link, .settings-store-update",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
           "selector": "summary.settings-block-title",
           "fallbacks": []
         },
@@ -8971,6 +8992,7 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/OverlaySurface.tsx",
+        "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
@@ -8979,6 +9001,11 @@
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
+        {
+          "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification",
+          "fallbacks": []
+        },
         {
           "file": "shell/src/styles/kit-components.css",
           "selector": ".sb-accordion-item > summary",
@@ -9385,6 +9412,11 @@
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
+        {
+          "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification p",
+          "fallbacks": []
+        },
         {
           "file": "shell/src/styles/bar.css",
           "selector": ".plugin-tile",
@@ -10838,6 +10870,11 @@
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/bar.css",
           "selector": ".shortcut-separator",
           "fallbacks": []
         },
@@ -11398,6 +11435,7 @@
       ],
       "consumers": [
         "shell/src/components/settings/model.ts",
+        "shell/src/styles/bar.css",
         "shell/src/styles/globals.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
@@ -11406,6 +11444,11 @@
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
+        {
+          "file": "shell/src/styles/bar.css",
+          "selector": ".app-update-notification p",
+          "fallbacks": []
+        },
         {
           "file": "shell/src/styles/settings-fonts.css",
           "selector": ".settings-font-current-copy small, .settings-font-option-copy small",
@@ -12383,6 +12426,7 @@
       "group": "color.status",
       "dependencies": [],
       "consumers": [
+        "shell/src/components/settings/SettingsButton.tsx",
         "shell/src/styles/globals.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-store.css",
@@ -12418,6 +12462,16 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-color-warning, .settings-color-error",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-update-dot",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-update-link, .settings-store-update",
           "fallbacks": []
         },
         {

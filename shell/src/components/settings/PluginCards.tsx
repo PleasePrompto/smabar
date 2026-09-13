@@ -7,6 +7,7 @@ import { AudioLevelControls } from "./AudioGroup";
 import { SettingRow } from "./controls";
 import { PluginSettings } from "./PluginSettings";
 import { OriginBadge } from "./StoreBadge";
+import { StoreUpdateLink } from "./UpdateBadge";
 import { useAudioSettings, type AudioSettings } from "./useAudioSettings";
 import type { PluginManagement } from "./usePluginManagement";
 import { PluginActions } from "./PluginActions";
@@ -58,7 +59,11 @@ function TileCard({
   const path = `audio.plugins.${plugin.id}`;
 
   return (
-    <section className="settings-block settings-plugin-card" aria-label={name}>
+    <section
+      className="settings-block settings-plugin-card"
+      aria-label={name}
+      data-update-key={`plugin:${plugin.id}`}
+    >
       <div className="settings-box">
         <div className="settings-plugin-header">
           <span className="settings-plugin-icon" aria-hidden="true">
@@ -75,6 +80,7 @@ function TileCard({
             <h3 className="settings-block-title">{name}</h3>
             <div className="settings-plugin-facts">
               <OriginBadge provenance={plugin} />
+              <StoreUpdateLink kind="plugin" id={plugin.id} />
               {plugin.origin !== "community" && plugin.version !== null && (
                 <span className="sb-mono sb-dim">v{plugin.version}</span>
               )}

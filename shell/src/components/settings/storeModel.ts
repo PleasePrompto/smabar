@@ -2,8 +2,13 @@
  * The Community Store's UI model — pure, so every product decision about
  * what a listing shows and offers is testable without a DOM.
  */
-import { safeIntlLocale } from "../../i18n/t";
+import { safeIntlLocale, t } from "../../i18n/t";
 import type { StoreEntry } from "../../ipc/store";
+
+export function updateLabel(entry: StoreEntry): string {
+  if (entry.update === null) return "";
+  return `${t(entry.update.contentChanged ? "settings.store.stateContentChanged" : "settings.update.badge")} · ${entry.update.fromVersion} → ${entry.update.toVersion}`;
+}
 
 /**
  * The one state a listing is in, read off the overview entry. The order of
@@ -95,11 +100,6 @@ export function badgeFor(
     case "incompatible":
       return { key: "settings.store.stateIncompatible", tone: "neutral" };
   }
-}
-
-/** What the gear badge counts. */
-export function countUpdates(entries: readonly StoreEntry[]): number {
-  return entries.filter((entry) => entry.update !== null).length;
 }
 
 /** The seven characters GitHub shows. */

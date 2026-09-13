@@ -33,4 +33,4 @@ if not defined SMABAR_UV (
   )
 )
 cd /d "%REPO%\shell"
-bun run dev:app
+bun run dev:app %*

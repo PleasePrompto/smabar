@@ -51,6 +51,9 @@ pub struct UiState {
     /// The bundled terms of use are not accepted; the bar shows only the
     /// legal tile until they are.
     legal_required: bool,
+    /// Process-only diagnostic mode; absent in normal operation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    memory_probe: Option<&'static str>,
 }
 
 #[derive(Serialize, Clone)]
@@ -136,7 +139,10 @@ struct PluginsDeactivatedChanged {
 /// Initial state for the shell: configured language, layout, shortcuts,
 /// effects, resolved locale, and resolved theme tokens.
 #[tauri::command]
-pub fn get_ui_state(state: State<'_, AppState>) -> UiState {
+pub fn get_ui_state(
+    state: State<'_, AppState>,
+    probe: State<'_, crate::memory_probe::Mode>,
+) -> UiState {
     let config = state.watcher.current();
     UiState {
         locale: i18n::resolve(&state.paths, &config.language),
@@ -157,6 +163,7 @@ pub fn get_ui_state(state: State<'_, AppState>) -> UiState {
         data_root: state.paths.data_dir().display().to_string(),
         embed_root: state.embed_url(),
         legal_required: !smabar_core::legal::is_accepted(&state.paths),
+        memory_probe: probe.name(),
     }
 }
 

@@ -59,7 +59,7 @@ class DevLauncherTests(unittest.TestCase):
                     )
                     try:
                         result = subprocess.run(
-                            ["bash", "scripts/dev.sh"],
+                            ["bash", "scripts/dev.sh", "--release", "--no-watch"],
                             cwd=root,
                             env={**env, "DEV_TEST_OS": platform, "DEV_TEST_BUSY": "0"},
                             text=True,
@@ -69,6 +69,8 @@ class DevLauncherTests(unittest.TestCase):
                         )
                         self.assertEqual(result.returncode, 0, result.stderr)
                         self.assertIn("started: dev", result.stdout)
+                        self.assertIn("started: --release", result.stdout)
+                        self.assertIn("started: --no-watch", result.stdout)
                         orphan.wait(timeout=5)
                         self.assertLess(orphan.returncode, 0)
                         self.assertEqual(

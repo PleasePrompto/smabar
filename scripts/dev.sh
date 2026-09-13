@@ -80,6 +80,6 @@ if [[ "$platform" == Darwin ]]; then
   # and source syncs agree. Only the missing Darwin sidecar is skipped here.
   exec ../../shell/node_modules/.bin/tauri dev \
     --features tauri/macos-private-api \
-    --config '{"app":{"macOSPrivateApi":true},"bundle":{"externalBin":[]}}'
+    --config '{"app":{"macOSPrivateApi":true},"bundle":{"externalBin":[]}}' "$@"
 fi
-exec ../../shell/node_modules/.bin/tauri dev
+exec ../../shell/node_modules/.bin/tauri dev "$@"

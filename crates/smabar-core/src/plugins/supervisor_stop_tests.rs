@@ -93,3 +93,23 @@ async fn a_full_command_queue_rejects_actions_instead_of_waiting() {
     handle.task.abort();
     supervisor.shutdown_all().await;
 }
+
+#[tokio::test]
+async fn shutdown_all_is_idempotent_for_the_exit_fallback() {
+    let (_dir, paths) = crate::plugins::tests::temp_paths();
+    let config = Arc::new(ConfigWatcher::spawn(paths.clone()).expect("config watcher"));
+    let supervisor = PluginSupervisor::start(
+        paths,
+        ProviderHub::new(),
+        config,
+        SupervisorOptions::default(),
+    )
+    .await;
+    // The tray quit stops plugins on a live loop; the exit callback repeats
+    // the call on a dead loop and must find nothing left to wait for.
+    supervisor.shutdown_all().await;
+    tokio::time::timeout(Duration::from_secs(1), supervisor.shutdown_all())
+        .await
+        .expect("second shutdown returns at once");
+    assert!(lock_unpoisoned(&supervisor.inner.plugins).is_empty());
+}

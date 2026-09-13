@@ -115,14 +115,8 @@ pub fn setup(app: &App, locale: &LocaleMap) -> anyhow::Result<()> {
                     }
                 });
             }
-            RESTART_ID => {
-                release_platform_state();
-                app.request_restart();
-            }
-            QUIT_ID => {
-                release_platform_state();
-                app.exit(0);
-            }
+            RESTART_ID => quit_app(app, true),
+            QUIT_ID => quit_app(app, false),
             _ => {}
         })
         .on_tray_icon_event(move |tray, event| {
@@ -168,6 +162,25 @@ pub(crate) fn release_platform_state() {
     if let Err(error) = crate::platform::shutdown() {
         tracing::error!(%error, "failed to release native platform state before quitting");
     }
+}
+
+/// Stops plugins and saves geometry while the event loop still runs, then
+/// requests the exit. Doing that inside the exit callback ran on a dead loop,
+/// where waits on the main thread never returned (tray quit hang).
+pub(crate) fn quit_app(app: &AppHandle, restart: bool) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        crate::surfaces::remember_settings_geometry_at_exit(&app);
+        app.state::<crate::commands::AppState>()
+            .shutdown_plugins()
+            .await;
+        release_platform_state();
+        if restart {
+            app.request_restart();
+        } else {
+            app.exit(0);
+        }
+    });
 }
 
 fn open_settings(app: &AppHandle, section: &'static str) {

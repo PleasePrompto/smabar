@@ -18,6 +18,7 @@ mod surfaces;
 mod tray;
 
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Context;
 use smabar_core::config::{ConfigWatcher, RenderingMode, SmabarConfig, SmabarPaths};
@@ -27,6 +28,9 @@ use smabar_core::plugins::{
 use smabar_core::providers::ProviderHub;
 use smabar_core::shortcuts::ShortcutsService;
 use tauri::Manager;
+
+/// Longest time the exit callback may take once the event loop is gone.
+const EXIT_DEADLINE: Duration = Duration::from_secs(15);
 
 fn main() -> anyhow::Result<()> {
     let paths = SmabarPaths::default_base().context("could not determine home directory")?;
@@ -379,6 +383,15 @@ fn main() -> anyhow::Result<()> {
         .context("failed to build smabar")?;
     app.run(|app, event| {
         if matches!(event, tauri::RunEvent::Exit) {
+            // The loop is gone here; `tray::quit` already did this work on a
+            // live loop, so this is the fallback for exits that skipped it.
+            // Nothing below may hold the process past the deadline.
+            std::thread::spawn(|| {
+                std::thread::sleep(EXIT_DEADLINE);
+                tracing::error!("exit cleanup exceeded its deadline; terminating smabar now");
+                std::thread::sleep(Duration::from_millis(200));
+                std::process::exit(1);
+            });
             surfaces::remember_settings_geometry_at_exit(app);
             tauri::async_runtime::block_on(
                 app.state::<commands::AppState>().shutdown_plugins(),

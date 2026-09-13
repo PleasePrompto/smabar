@@ -44,6 +44,5 @@ pub fn legal_accept(app: AppHandle, state: State<'_, AppState>) -> Result<LegalS
 #[tauri::command]
 pub fn legal_decline(app: AppHandle) {
     tracing::info!("terms of use declined; quitting smabar");
-    crate::tray::release_platform_state();
-    app.exit(0);
+    crate::tray::quit_app(&app, false);
 }

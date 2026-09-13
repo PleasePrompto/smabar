@@ -308,14 +308,8 @@ fn reassert_appbar(appbar_hwnd: HWND, reason: &'static str) {
         return;
     };
 
-    let applied = appbar::reposition(
-        appbar_hwnd,
-        host,
-        reservation,
-        appbar::logical_thickness(previous),
-    );
-    match applied {
-        Ok(applied) => {
+    match appbar::reposition(appbar_hwnd, host, reservation, previous) {
+        Ok(Some(applied)) => {
             if let Ok(mut state) = lock_state()
                 && state.appbar_hwnd == Some(raw_hwnd(appbar_hwnd))
             {
@@ -323,6 +317,10 @@ fn reassert_appbar(appbar_hwnd: HWND, reason: &'static str) {
             }
             appbar::log(host, appbar_hwnd, reservation.bar, applied, reason);
         }
+        Ok(None) => tracing::debug!(
+            reason,
+            "Windows AppBar notification changed nothing; ABM_SETPOS skipped"
+        ),
         Err(error) => {
             tracing::error!(%error, "failed to reapply Windows AppBar reservation");
         }

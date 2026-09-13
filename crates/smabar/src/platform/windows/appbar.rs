@@ -15,7 +15,8 @@ use windows::Win32::{
 };
 
 use crate::platform::windows_geometry::{
-    DockEdge, PhysicalRect, fit_appbar, physical_length, reservation_thickness,
+    DockEdge, PhysicalRect, ReservationKey, fit_appbar, physical_length, reassert_rect,
+    reservation_thickness,
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -31,9 +32,16 @@ pub(super) struct AppliedReservation {
     dpi: u32,
     scale: f64,
     monitor: PhysicalRect,
+    requested: PhysicalRect,
     approved: PhysicalRect,
     work_area: PhysicalRect,
     logical_thickness: f64,
+}
+
+impl AppliedReservation {
+    fn key(self) -> ReservationKey {
+        (self.edge, self.thickness, self.requested)
+    }
 }
 
 pub(super) fn register(hwnd: HWND, callback_message: u32) -> anyhow::Result<()> {
@@ -80,17 +88,37 @@ pub(super) fn thickness(host: HWND, reservation: Reservation) -> anyhow::Result<
     ))
 }
 
+/// Re-applies after an AppBar notification or DPI change. `None` when the
+/// shell's answer already matches the applied reservation.
 pub(super) fn reposition(
     appbar: HWND,
     host: HWND,
     reservation: Reservation,
-    logical_thickness: f64,
-) -> anyhow::Result<AppliedReservation> {
+    previous: AppliedReservation,
+) -> anyhow::Result<Option<AppliedReservation>> {
     let client_height = client_height(host)?;
     let (_, scale) = super::native::window_scale(host)?;
-    let thickness = physical_length(logical_thickness, scale, client_height)
+    let thickness = physical_length(previous.logical_thickness, scale, client_height)
         .context("stored bar geometry produced an empty Windows AppBar reservation")?;
-    position(appbar, host, reservation, thickness)
+    let (data, monitor) = query(appbar, host, reservation.edge)?;
+    let Some(requested) = reassert_rect(
+        previous.key(),
+        reservation.edge,
+        from_win_rect(data.rc),
+        thickness,
+    ) else {
+        return Ok(None);
+    };
+    commit(
+        appbar,
+        host,
+        data,
+        reservation.edge,
+        thickness,
+        monitor,
+        requested,
+    )
+    .map(Some)
 }
 
 pub(super) fn position(
@@ -99,18 +127,42 @@ pub(super) fn position(
     reservation: Reservation,
     thickness: i32,
 ) -> anyhow::Result<AppliedReservation> {
-    let monitor = monitor_rect(host)?;
-    let (dpi, scale) = super::native::window_scale(host)?;
+    let (data, monitor) = query(appbar, host, reservation.edge)?;
+    let requested = fit_appbar(reservation.edge, from_win_rect(data.rc), thickness);
+    commit(
+        appbar,
+        host,
+        data,
+        reservation.edge,
+        thickness,
+        monitor,
+        requested,
+    )
+}
 
+fn query(appbar: HWND, host: HWND, edge: DockEdge) -> anyhow::Result<(APPBARDATA, PhysicalRect)> {
+    let monitor = monitor_rect(host)?;
     let mut data = data(appbar);
-    data.uEdge = edge_value(reservation.edge);
+    data.uEdge = edge_value(edge);
     data.rc = to_win_rect(monitor);
     // SAFETY: APPBARDATA is fully initialized and writable for the shell call.
     if unsafe { SHAppBarMessage(ABM_QUERYPOS, &mut data) } == 0 {
         bail!("Windows rejected ABM_QUERYPOS for the bar reservation");
     }
-    let approved = fit_appbar(reservation.edge, from_win_rect(data.rc), thickness);
-    data.rc = to_win_rect(approved);
+    Ok((data, monitor))
+}
+
+fn commit(
+    appbar: HWND,
+    host: HWND,
+    mut data: APPBARDATA,
+    edge: DockEdge,
+    thickness: i32,
+    monitor: PhysicalRect,
+    requested: PhysicalRect,
+) -> anyhow::Result<AppliedReservation> {
+    let (dpi, scale) = super::native::window_scale(host)?;
+    data.rc = to_win_rect(requested);
     // SAFETY: APPBARDATA is fully initialized and writable for the shell call.
     if unsafe { SHAppBarMessage(ABM_SETPOS, &mut data) } == 0 {
         bail!("Windows rejected ABM_SETPOS for the bar reservation");
@@ -118,18 +170,17 @@ pub(super) fn position(
     let approved = from_win_rect(data.rc);
     move_appbar(appbar, approved)?;
     let work_area = from_win_rect(monitor_info(host)?.rcWork);
-
-    let applied = AppliedReservation {
-        edge: reservation.edge,
+    Ok(AppliedReservation {
+        edge,
         thickness,
         dpi,
         scale,
         monitor,
+        requested,
         approved,
         work_area,
         logical_thickness: f64::from(thickness) / scale,
-    };
-    Ok(applied)
+    })
 }
 
 fn move_appbar(hwnd: HWND, area: PhysicalRect) -> anyhow::Result<()> {
@@ -145,10 +196,6 @@ fn move_appbar(hwnd: HWND, area: PhysicalRect) -> anyhow::Result<()> {
         )
     }
     .context("failed to move the Windows AppBar proxy to its approved bounds")
-}
-
-pub(super) fn logical_thickness(applied: AppliedReservation) -> f64 {
-    applied.logical_thickness
 }
 
 pub(super) fn log(

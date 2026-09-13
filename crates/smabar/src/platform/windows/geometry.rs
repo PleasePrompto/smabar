@@ -93,6 +93,23 @@ pub fn fit_appbar(edge: DockEdge, queried: PhysicalRect, thickness: i32) -> Phys
     }
 }
 
+/// What an applied reservation committed: edge, physical thickness and the
+/// rect requested from the shell.
+pub type ReservationKey = (DockEdge, i32, PhysicalRect);
+
+/// The rect to commit after an AppBar notification, or `None` when the shell's
+/// answer already matches the applied reservation: committing it again would
+/// echo as another notification and keep the bar moving.
+pub fn reassert_rect(
+    applied: ReservationKey,
+    edge: DockEdge,
+    queried: PhysicalRect,
+    thickness: i32,
+) -> Option<PhysicalRect> {
+    let requested = fit_appbar(edge, queried, thickness);
+    (applied != (edge, thickness, requested)).then_some(requested)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -163,6 +180,38 @@ mod tests {
                 top: 1_020,
                 ..queried
             }
+        );
+    }
+
+    #[test]
+    fn notifications_recommit_only_a_changed_reservation() {
+        let queried = PhysicalRect {
+            left: 0,
+            top: 0,
+            right: 1_920,
+            bottom: 1_080,
+        };
+        let applied = (
+            DockEdge::Bottom,
+            60,
+            fit_appbar(DockEdge::Bottom, queried, 60),
+        );
+        assert_eq!(reassert_rect(applied, DockEdge::Bottom, queried, 60), None);
+        assert_eq!(
+            reassert_rect(applied, DockEdge::Bottom, queried, 72),
+            Some(fit_appbar(DockEdge::Bottom, queried, 72))
+        );
+        let shifted = PhysicalRect {
+            bottom: 1_040,
+            ..queried
+        };
+        assert_eq!(
+            reassert_rect(applied, DockEdge::Bottom, shifted, 60),
+            Some(fit_appbar(DockEdge::Bottom, shifted, 60))
+        );
+        assert_eq!(
+            reassert_rect(applied, DockEdge::Top, queried, 60),
+            Some(fit_appbar(DockEdge::Top, queried, 60))
         );
     }
 

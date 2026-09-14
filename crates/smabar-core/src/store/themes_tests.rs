@@ -82,6 +82,18 @@ async fn a_theme_is_written_through_the_import_path_with_a_receipt() {
     assert!(entry.installed.is_some());
     assert!(!entry.installable);
 
+    let original = fs::read(&file).expect("theme bytes");
+    let original_receipts = fs::read(paths.store_receipts_file()).expect("receipt bytes");
+    service
+        .install_theme("nord-test", "1.0.0")
+        .await
+        .expect_err("already installed");
+    assert_eq!(fs::read(&file).expect("theme unchanged"), original);
+    assert_eq!(
+        fs::read(paths.store_receipts_file()).expect("receipt unchanged"),
+        original_receipts
+    );
+
     fs::write(&file, "{\"--sb-accent\": \"#000000\"}").expect("edit");
     let entry = service
         .overview()
@@ -90,6 +102,12 @@ async fn a_theme_is_written_through_the_import_path_with_a_receipt() {
         .find(|entry| entry.id == "nord-test")
         .expect("entry");
     assert!(entry.installed.expect("installed").modified);
+    let edited = fs::read(&file).expect("edited theme");
+    service
+        .install_theme("nord-test", "1.0.0")
+        .await
+        .expect_err("no update for edited theme");
+    assert_eq!(fs::read(&file).expect("edits preserved"), edited);
 
     // Deleting through the theme path drops the receipt.
     crate::themes::io::delete_theme(&paths, "nord-test").expect("delete");
@@ -116,6 +134,41 @@ async fn unreadable_receipts_are_preserved_without_importing_the_theme() {
     );
     assert!(!paths.themes_dir().join("nord-test.json").exists());
     assert!(!paths.store_staging_dir().join("nord-test.json").exists());
+    service.inner.supervisor.shutdown_all().await;
+}
+
+#[tokio::test]
+async fn theme_install_matches_the_overview_for_updates_and_downgrades() {
+    let (_dir, paths, service, fetcher, signer) = setup().await;
+    serve_theme(&fetcher, &signer, "nord-test", "1.0.0", THEME, |_| {});
+    service
+        .install_theme("nord-test", "1.0.0")
+        .await
+        .expect("initial install");
+    let changed = THEME.replace("#88c0d0", "#123456");
+    for (version, body, installable) in [
+        ("1.0.0", changed.as_str(), true),
+        ("2.0.0", changed.as_str(), true),
+        ("1.0.0", THEME, false),
+    ] {
+        serve_theme(&fetcher, &signer, "nord-test", version, body, |_| {});
+        let overview = service.refresh().await;
+        let entry = overview
+            .entries
+            .iter()
+            .find(|entry| entry.id == "nord-test")
+            .expect("theme");
+        assert_eq!(entry.installable, installable);
+        let file = paths.themes_dir().join("nord-test.json");
+        let before = fs::read(&file).expect("installed file");
+        let result = service.install_theme("nord-test", version).await;
+        if installable {
+            assert_eq!(result.expect("update").version, version);
+        } else {
+            assert!(matches!(result, Err(StoreError::NoUpdate { .. })));
+            assert_eq!(fs::read(&file).expect("file unchanged"), before);
+        }
+    }
     service.inner.supervisor.shutdown_all().await;
 }
 

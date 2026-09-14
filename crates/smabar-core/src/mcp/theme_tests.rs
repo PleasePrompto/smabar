@@ -36,6 +36,8 @@ fn write_params_with_settings(
 fn get_params(name: Option<&str>) -> Parameters<ThemeGetParams> {
     Parameters(ThemeGetParams {
         name: name.map(str::to_string),
+        contract_path: None,
+        offset: None,
     })
 }
 
@@ -201,18 +203,10 @@ async fn theme_write_then_list_get_and_activate_roundtrip() {
         got.contract["baseThemes"],
         json!(["default", "paper", "terminal", "topbar"])
     );
-    assert!(got.contract["configSchema"].is_object());
-    assert_eq!(
-        got.contract["referenceThemes"]
-            .as_object()
-            .map(|themes| themes.keys().map(String::as_str).collect::<Vec<_>>()),
-        Some(vec!["default", "paper", "terminal", "topbar"])
-    );
-    assert_eq!(
-        got.contract["themeSchema"]["$schema"],
-        "https://json-schema.org/draft/2020-12/schema"
-    );
-    assert_eq!(got.contract["themeSchema"]["$ref"], "#/$defs/dropIn");
+    let paths = got.contract["paths"].as_array().expect("contract paths");
+    for path in ["/configSchema", "/referenceThemes", "/themeSchema"] {
+        assert!(paths.contains(&json!(path)));
+    }
     assert!(got.contract["themeFormat"].is_object());
 
     // Activation goes through settings_set and broadcasts a theme change.

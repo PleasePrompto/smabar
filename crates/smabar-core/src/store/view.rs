@@ -375,7 +375,7 @@ fn view_entry(entry: &Entry, listing: &Listing, input: &OverviewInput<'_>) -> St
     }
 }
 
-fn update_view(
+pub(super) fn update_view(
     installed_version: &str,
     listed_version: &str,
     installed_hash: &str,

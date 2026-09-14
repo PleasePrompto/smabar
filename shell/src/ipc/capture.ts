@@ -164,7 +164,14 @@ export async function initCapture(surface: SurfaceRole): Promise<void> {
       void applyUiAction(action, tileId, group ?? null)
         .then(async (error) => {
           await afterPaint();
-          reply({ id, error, targets: [...collectTargets().keys()] });
+          const targets = new Set(collectTargets().keys());
+          if (surface === "bar" && error === undefined) {
+            // These surfaces live in other webviews, outside the bar's DOM.
+            const state = useSmabar.getState();
+            if (state.openFlyout !== null) targets.add("flyout");
+            if (state.settingsOpen) targets.add("settings");
+          }
+          reply({ id, error, targets: [...targets] });
         })
         .catch((error: unknown) => {
           reportError(error);

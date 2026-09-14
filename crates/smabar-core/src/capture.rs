@@ -100,7 +100,7 @@ pub enum BarError {
         target: String,
         available: Vec<String>,
     },
-    #[error("the bar could not take the picture: {0}")]
+    #[error("the bar could not complete the request: {0}")]
     Failed(String),
     #[error("the bar is not running or its window is gone")]
     Disconnected,

@@ -71,10 +71,24 @@ pub struct FontListParams {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+#[serde(rename_all = "camelCase")]
 pub struct ThemeGetParams {
     /// Theme name (`[a-z0-9-]`), as listed by `theme_list`; omit for the
     /// active theme.
     pub name: Option<String>,
+    /// JSON Pointer into the full contract, e.g. `/fonts` or
+    /// `/baseTokens/--sb-accent`. Omit for the compact authoring overview.
+    /// Large nodes return a child-path index instead of their full contents.
+    pub contract_path: Option<String>,
+    /// Offset into a large node's child-path index (100 entries per page).
+    pub offset: Option<usize>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
+pub struct ThemeRemoveParams {
+    /// Drop-in theme name from `theme_list`. Activate another theme before
+    /// removing the active one. Bundled themes cannot be removed.
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
@@ -283,8 +297,8 @@ pub struct ThemeGetResult {
     /// Self-describing metadata of a drop-in file, when it carries any.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<crate::themes::ThemeMeta>,
-    /// Complete machine-readable token/theme/config contract, including all
-    /// four resolved bundled reference themes.
+    /// Compact authoring overview, requested contract fragment, or a paged
+    /// child-path index when the requested fragment exceeds 16 KiB.
     pub contract: Value,
 }
 

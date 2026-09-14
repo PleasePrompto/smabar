@@ -3,11 +3,14 @@
 
 use rmcp::handler::server::wrapper::{Json, Parameters};
 use rmcp::{ErrorData as McpError, tool, tool_router};
+use serde_json::{Value, json};
 
 use crate::themes::{self, ThemeDocument};
 
 use super::SmabarMcp;
-use super::types::{AckResult, ThemeGetParams, ThemeGetResult, ThemeListResult, ThemeWriteParams};
+use super::types::{
+    AckResult, ThemeGetParams, ThemeGetResult, ThemeListResult, ThemeRemoveParams, ThemeWriteParams,
+};
 
 #[tool_router(router = theme_tool_router, vis = "pub(crate)")]
 impl SmabarMcp {
@@ -27,9 +30,11 @@ impl SmabarMcp {
     #[tool(
         description = "CALL THIS FIRST before creating or editing a theme. Returns the \
                        resolved `tokens`, merged behavior `settings`, `baseTheme`, and the \
-                       complete machine-readable `contract`: token definitions and validation, \
-                       settings allowlist, JSON Schema, bundled referenceThemes, and font \
-                       pair/discovery/download/fallback rules. Without `name`: the active \
+                       compact authoring `contract`: format, settings allowlist and font rules. \
+                       Query details with contractPath (JSON Pointer), e.g. /baseTokens/--sb-accent, \
+                       /fonts, /themeSchema or /referenceThemes/paper. Large nodes return a \
+                       child-path index; follow its paths or nextOffset (offset parameter). \
+                       contractPath=\"\" lists the contract root. Without `name`: the active \
                        theme. A same-named drop-in patches its bundled theme; a drop-in-only \
                        theme inherits bundled default. Plugin HTML consumes tokens via \
                        var(--sb-*). For a polished look start from the closest \
@@ -44,7 +49,11 @@ impl SmabarMcp {
     )]
     pub(super) async fn theme_get(
         &self,
-        Parameters(ThemeGetParams { name }): Parameters<ThemeGetParams>,
+        Parameters(ThemeGetParams {
+            name,
+            contract_path,
+            offset,
+        }): Parameters<ThemeGetParams>,
     ) -> Result<Json<ThemeGetResult>, McpError> {
         let name = match name {
             Some(name) => {
@@ -63,14 +72,15 @@ impl SmabarMcp {
                 "default".to_string()
             },
             meta: themes::dropin_meta(&self.paths, &name),
-            contract: themes::contract::export(),
+            contract: read_contract(contract_path.as_deref(), offset.unwrap_or(0))?,
             name,
         }))
     }
 
     #[tool(
         description = "Create or replace one drop-in theme file. EXACT WORKFLOW: (1) call \
-                       theme_get FIRST and use its contract/referenceThemes; (2) when changing \
+                       theme_get FIRST and read its contract; query /referenceThemes/<name> \
+                       with contractPath for a bundled recipe; (2) when changing \
                        fonts, call font_list and set both the family/source token pair returned \
                        by contract.fonts (`system` or `google:<catalog-id>`); (3) call \
                        theme_write with a NEW lowercase name, flat token object, optional \
@@ -79,8 +89,8 @@ impl SmabarMcp {
                        self-contained file and import such files); (4) activate via \
                        settings_set(\"theme\", name); (5) call \
                        theme_get(name) to verify the resolved result. Omitted tokens inherit \
-                       bundled default. To start from another bundled look, copy that \
-                       contract.referenceThemes entry's tokens and settings. Settings are \
+                       bundled default. To start from another bundled look, copy the queried \
+                       reference theme's tokens and settings. Settings are \
                        dotted paths from contract.settings.allowedPaths, applied one-shot on \
                        every activation; tokens never go under appearance.tokens. Bundled \
                        names (default, paper, terminal, topbar) are read-only. Rewriting the \
@@ -167,6 +177,120 @@ impl SmabarMcp {
             ),
         }))
     }
+
+    #[tool(
+        description = "Permanently remove one drop-in theme and its Community Store receipt. \
+                       Bundled themes are read-only. If active, first activate another theme \
+                       with settings_set(\"theme\", name). Missing themes are errors; theme_list \
+                       shows the available names."
+    )]
+    pub(super) async fn theme_remove(
+        &self,
+        Parameters(ThemeRemoveParams { name }): Parameters<ThemeRemoveParams>,
+    ) -> Result<Json<AckResult>, McpError> {
+        validate_theme_name(&name)?;
+        self.config.with_current(|current| {
+            if !themes::is_bundled(&name) && current.theme == name {
+                return Err(McpError::invalid_params(
+                    format!("theme \"{name}\" is active; use settings_set(\"theme\", \"default\") or another theme before removing it"),
+                    None,
+                ));
+            }
+            themes::io::delete_theme(&self.paths, &name).map_err(|error| match error {
+                themes::io::ThemeIoError::Io { .. } => McpError::internal_error(error.to_string(), None),
+                error => McpError::invalid_params(error.to_string(), None),
+            })
+        })?;
+        if let Some(store) = &self.store {
+            store.note_removed();
+        }
+        Ok(Json(AckResult {
+            message: format!("removed theme \"{name}\" and its store receipt"),
+        }))
+    }
+}
+
+/// Keep authoring replies readable while retaining access to every contract fact.
+fn read_contract(path: Option<&str>, offset: usize) -> Result<Value, McpError> {
+    const MAX_FRAGMENT_BYTES: usize = 16 * 1024;
+    const INDEX_PAGE_SIZE: usize = 100;
+    let mut contract = themes::contract::export();
+    let Some(path) = path else {
+        if offset != 0 {
+            return Err(McpError::invalid_params("offset needs contractPath", None));
+        }
+        let paths: Vec<String> = contract
+            .as_object()
+            .into_iter()
+            .flat_map(|object| object.keys())
+            .map(|key| format!("/{key}"))
+            .collect();
+        if let Some(object) = contract.as_object_mut() {
+            object.retain(|key, _| {
+                matches!(
+                    key.as_str(),
+                    "version"
+                        | "baseThemes"
+                        | "themeFormat"
+                        | "hierarchy"
+                        | "settings"
+                        | "fonts"
+                        | "transparency"
+                        | "responsiveBreakpoints"
+                )
+            });
+            object.insert("paths".to_string(), json!(paths));
+        }
+        return Ok(contract);
+    };
+    let value = contract.pointer(path).ok_or_else(|| {
+        McpError::invalid_params(
+            format!("no contract value at {path:?}; use contractPath=\"\" to list available paths"),
+            None,
+        )
+    })?;
+    let size = serde_json::to_vec(value)
+        .map_err(|error| McpError::internal_error(error.to_string(), None))?
+        .len();
+    if size <= MAX_FRAGMENT_BYTES {
+        if offset != 0 {
+            return Err(McpError::invalid_params(
+                "offset is only valid for a child-path index",
+                None,
+            ));
+        }
+        return Ok(value.clone());
+    }
+    let children: Vec<String> = match value {
+        Value::Object(object) => object
+            .keys()
+            .map(|key| key.replace('~', "~0").replace('/', "~1"))
+            .collect(),
+        Value::Array(array) => (0..array.len()).map(|index| index.to_string()).collect(),
+        _ => {
+            return Err(McpError::internal_error(
+                "a scalar contract value exceeds the 16 KiB response budget",
+                None,
+            ));
+        }
+    };
+    if offset >= children.len() {
+        return Err(McpError::invalid_params(
+            "offset is past the end of the child-path index",
+            None,
+        ));
+    }
+    let entries: Vec<Value> = children
+        .iter()
+        .skip(offset)
+        .take(INDEX_PAGE_SIZE)
+        .map(|key| json!({"path": format!("{path}/{key}")}))
+        .collect();
+    let next = offset + entries.len();
+    Ok(
+        json!({"kind": "index", "path": path, "entries": entries, "total": children.len(),
+        "nextOffset": (next < children.len()).then_some(next)}),
+    )
 }
 
 impl SmabarMcp {

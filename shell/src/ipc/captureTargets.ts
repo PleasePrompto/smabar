@@ -156,19 +156,22 @@ export function stageCapture(subject: HTMLElement): StagedCapture {
       // A fixed `height` ignores max-height, so release that too: a scroll
       // container's height is a viewport budget rather than part of the subject.
       patch(patches, el, "height", "auto");
-      patch(patches, el, "overflow-y", "visible");
+      // top + bottom still fixes an absolute/fixed box's height when height
+      // is auto (the settings root uses inset: 0). Let it grow with its content.
+      if (["absolute", "fixed"].includes(getComputedStyle(el).position)) {
+        patch(patches, el, "bottom", "auto");
+      }
     }
     if (axes.horizontal) {
       patch(patches, el, "max-width", "none");
-      patch(patches, el, "overflow-x", "visible");
     }
+    // visible computes to auto when the other axis is hidden/auto/scroll.
+    // Release both overflow axes, retaining height for horizontal-only charts.
+    patch(patches, el, "overflow-x", "visible");
+    patch(patches, el, "overflow-y", "visible");
   }
 
-  // Anything still scrolling could not be freed by the rules above; say so
-  // rather than returning a silently cropped picture.
-  const clipped = [subject, ...descend(subject)].some(clips);
-
-  let rect = measure(subject);
+  const rect = measure(subject);
   const fitsViewport =
     rect.x >= 0 &&
     rect.y >= 0 &&
@@ -192,8 +195,18 @@ export function stageCapture(subject: HTMLElement): StagedCapture {
     // Pin the width it had while laid out normally: a percentage width would
     // otherwise resolve against a different container and reflow the shot.
     patch(patches, subject, "width", `${String(rect.w)}px`);
-    rect = measure(subject);
   }
 
-  return { rect, expanded, clipped, release };
+  // The caller waits for paint after staging. Content/fonts can settle during
+  // those frames, so the reply must measure the painted layout, not this one.
+  return {
+    get rect() {
+      return measure(subject);
+    },
+    expanded,
+    get clipped() {
+      return [subject, ...descend(subject)].some(clips);
+    },
+    release,
+  };
 }

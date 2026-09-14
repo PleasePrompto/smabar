@@ -25,3 +25,17 @@ async fn the_core_tool_descriptions_stay_inside_their_word_budget() {
         );
     }
 }
+
+#[tokio::test]
+async fn settings_description_names_every_settable_root() {
+    let (_dir, mcp) = test_handler().await;
+    let tools = mcp.tool_router.list_all();
+    let description = tools
+        .iter()
+        .find(|tool| tool.name == "settings_set")
+        .and_then(|tool| tool.description.as_deref())
+        .expect("settings description");
+    for root in crate::config::update::SETTABLE_ROOTS {
+        assert!(description.contains(root), "missing {root}");
+    }
+}

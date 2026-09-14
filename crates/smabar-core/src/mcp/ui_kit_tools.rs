@@ -337,12 +337,11 @@ impl SmabarMcp {
             tile_sizing: field("tileSizing"),
             tokens: wants("tokens")
                 .then(|| themes::resolve(&self.paths, &self.config.current().theme)),
-            // The 600 KB machine-readable contract belongs to theme_get; here
-            // it would bury the markup contract under theme internals.
+            // Theme details are queried separately so they do not bury the markup contract.
             token_contract: wants("tokens").then(|| {
                 Value::String(
-                    "theme_get() — the machine-readable token, settings, schema and \
-                     reference-theme contract"
+                    "theme_get() — compact authoring overview; use its contractPath parameter \
+                     for token definitions, schemas and reference themes"
                         .to_string(),
                 )
             }),

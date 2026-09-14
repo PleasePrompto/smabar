@@ -167,11 +167,25 @@ fn guard(inner: &Inner, entry: &ThemeEntry, blocked: Option<String>) -> Result<(
         });
     }
     let file = theme_file(&inner.paths, name);
-    if file.exists() && !receipts::load(&inner.paths).themes.contains_key(name) {
-        return Err(StoreError::LocalTheme {
-            name: name.clone(),
-            path: file,
-        });
+    if file.exists() {
+        let receipts = receipts::load(&inner.paths);
+        let receipt = receipts
+            .themes
+            .get(name)
+            .ok_or_else(|| StoreError::LocalTheme {
+                name: name.clone(),
+                path: file,
+            })?;
+        if super::view::update_view(
+            &receipt.version,
+            &entry.common.version,
+            &receipt.source_sha256,
+            &entry.source.sha256,
+        )
+        .is_none()
+        {
+            return Err(StoreError::NoUpdate { id: name.clone() });
+        }
     }
     Ok(())
 }

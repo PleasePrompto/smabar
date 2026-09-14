@@ -103,9 +103,36 @@ describe("stageCapture", () => {
     expect(chart.style.getPropertyValue("max-width")).toBe("none");
     // The vertical budget is untouched: the bars keep the height they scale to.
     expect(chart.style.getPropertyValue("height")).toBe("120px");
-    expect(chart.style.getPropertyValue("overflow-y")).toBe("");
+    expect(chart.style.getPropertyValue("overflow-y")).toBe("visible");
     staged.release();
     expect(chart.style.getPropertyValue("overflow-x")).toBe("auto");
+    expect(chart.style.getPropertyValue("overflow-y")).toBe("");
+  });
+
+  it("releases an inset-constrained scroll viewport and restores its anchors", () => {
+    build(
+      '<div id="settings" style="position: absolute; top: 0; bottom: 0; overflow-x: hidden; overflow-y: auto"></div>',
+    );
+    const settings = element("settings");
+    Object.defineProperty(settings, "scrollHeight", {
+      value: 1800,
+      configurable: true,
+    });
+    Object.defineProperty(settings, "clientHeight", {
+      value: 800,
+      configurable: true,
+    });
+    const staged = stageCapture(settings);
+    expect(staged.expanded).toBe(true);
+    expect(staged.clipped).toBe(false);
+    expect(settings.style.bottom).toBe("auto");
+    expect(settings.style.overflowX).toBe("visible");
+    expect(settings.style.overflowY).toBe("visible");
+    staged.release();
+    expect(settings.style.bottom).toBe("0px");
+    expect(settings.style.top).toBe("0px");
+    expect(settings.style.overflowX).toBe("hidden");
+    expect(settings.style.overflowY).toBe("auto");
   });
 
   it("ignores content that overflows visibly instead of being cut", () => {
@@ -181,20 +208,30 @@ describe("stageCapture", () => {
     expect(tile.getAttribute("style")).toBe("width: 120px");
   });
 
+  it("measures content that changes between staging and the painted reply", () => {
+    build('<div id="subject"></div>');
+    const subject = element("subject");
+    let height = 100;
+    subject.getBoundingClientRect = () =>
+      DOMRect.fromRect({ width: 300, height });
+    const staged = stageCapture(subject);
+    height = 400;
+    expect(staged.rect.h).toBe(400);
+    staged.release();
+  });
+
   it("anchors a subject that reaches past the viewport, then restores it", () => {
     build(
       `<div id="tall" style="position: fixed; left: 40px; top: 20px"></div>`,
     );
     const tall = element("tall");
     tall.getBoundingClientRect = () =>
-      ({
-        left: 40,
-        top: 20,
+      DOMRect.fromRect({
+        x: 40,
+        y: 20,
         width: 300,
         height: 4000,
-        right: 340,
-        bottom: 4020,
-      }) as DOMRect;
+      });
 
     const staged = stageCapture(tall);
     expect(tall.style.getPropertyValue("position")).toBe("absolute");

@@ -88,7 +88,7 @@ pub struct PluginInfoOut {
     pub update_available: bool,
     /// Tile ids of this plugin the user hid (`pluginsHidden`): the plugin
     /// runs, but these tiles are off the bar until `plugin_set_visible`.
-    #[serde(skip_serializing_if = "Vec::is_empty")]
+    /// Always present, including an empty list, as required by the output schema.
     pub hidden_tiles: Vec<String>,
 }
 

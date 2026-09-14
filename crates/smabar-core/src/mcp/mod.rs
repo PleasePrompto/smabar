@@ -55,6 +55,8 @@ mod shortcut_tests;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
+mod theme_query_tests;
+#[cfg(test)]
 mod theme_tests;
 #[cfg(test)]
 mod ui_kit_cover_tests;

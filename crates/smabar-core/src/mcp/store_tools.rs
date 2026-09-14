@@ -122,7 +122,9 @@ impl SmabarMcp {
         description = "Install or update a Community Theme to its listed version: the raw file \
                        is verified against the listed SHA-256 and written to \
                        ~/.smabar/themes/<name>.json through the theme import path. Bundled \
-                       names and files without a store receipt are refused."
+                       names, files without a store receipt, and installed themes with no \
+                       newer or changed catalog version are refused; check store_overview's \
+                       installable flag first."
     )]
     pub(super) async fn store_install_theme(
         &self,

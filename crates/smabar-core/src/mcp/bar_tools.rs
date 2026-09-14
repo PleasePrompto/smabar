@@ -99,7 +99,7 @@ impl SmabarMcp {
 
     #[tool(
         description = "Set a config value at a dotted path. Allowed roots: zOrder, language, \
-                       theme, pluginOrder, plugins, mcp, rendering, layout, shortcuts, \
+                       theme, themeExportDir, pluginOrder, plugins, mcp, rendering, layout, shortcuts, \
                        pluginsHidden, pluginsDeactivated, effects, appearance, popups, \
                        settingsWindow, audio (smabar playback volume/mute, notificationSounds, \
                        and per-plugin levels). Intermediate objects are created under `plugins` \

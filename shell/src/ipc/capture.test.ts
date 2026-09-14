@@ -210,6 +210,30 @@ test.each(["flyout", "overlay"])(
   },
 );
 
+test("UI replies include the separate flyout surface only while it is open", async () => {
+  const tile = document.querySelector<HTMLElement>("[data-tile-id]");
+  if (tile === null) throw new Error("test tile missing");
+  tile.getBoundingClientRect = () =>
+    DOMRect.fromRect({ x: 20, y: 20, width: 40, height: 20 });
+  immediateFrames();
+  await initCapture("bar");
+  const listener = listeners.get("bar-ui-command");
+  if (listener === undefined) throw new Error("UI listener missing");
+  listener({
+    payload: { id: 20, action: "open_flyout", tileId: "plugin:demo:main" },
+  });
+  await vi.waitFor(() => {
+    expect(replies).toHaveLength(1);
+  });
+  expect(replies[0]?.reply.error).toBeUndefined();
+  expect(replies[0]?.reply.targets).toContain("flyout");
+  listener({ payload: { id: 21, action: "close_flyout", tileId: null } });
+  await vi.waitFor(() => {
+    expect(replies).toHaveLength(2);
+  });
+  expect(replies[1]?.reply.targets).not.toContain("flyout");
+});
+
 test("a release cancels a capture that is still preparing", async () => {
   document.body.innerHTML = '<div data-capture="flyout">content</div>';
   vi.useFakeTimers();

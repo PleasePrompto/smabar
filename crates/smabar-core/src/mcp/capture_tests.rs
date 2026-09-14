@@ -4,7 +4,7 @@ use base64::Engine as _;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::ContentBlock;
 
-use crate::capture::UiAction;
+use crate::capture::{BarError, BarPort, UiAction};
 
 use super::tests::{ONE_PIXEL_PNG, test_handler};
 use super::types::{BarScreenshotParams, BarUiStateParams};
@@ -101,4 +101,29 @@ async fn closing_a_surface_needs_no_tile() {
         "{}",
         text.text
     );
+}
+
+#[tokio::test]
+async fn ui_action_failures_do_not_claim_a_screenshot_was_requested() {
+    let (_dir, mut handler) = test_handler().await;
+    let (port, mut receiver) = BarPort::channel();
+    handler.bar = port;
+    tokio::spawn(async move {
+        let (_, reply) = receiver.recv().await.expect("UI request");
+        reply
+            .send(Err(BarError::Failed(
+                "the secondary row requires the solo layout".into(),
+            )))
+            .expect("reply");
+    });
+    let error = handler
+        .bar_ui_state(Parameters(BarUiStateParams {
+            action: UiAction::OpenOverlay,
+            tile_id: None,
+            group: None,
+        }))
+        .await
+        .expect_err("layout precondition");
+    assert!(error.message.contains("solo layout"));
+    assert!(!error.message.contains("picture") && !error.message.contains("screenshot"));
 }

@@ -190,7 +190,15 @@ impl SmabarMcp {
         self.supervisor
             .restart(&id)
             .await
-            .map_err(|error| McpError::invalid_params(error.to_string(), None))?;
+            .map_err(|error| {
+                let message = match error {
+                    crate::plugins::PluginError::Deactivated { id } => format!(
+                        "plugin \"{id}\" is deactivated; call plugin_set_active with id=\"{id}\" and active=true before reloading"
+                    ),
+                    error => error.to_string(),
+                };
+                McpError::invalid_params(message, None)
+            })?;
         let outcome = self.settle_reload(&id, watcher, since_ms).await;
         Ok(Json(PluginReloadResult {
             message: plugin_reload::reload_message(&id, &outcome),

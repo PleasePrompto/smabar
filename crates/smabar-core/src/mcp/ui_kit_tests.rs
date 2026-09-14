@@ -178,8 +178,7 @@ async fn all_returns_the_complete_contract_with_live_tokens_but_no_token_contrac
     let result = unwrap_json(mcp.ui_kit(params(Some("all"))).await).expect("ui_kit");
     assert_eq!(result.version, 1);
     assert_eq!(result.tokens.as_ref(), Some(themes::bundled_default()));
-    // The 600 KB machine-readable contract is theme_get's; the markup
-    // contract only points there.
+    // The markup contract points to the bounded theme contract lookup.
     assert!(
         result
             .token_contract

@@ -5,6 +5,7 @@
 use std::fs;
 
 use rmcp::handler::server::wrapper::Parameters;
+use serde_json::json;
 
 use super::plugin_types::PluginIdParams;
 use super::tests::{test_handler, unwrap_json};
@@ -24,6 +25,92 @@ fn set_active(id: &str, active: bool) -> Parameters<PluginSetActiveParams> {
         id: id.to_string(),
         active,
     })
+}
+
+#[tokio::test]
+async fn plugin_lists_serialize_required_fields_with_and_without_hidden_tiles() {
+    let (_dir, mcp) = test_handler().await;
+    install(&mcp, "hello");
+    mcp.supervisor
+        .restart("hello")
+        .await
+        .expect("register plugin");
+
+    for hidden in [false, true] {
+        mcp.config
+            .update(|current| {
+                let mut updated = current.clone();
+                updated.plugins_hidden = vec!["plugin:other:greeting".to_string()];
+                if hidden {
+                    updated
+                        .plugins_hidden
+                        .push("plugin:hello:greeting".to_string());
+                }
+                (updated, ())
+            })
+            .expect("set hidden tiles");
+        for (name, value) in [
+            (
+                "plugin_list",
+                serde_json::to_value(unwrap_json(mcp.plugin_list().await).expect("list")),
+            ),
+            (
+                "bar_get_state",
+                serde_json::to_value(unwrap_json(mcp.bar_get_state().await).expect("state")),
+            ),
+        ] {
+            let value = value.expect("serialize response");
+            let tools = mcp.tool_router.list_all();
+            let schema = tools
+                .iter()
+                .find(|tool| tool.name == name)
+                .and_then(|tool| tool.output_schema.as_ref())
+                .expect("advertised output schema");
+            let required = schema["$defs"]["PluginInfoOut"]["required"]
+                .as_array()
+                .expect("required fields");
+            assert!(required.contains(&json!("hiddenTiles")));
+            let plugins = value["plugins"].as_array().expect("plugins");
+            assert_eq!(plugins.len(), 1);
+            for field in required {
+                let field = field.as_str().expect("field name");
+                assert!(
+                    plugins[0].get(field).is_some(),
+                    "{name}: missing required property {field}"
+                );
+            }
+            assert_eq!(
+                plugins[0]["hiddenTiles"],
+                if hidden {
+                    json!(["greeting"])
+                } else {
+                    json!([])
+                }
+            );
+            assert_eq!(plugins[0]["updateAvailable"], false);
+        }
+    }
+    mcp.supervisor.shutdown_all().await;
+}
+
+#[tokio::test]
+async fn reloading_a_deactivated_plugin_points_to_the_activation_tool() {
+    let (_dir, mcp) = test_handler().await;
+    install(&mcp, "hello");
+    unwrap_json(mcp.plugin_set_active(set_active("hello", false)).await).expect("deactivate");
+    let error = unwrap_json(
+        mcp.plugin_reload(Parameters(PluginIdParams {
+            id: "hello".to_string(),
+        }))
+        .await,
+    )
+    .expect_err("deactivated");
+    assert!(
+        error.message.contains("plugin_set_active"),
+        "{}",
+        error.message
+    );
+    assert!(error.message.contains("hello") && error.message.contains("true"));
 }
 
 #[tokio::test]

@@ -402,7 +402,7 @@
       "accent / accent2 / accentFg: simple CSS color values, at most 128 chars, no ';', '{', '}' or url() other than data:/https:.",
       "settingsSchema: optional JSON Schema, read by the plugin through app.settings and rendered by the settings panel — what it can render, and the coverLayout convention: manifest.settingsSchema below."
     ],
-    "pythonHeader": "A python plugin runs through `uv run --script`, so its entry file MUST start with a PEP 723 header:\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = []\n# ///\nDeclare third-party packages in `dependencies`; uv resolves them on first start (which is why a first start can take a minute).",
+    "pythonHeader": "uv prepares a python plugin's environment from its entry file (`uv sync --script`) and smabar then starts that environment's interpreter directly, so the entry file MUST start with a PEP 723 header:\n# /// script\n# requires-python = \">=3.12\"\n# dependencies = []\n# ///\nDeclare third-party packages in `dependencies`; uv resolves them on first start (which is why a first start can take a minute).",
     "tileFields": {
       "id": "Stable tile id. Referenced by every app.render call and by plugin_order_set as plugin:<pluginId>:<tileId>.",
       "name": "Human-readable name, shown in settings and menus.",

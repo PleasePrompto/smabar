@@ -53,8 +53,9 @@ Go, Rust, Node or a shell script.
 
 **Python without setup.** smabar ships uv and installs its own Python 3.14
 under `~/.smabar/tools/`, separate from anything on your system.
-`"runtime": "python"` runs your script with `uv run --script`, so dependencies
-are declared in the script header (PEP 723) and installed on first start. The
+`"runtime": "python"` has uv prepare an environment from the script header
+(PEP 723) and then starts that environment's Python directly, so dependencies
+are installed on first start and no uv process stays resident. The
 SDK in [`sdk/`](sdk/) (MIT) handles the protocol; a plugin is `render()`,
 `log()` and `on_action()`. The six bundled plugins in [`plugins/`](plugins/)
 (MIT) are the reference.

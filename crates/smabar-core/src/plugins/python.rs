@@ -47,9 +47,7 @@ pub(super) async fn command(
     // Only detect the tag. uv owns PEP 723 parsing and validation. Plain
     // scripts retain uv run's interpreter/project discovery semantics.
     if !has_metadata(script).await? || std::env::var_os("UV_NO_CACHE").is_some() {
-        let mut command = Command::new(uv);
-        command.args(["run", "--script", entry]);
-        return Ok(command);
+        return Ok(uv_run(uv, entry));
     }
     let uv_command = |args: &[&str]| {
         let mut command = Command::new(uv);
@@ -77,10 +75,23 @@ pub(super) async fn command(
     let path = std::str::from_utf8(&path)
         .map_err(|_| PrepareError::Failed("uv returned a non-UTF-8 interpreter path".into()))?;
     let path = PathBuf::from(path.trim_end_matches(['\r', '\n']));
-    let scripts = path.parent().filter(|_| path.is_absolute() && path.is_file())
-        .ok_or_else(|| PrepareError::Failed("uv did not return an existing absolute interpreter path; restart the plugin to prepare its environment again".into()))?;
-    let environment = scripts.parent().filter(|parent| parent.join("pyvenv.cfg").is_file())
-        .ok_or_else(|| PrepareError::Failed("uv did not return a script virtual environment; restart the plugin to prepare it again".into()))?;
+    // uv config `no-cache = true` syncs into a temporary environment and find
+    // then answers with the base interpreter: such plugins keep running the
+    // way they did before, under a resident uv.
+    let Some((scripts, environment)) = script_environment(&path) else {
+        log.write(
+            "warn",
+            "core",
+            "uv keeps no persistent script environment (uv no-cache?); starting through uv run --script with a resident uv process",
+            None,
+        );
+        tracing::warn!(
+            plugin = plugin_id,
+            interpreter = %path.display(),
+            "no persistent script environment; falling back to uv run"
+        );
+        return Ok(uv_run(uv, entry));
+    };
     let inherited = std::env::var_os("PATH").unwrap_or_default();
     let search_path = std::env::join_paths(
         std::iter::once(scripts.to_path_buf()).chain(std::env::split_paths(&inherited)),
@@ -96,6 +107,24 @@ pub(super) async fn command(
         "Python script environment prepared; starting interpreter directly"
     );
     Ok(command)
+}
+
+fn uv_run(uv: &Path, entry: &str) -> Command {
+    let mut command = Command::new(uv);
+    command.args(["run", "--script", entry]);
+    command
+}
+
+/// The `bin`/`Scripts` directory and the root of the virtual environment
+/// `python` belongs to, if it is an interpreter inside one.
+fn script_environment(python: &Path) -> Option<(&Path, &Path)> {
+    let scripts = python
+        .parent()
+        .filter(|_| python.is_absolute() && python.is_file())?;
+    let environment = scripts
+        .parent()
+        .filter(|root| root.join("pyvenv.cfg").is_file())?;
+    Some((scripts, environment))
 }
 
 async fn output(command: Command, log: &mut PluginLog) -> Result<Vec<u8>, SpawnError> {

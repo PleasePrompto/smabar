@@ -27,9 +27,12 @@ if sys.argv[1] == 'sync':
         child = subprocess.Popen(['sleep', '60'])
         (root / 'descendant').write_text(str(child.pid))
         time.sleep(60)
+    if (root / 'no-env').exists():
+        sys.exit(0)
     subprocess.check_call([sys.executable, '-m', 'venv', '--without-pip', str(root / 'env')])
 elif sys.argv[1:3] == ['python', 'find']:
-    print(root / 'env' / 'bin' / 'python3')
+    env = root / 'env' / 'bin' / 'python3'
+    print(env if env.exists() else sys.executable)
 elif sys.argv[1] == 'run':
     sys.exit(subprocess.call([sys.executable, sys.argv[3]]))
 else:
@@ -99,11 +102,8 @@ impl Fixture {
     }
 }
 
-#[tokio::test]
-async fn python_is_the_direct_child_with_its_environment_and_sdk() {
-    let fixture = Fixture::new();
-    let mut log = PluginLog::open(fixture.path(), "test");
-    let mut process = fixture.start(&mut log).await.expect("start");
+/// The spawned pid and the state the script printed before exiting cleanly.
+async fn finish(mut process: PluginProcess) -> (u32, Value) {
     let pid = process.child.id().expect("pid");
     let mut output = String::new();
     process
@@ -115,7 +115,15 @@ async fn python_is_the_direct_child_with_its_environment_and_sdk() {
         .await
         .expect("read");
     assert!(process.child.wait().await.expect("wait").success());
-    let state: Value = serde_json::from_str(&output).expect("state");
+    (pid, serde_json::from_str(&output).expect("state"))
+}
+
+#[tokio::test]
+async fn python_is_the_direct_child_with_its_environment_and_sdk() {
+    let fixture = Fixture::new();
+    let mut log = PluginLog::open(fixture.path(), "test");
+    let process = fixture.start(&mut log).await.expect("start");
+    let (pid, state) = finish(process).await;
     assert_eq!(
         state["pid"], pid,
         "no resident uv between supervisor and Python"
@@ -196,6 +204,32 @@ async fn cancelling_preparation_kills_its_process_group() {
     })
     .await
     .expect("uv descendant stopped after cancellation");
+}
+
+#[tokio::test]
+async fn a_missing_script_environment_falls_back_to_uv_run() {
+    let fixture = Fixture::new();
+    std::fs::write(fixture.path().join("data/no-env"), "").expect("no-env marker");
+    let mut log = PluginLog::open(fixture.path(), "test");
+    let process = fixture.start(&mut log).await.expect("start");
+    let (pid, state) = finish(process).await;
+    assert_ne!(
+        state["pid"], pid,
+        "the plugin runs under the resident stub uv"
+    );
+    assert_eq!(state["id"], "test");
+    let calls = std::fs::read_to_string(fixture.path().join("data/calls")).expect("calls");
+    assert_eq!(calls.lines().count(), 3, "{calls}");
+    assert_eq!(
+        calls.lines().last(),
+        Some("[\"run\", \"--script\", \"plugin.py\"]")
+    );
+    let plugin_log =
+        std::fs::read_to_string(fixture.path().join("plugin-test.log")).expect("plugin log");
+    assert!(
+        plugin_log.contains("no persistent script environment"),
+        "{plugin_log}"
+    );
 }
 
 #[tokio::test]

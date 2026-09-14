@@ -335,7 +335,7 @@ async fn invalid_manifest_surfaces_as_failed_status() {
 #[tokio::test]
 async fn python_plugin_without_entry_file_fails_fast_and_recovers() {
     // Regression: plugin_write_file wrote smabar.json first; the watcher
-    // started the plugin and `uv run` failed 5 times ("No such file") until
+    // started the plugin and its uv preparation failed 5 times ("No such file") until
     // the entry script arrived. The supervisor must fail without spawning.
     let (_dir, paths) = temp_paths();
     let plugin_dir = paths.plugins_dir().join("halfway");

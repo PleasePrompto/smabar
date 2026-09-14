@@ -138,7 +138,7 @@ enum ImageTarget {
 fn image_target(dest: &str, base: &ReadmeBase) -> ImageTarget {
     match classify(dest) {
         Target::Absolute(url) => {
-            if url.scheme() == "https" && github_host(url.host_str()) {
+            if github_image_url(dest) {
                 ImageTarget::Image(dest.to_string())
             } else if matches!(url.scheme(), "http" | "https") {
                 ImageTarget::Link(dest.to_string())
@@ -154,6 +154,17 @@ fn image_target(dest: &str, base: &ReadmeBase) -> ImageTarget {
         )),
         Target::Refused => ImageTarget::Text,
     }
+}
+
+/// Shared display boundary for README images and catalog presentation assets.
+pub(super) fn github_image_url(value: &str) -> bool {
+    Url::parse(value).is_ok_and(|url| {
+        url.scheme() == "https"
+            && url.username().is_empty()
+            && url.password().is_none()
+            && url.port().is_none()
+            && github_host(url.host_str())
+    })
 }
 
 fn github_host(host: Option<&str>) -> bool {
@@ -248,5 +259,9 @@ pub(super) fn render_readme(markdown: &str, base: &ReadmeBase) -> String {
     }
     let mut rendered = String::with_capacity(markdown.len() * 2);
     html::push_html(&mut rendered, events.into_iter());
-    rendered
+    // Only the converter emits tags; author HTML was dropped and code escaped.
+    rendered.replace(
+        "<img ",
+        "<img loading=\"lazy\" decoding=\"async\" referrerpolicy=\"no-referrer\" ",
+    )
 }

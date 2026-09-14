@@ -95,6 +95,63 @@ fn a_fresh_listing_is_installable_and_carries_the_source_facts() {
 }
 
 #[test]
+fn media_is_optional_and_only_github_https_images_reach_clients() {
+    let mut scenario = Scenario::new();
+    let plain = serde_json::to_value(scenario.entry("hello")).expect("entry JSON");
+    assert!(plain.get("icon").is_some());
+    assert_eq!(plain["icon"], serde_json::Value::Null);
+    assert_eq!(plain["screenshots"], serde_json::json!([]));
+
+    let mut raw: serde_json::Value = serde_json::from_slice(FIXTURE_CATALOG).expect("fixture");
+    let icon = "https://raw.githubusercontent.com/o/r/commit/icon.png";
+    let screenshot = "https://user-images.githubusercontent.com/1/shot.png";
+    let rejected = [
+        "http://github.com/o/r/icon.png",
+        "https://github.com.evil.test/icon.png",
+        "https://evilgithubusercontent.com/icon.png",
+        "https://user:password@github.com/icon.png",
+        "https://github.com:8443/icon.png",
+        "https://example.org/icon.png",
+        "data:image/png;base64,AAAA",
+        "file:///tmp/icon.png",
+        "icon.png",
+    ];
+    for item in raw["items"].as_array_mut().expect("items") {
+        item["icon"] = serde_json::json!(icon);
+        item["screenshots"] = serde_json::json!(
+            rejected
+                .iter()
+                .copied()
+                .chain([screenshot])
+                .collect::<Vec<_>>()
+        );
+    }
+    scenario.listing = serde_json::from_value(raw.clone()).expect("media catalog");
+    for entry in scenario.overview().entries {
+        let response = serde_json::to_value(entry).expect("entry JSON");
+        assert_eq!(response["icon"], icon);
+        assert_eq!(response["screenshots"], serde_json::json!([screenshot]));
+    }
+    for url in rejected {
+        for item in raw["items"].as_array_mut().expect("items") {
+            item["icon"] = serde_json::json!(url);
+            item["screenshots"] = serde_json::json!(vec![screenshot; 8]);
+        }
+        scenario.listing = serde_json::from_value(raw.clone()).expect("bad URL is only bad media");
+        let response = serde_json::to_value(scenario.entry("hello")).expect("entry JSON");
+        assert_eq!(response["icon"], serde_json::Value::Null);
+        assert_eq!(
+            response["screenshots"]
+                .as_array()
+                .expect("screenshots")
+                .len(),
+            6
+        );
+        assert_eq!(response["installable"], true);
+    }
+}
+
+#[test]
 fn an_installed_current_copy_is_neither_installable_nor_updatable() {
     let mut scenario = Scenario::new();
     let receipt = receipt_for(&scenario.listing, "hello");

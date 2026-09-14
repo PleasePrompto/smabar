@@ -17,6 +17,9 @@ use super::SmabarMcp;
 use super::plugin_types::{GuideParams, GuideResult};
 
 const GUIDE_JSON: &str = include_str!("../../../../plugin-guide/guide.json");
+/// Pointer only: offer timing, consent and publishing steps belong to the guide.
+pub(super) const PUBLISHING_HINT: &str =
+    "After final verification, follow plugin_guide(section=\"publishing\").offer.";
 /// The template ships as real files so it stays runnable and diffable; a test
 /// pushes the manifest through the production validator.
 pub(super) const TEMPLATE_MANIFEST: &str =
@@ -66,6 +69,7 @@ const SECTIONS: &[&str] = &[
     "storage",
     "lifecycle",
     "debugging",
+    "publishing",
     "template",
     "all",
 ];
@@ -85,7 +89,8 @@ impl SmabarMcp {
                        thread), lifecycle (startup order, the ONE handler lock, hot reload, no \
                        shutdown hook), debugging (plugin_list, plugin_logs, plugin_data, common \
                        failures), template (a complete multi-file plugin in write order), \
-                       capabilities (the index alone), all (everything at once). Every reply \
+                       publishing (optional sharing of plugins AND themes), capabilities \
+                       (the index alone), all (everything at once). Every reply \
                        carries the golden path. No bundled plugin is required; installed ones \
                        are worked examples readable with plugin_read."
     )]
@@ -131,6 +136,7 @@ impl SmabarMcp {
             storage: wants("storage").then(|| field("storage")).flatten(),
             lifecycle: wants("lifecycle").then(|| field("lifecycle")).flatten(),
             debugging: wants("debugging").then(|| field("debugging")).flatten(),
+            publishing: wants("publishing").then(|| field("publishing")).flatten(),
             template: wants("template").then(|| {
                 json!({
                     "note": TEMPLATE_NOTE,

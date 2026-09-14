@@ -51,6 +51,8 @@ mod plugin_tests;
 #[cfg(test)]
 mod prompt_tests;
 #[cfg(test)]
+mod publishing_tests;
+#[cfg(test)]
 mod shortcut_tests;
 #[cfg(test)]
 mod tests;

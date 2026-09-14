@@ -564,6 +564,11 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip:focus-visible",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-stars svg",
           "fallbacks": []
         },
@@ -2187,6 +2192,20 @@
         {
           "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-aside",
+          "fallbacks": [
+            "1px"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": [
+            "1px"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip > li",
           "fallbacks": [
             "1px"
           ]
@@ -5106,6 +5125,11 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-image-error",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-readme",
           "fallbacks": []
         },
@@ -5351,6 +5375,11 @@
         {
           "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-readme pre code",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
           "fallbacks": []
         },
         {
@@ -6004,7 +6033,17 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip > li",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-hero",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-icon, .settings-store-avatar",
           "fallbacks": []
         },
         {
@@ -6440,6 +6479,16 @@
         {
           "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-aside",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip > li",
           "fallbacks": []
         },
         {
@@ -7702,6 +7751,11 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip > li",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-hero",
           "fallbacks": []
         },
@@ -7878,6 +7932,11 @@
         {
           "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-readme pre",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-icon, .settings-store-avatar",
           "fallbacks": []
         },
         {
@@ -8625,7 +8684,22 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-author",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-facts dd",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-facts dd",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-keywords",
           "fallbacks": []
         },
         {
@@ -9258,7 +9332,27 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-facts",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-hero",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-identity",
           "fallbacks": []
         },
         {
@@ -9654,7 +9748,22 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
-          "selector": ".settings-store-facts dd",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-facts",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-image-error",
           "fallbacks": []
         },
         {
@@ -10108,12 +10217,27 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-facts dd",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-heading",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-image-error",
           "fallbacks": []
         },
         {
@@ -12031,7 +12155,22 @@
         },
         {
           "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-details--compact .settings-store-trust",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-store-facts dt",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-gallery-strip > li",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-store.css",
+          "selector": ".settings-store-icon, .settings-store-avatar",
           "fallbacks": []
         },
         {

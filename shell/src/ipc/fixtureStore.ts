@@ -22,8 +22,13 @@ const HOST_OS = "linux";
 const GENERATED_AT = "2026-08-30T06:00:00Z";
 const FETCHED_AT = Date.parse("2026-09-03T07:30:00Z");
 
-type Seed = Omit<StoreEntry, "incompatible" | "installable"> & {
+type Seed = Omit<
+  StoreEntry,
+  "incompatible" | "installable" | "icon" | "screenshots"
+> & {
   incompatible?: StoreEntry["incompatible"];
+  icon?: string;
+  screenshots?: string[];
   readme: string;
   /** What the core's converter makes of `readme`; absent for a bare text. */
   readmeHtml?: string;
@@ -294,12 +299,16 @@ function seedListings(): Map<string, Listing> {
         releases,
         accent,
         incompatible = [],
+        icon = null,
+        screenshots = [],
         ...rest
       }) => [
         key(rest.kind, rest.id),
         {
           entry: {
             ...rest,
+            icon,
+            screenshots,
             incompatible,
             installable: incompatible.length === 0,
           },

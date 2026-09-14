@@ -26,6 +26,8 @@ function entry(id: string, extra: Partial<StoreEntry> = {}): StoreEntry {
     version: "1.0.0",
     description: "",
     keywords: [],
+    icon: null,
+    screenshots: [],
     author: { login: "someone", url: "https://github.com/someone" },
     repo: {
       url: `https://github.com/someone/${id}`,

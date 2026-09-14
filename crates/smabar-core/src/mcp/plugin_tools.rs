@@ -115,6 +115,7 @@ impl SmabarMcp {
         let dir = self.paths.plugins_dir().join(&id);
         let target = dir.join(&rel);
         let is_manifest = rel.as_os_str() == MANIFEST_FILE;
+        let new_plugin = is_manifest && !target.exists();
         let manifest = if is_manifest {
             let manifest = self.validate_manifest(&id, &content, &target)?;
             // The one start failure a manifest predicts: no entry script. A
@@ -159,11 +160,15 @@ impl SmabarMcp {
         }
         self.restart_if_not_watched(&id).await;
         let outcome = self.settle_reload(&id, watcher, since_ms).await;
-        let message = format!(
+        let mut message = format!(
             "wrote {}; {}",
             target.display(),
             plugin_reload::reload_message(&id, &outcome)
         );
+        if new_plugin {
+            message.push(' ');
+            message.push_str(super::guide_tools::PUBLISHING_HINT);
+        }
         Ok(Json(PluginWriteResult {
             path: rel.display().to_string(),
             bytes_written: content.len(),

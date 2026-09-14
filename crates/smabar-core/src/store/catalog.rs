@@ -158,6 +158,11 @@ pub struct EntryCommon {
     pub description: String,
     #[serde(default)]
     pub keywords: Vec<String>,
+    /// Optional presentation assets, served by GitHub at the listed commit.
+    #[serde(default)]
+    pub icon: Option<String>,
+    #[serde(default)]
+    pub screenshots: Vec<String>,
     #[serde(default)]
     pub requires: Requires,
     pub author: Author,

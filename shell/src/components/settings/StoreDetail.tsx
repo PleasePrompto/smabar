@@ -14,6 +14,7 @@ import { ConfirmRow } from "./controls";
 import { StoreStateBadge } from "./StoreBadge";
 import { LinkButton, StoreFacts, StoreNotes, TrustFacts } from "./StoreFacts";
 import { Meta, Stars } from "./StoreList";
+import { StoreGallery, StoreIcon } from "./StoreMedia";
 import { StoreReadme } from "./StoreReadme";
 import {
   ActionButtons,
@@ -101,10 +102,86 @@ function Readme({
   );
 }
 
+/** Plugins pair documentation with a sidebar; themes lead with compact facts. */
+function DetailContents({
+  entry,
+  overview,
+  detail,
+  detailError,
+  language,
+}: {
+  entry: StoreEntry;
+  overview: StoreOverview;
+  detail: StoreDetailInfo | null;
+  detailError: string | null;
+  language: string;
+}) {
+  const isTheme = entry.kind === "theme";
+  const showReadme =
+    !isTheme ||
+    detail === null ||
+    detailError !== null ||
+    Boolean(detail.readmeHtml?.trim()) ||
+    Boolean(detail.readme?.trim());
+  const showReleases =
+    detail !== null && (!isTheme || detail.releases.length > 0);
+  const facts = (
+    <div className="settings-store-column">
+      <div className="sb-section">{t("settings.store.details")}</div>
+      <aside
+        className={`settings-store-aside${isTheme ? " settings-store-details--compact" : ""}`}
+      >
+        {!isTheme && <TrustFacts entry={entry} overview={overview} />}
+        <StoreFacts entry={entry} language={language} />
+        {isTheme && <TrustFacts entry={entry} overview={overview} />}
+        <LinkButton
+          url={`https://github.com/PleasePrompto/smabar/issues/new?${new URLSearchParams(
+            {
+              title: `Report ${entry.kind}: ${entry.id}`,
+              body: `${entry.repo.url}\n\n`,
+            },
+          )}`}
+          label={t("settings.store.report")}
+        />
+      </aside>
+    </div>
+  );
+
+  const documentation = (showReadme || showReleases) && (
+    <div className="settings-store-column">
+      {showReadme && (
+        <>
+          <div className="sb-section">{t("settings.store.readme")}</div>
+          <Readme detail={detail} detailError={detailError} />
+        </>
+      )}
+      {showReleases && (
+        <>
+          <div className="sb-section">{t("settings.store.releases")}</div>
+          <Releases detail={detail} entry={entry} language={language} />
+        </>
+      )}
+    </div>
+  );
+
+  return isTheme ? (
+    <div className="settings-store-column">
+      {facts}
+      {documentation}
+    </div>
+  ) : (
+    <div className="settings-store-columns">
+      {documentation}
+      {facts}
+    </div>
+  );
+}
+
 /**
  * The detail page of one listing: a header card with the name, the facts
  * from the list and the actions; then the notes a user must read before
- * installing; then the readme beside a sidebar of source facts. Every
+ * installing; then the readme beside source facts for plugins, or below
+ * compact facts for themes. Every
  * action asks inline before doing anything; one install runs at a time
  * app-wide, so every button waits while the overview reports a pending one.
  */
@@ -180,13 +257,25 @@ export function StoreDetail({
         {t("settings.store.back")}
       </button>
       <header className="settings-store-hero">
-        <div className="settings-store-main">
-          <div className="settings-store-heading">
-            <h2>{entry.name}</h2>
-            <StoreStateBadge entry={entry} />
+        <div className="settings-store-identity">
+          <StoreIcon entry={entry} />
+          <div className="settings-store-main">
+            <div className="settings-store-heading">
+              <h2>{entry.name}</h2>
+              <StoreStateBadge entry={entry} />
+            </div>
+            <Meta entry={entry} language={language} />
+            <p className="settings-store-description">{entry.description}</p>
+            {entry.keywords.length > 0 && (
+              <ul className="settings-store-keywords">
+                {entry.keywords.map((keyword) => (
+                  <li key={keyword} className="sb-badge">
+                    #{keyword}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <Meta entry={entry} language={language} />
-          <p className="settings-store-description">{entry.description}</p>
         </div>
         <div className="settings-store-side">
           <Stars entry={entry} language={language} />
@@ -230,32 +319,15 @@ export function StoreDetail({
       </header>
 
       <StoreNotes entry={entry} overview={overview} />
+      <StoreGallery entry={entry} />
 
-      <div className="settings-store-columns">
-        <div className="settings-store-column">
-          <div className="sb-section">{t("settings.store.readme")}</div>
-          <Readme detail={detail} detailError={detailError} />
-          {detail !== null && (
-            <>
-              <div className="sb-section">{t("settings.store.releases")}</div>
-              <Releases detail={detail} entry={entry} language={language} />
-            </>
-          )}
-        </div>
-        <aside className="settings-store-aside">
-          <TrustFacts entry={entry} overview={overview} />
-          <StoreFacts entry={entry} language={language} />
-          <LinkButton
-            url={`https://github.com/PleasePrompto/smabar/issues/new?${new URLSearchParams(
-              {
-                title: `Report ${entry.kind}: ${entry.id}`,
-                body: `${entry.repo.url}\n\n`,
-              },
-            )}`}
-            label={t("settings.store.report")}
-          />
-        </aside>
-      </div>
+      <DetailContents
+        entry={entry}
+        overview={overview}
+        detail={detail}
+        detailError={detailError}
+        language={language}
+      />
     </section>
   );
 }

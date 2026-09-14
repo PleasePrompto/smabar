@@ -306,7 +306,7 @@ pub struct GuideParams {
     /// Omit for the START document (`start`). One reference block instead:
     /// `manifest` (incl. the generated JSON Schema), `sdk`, `storage`,
     /// `lifecycle`, `debugging`, `template` (a complete multi-file plugin in
-    /// write order), `capabilities` (the index alone), or `all`.
+    /// write order), `publishing` (plugins and themes), `capabilities` (the index alone), or `all`.
     pub section: Option<String>,
 }
 
@@ -355,6 +355,10 @@ pub struct GuideResult {
     /// Where to look when a plugin misbehaves.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub debugging: Option<Value>,
+    /// Optional public sharing and the existing GitHub/Community Store workflow
+    /// for both plugins and themes. Included with `publishing` and `all`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publishing: Option<Value>,
     /// A complete, runnable multi-file plugin as `files` in write order, plus
     /// a `note` on copying it.
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -67,6 +67,49 @@
   gap: var(--sb-space-2xs);
   min-width: 0;
 }
+.settings-store-identity {
+  display: flex;
+  flex: 1 1 18rem;
+  align-items: center;
+  gap: var(--sb-space-m);
+  min-width: 0;
+}
+.settings-store-icon,
+.settings-store-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  overflow: hidden;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--sb-radius-s);
+  background: var(--sb-inner-bg);
+  color: var(--sb-text-muted);
+}
+.settings-store-hero .settings-store-icon {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+.settings-store-avatar {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+}
+.settings-store-icon img,
+.settings-store-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.settings-store-avatar svg {
+  width: 1rem;
+  height: 1rem;
+}
+.settings-store-author {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sb-space-2xs);
+}
 .settings-store-heading {
   display: flex;
   flex-wrap: wrap;
@@ -84,6 +127,7 @@
 }
 .settings-store-meta {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 0 var(--sb-space-xs);
   margin: 0;
@@ -136,6 +180,9 @@
   .settings-store-side {
     justify-content: flex-start;
   }
+  .settings-store-identity {
+    flex-basis: auto;
+  }
 }
 
 /* === The detail page ========================================= */
@@ -160,6 +207,54 @@
 .settings-store-hero-note {
   flex-basis: 100%;
   margin: 0;
+}
+.settings-store-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sb-space-2xs);
+  list-style: none;
+  margin: var(--sb-space-2xs) 0 0;
+  padding: 0;
+}
+.settings-store-gallery-strip {
+  display: flex;
+  gap: var(--sb-space-s);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  list-style: none;
+  margin: var(--sb-space-xs) 0 0;
+  padding: 0 0 var(--sb-space-xs);
+}
+.settings-store-gallery-strip > li {
+  flex: 0 0 min(24rem, 85%);
+  scroll-snap-align: start;
+  overflow: hidden;
+  border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-m);
+  background: var(--sb-inner-bg);
+  color: var(--sb-text-muted);
+}
+.settings-store-gallery-strip:focus-visible {
+  outline: 2px solid var(--sb-accent);
+  outline-offset: -3px;
+}
+.settings-store-screenshot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 3 / 2;
+}
+.settings-store-screenshot img {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+.settings-store-image-error {
+  display: flex;
+  align-items: center;
+  gap: var(--sb-space-xs);
+  padding: var(--sb-space-s);
+  font-size: var(--sb-fs-s);
 }
 .settings-store-columns {
   display: grid;
@@ -214,8 +309,11 @@
 .settings-store-facts {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--sb-space-s);
   margin: 0;
+}
+.settings-store-facts > div {
+  min-width: 0;
 }
 .settings-store-facts dt {
   color: var(--sb-text-muted);
@@ -230,11 +328,33 @@
   align-items: center;
   gap: var(--sb-space-2xs) var(--sb-space-xs);
   min-width: 0;
-  margin: 0 0 var(--sb-space-s);
+  margin: 0;
   color: var(--sb-text);
 }
-.settings-store-facts dd:last-child {
-  margin-bottom: 0;
+.settings-store-details--compact {
+  padding: var(--sb-space-m);
+  gap: var(--sb-space-m);
+}
+.settings-store-details--compact .settings-store-trust {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--sb-space-xs) var(--sb-space-m);
+  padding: var(--sb-space-s) 0 0;
+  border-bottom: 0;
+  border-top: var(--sb-border-width, 1px) solid var(--sb-inner-border);
+  color: var(--sb-text-muted);
+  font-size: var(--sb-fs-xs);
+}
+.settings-store-details--compact .settings-store-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--sb-space-m);
+}
+.settings-store-details--compact .settings-store-facts dd {
+  margin-top: var(--sb-space-2xs);
+}
+.settings-store-details--compact > .settings-store-link {
+  align-self: flex-start;
 }
 /* A link, not a button: text in the accent colour with the icon after it.
    Two classes, because ui-kit.css is imported after this file. */

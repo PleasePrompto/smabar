@@ -95,7 +95,7 @@
     },
     {
       "step": 6,
-      "do": "Photograph every surface after the last write; reload.designReview lists the calls: bar_screenshot(target=\"plugin:<id>:<tile>\", scale=3) for the tile, and for a tile with hasFlyout bar_ui_state(\"open_flyout\", tileId) followed by bar_screenshot(target=\"flyout\"); hover and popup when you render them. Inspect each PNG against ui_kit bestPractices: hierarchy, clipping, contrast, raw locale keys, placeholder text, control size.",
+      "do": "Photograph every surface after the last write; reload.designReview lists the calls: bar_screenshot(target=\"plugin:<id>:<tile>\", scale=3) for the tile, and for a tile with hasFlyout bar_ui_state(\"open_flyout\", tileId) followed by bar_screenshot(target=\"flyout\"); hover and popup when you render them. Inspect each PNG against ui_kit bestPractices: hierarchy, clipping, contrast, raw locale keys, placeholder text, control size. After completing a NEW plugin, follow plugin_guide(section=\"publishing\").offer.",
       "done": "Every surface the plugin renders has a photograph taken after the final write, each inspected and passing; the report names the surfaces photographed and any you could not.",
       "read": [
         {
@@ -122,7 +122,35 @@
     "storage": "app.data_dir, SQLite, atomic writes, stale-while-refresh, sb-asset, network in a thread, media polling.",
     "lifecycle": "Startup order, the ONE handler lock, errors and restarts, hot reload, no shutdown hook.",
     "debugging": "plugin_list, plugin_logs, plugin_data, the markup report and the common failures.",
+    "publishing": "The optional sharing offer and the GitHub/Community Store publication steps for BOTH plugins and themes.",
     "template": "A complete multi-file plugin (views.py, locales, plugin.py, smabar.json) in write order, with a note on copying it."
+  },
+  "publishing": {
+    "offer": "After a NEW plugin or theme passes its final functional and visual checks, ask the user once whether they want to share it publicly in the Community Store. Skip the question if their choice is already clear, they declined, or this was a routine edit/reload. Local creation never authorizes publication. Do not ask before the result is ready to review.",
+    "approval": "Before creating a public repository, pushing files or submitting it to the store, obtain explicit user authorization for those public actions. Respect authorization already given in the conversation. Agree on the repository and license; never choose a license for the user. Publish only the plugin code/bundled assets or theme document, not app.data_dir, settings, databases, credentials, private files or screenshots containing personal data.",
+    "required": {
+      "repository": "A public GitHub repository. Plugin and theme ids are separate namespaces, first come first served; choose a new lowercase [a-z0-9-] id, at most 64 characters. Bundled ids are reserved.",
+      "license": "Agree a license with the user (or keep the repository's existing license) and include LICENSE at the root. The store requires a license at the root or inside each plugin folder; theme-only listings currently do not enforce that check.",
+      "plugin": "smabar.json at the repository root for a single plugin, or plugins/<id>/smabar.json for a collection. The id must match its folder in a collection. Use a SemVer version such as 1.0.0, protocolVersion 1 and the valid runtime/entry/dependencies from plugin_guide(section=\"manifest\"). Include every imported sibling and locale. No symlinks/submodules anywhere inside the plugin; at most 200 subdirectories.",
+      "theme": "themes/<name>.json with flat --sb-* tokens and a meta object containing a display name (meta.name) and SemVer meta.version. These two metadata fields are REQUIRED by the store even though local theme_write allows omission. meta.author and meta.description are optional; settings contains activation settings. At least one token, at most 512 KiB. Use theme_write(meta=...) to prepare it and read theme_get first for the actual theme contract."
+    },
+    "presentation": {
+      "readme": "Optional README.md beside a plugin manifest, with purpose, setup, declared requirements and usage. Its hashtags and store.keywords aid discovery. Themes are listed from their meta fields; the store currently does not include a theme README.",
+      "icon": "Optional icon.png (also .webp/.jpg/.jpeg) beside smabar.json, at most 512 KiB; use a square image at least 128x128 for the app. Write real image bytes with filesystem/image tools: plugin_write_file accepts UTF-8 text, not binary images. Themes currently have no catalog icon.",
+      "screenshots": "Optional: up to six PNG/WebP/JPEG images, each at most 3 MiB. Plugins: screenshots/ beside smabar.json, ordered by filename. Themes: themes/<name>.png then <name>-2.png, <name>-3.png etc. in numeric order; the other supported extensions work too. Prefer readable 3:2 frames, e.g. 1200x800. Capture the finished app with bar_screenshot and inspect each image before including it. GitHub hosts all images; no separate upload service.",
+      "author": "The store author/avatar comes from the GitHub repository owner, not from a separately uploaded avatar."
+    },
+    "versions": "The store chooses the highest matching published GitHub Release (not draft/prerelease): v<version> for a root plugin, <id>-v<version> for collection plugins and themes. The file's version must match that release. A bare git tag is not a published GitHub Release. Without a matching release the default branch is used. For updates, bump the file version and publish a matching release if the item uses releases; otherwise push the default branch. Listed repositories are crawled hourly.",
+    "submit": {
+      "method": "POST",
+      "url": "https://store.smabar.com/submit",
+      "headers": { "content-type": "application/json" },
+      "body": { "url": "https://github.com/<owner>/<repo>" },
+      "authorization": "Only after the user authorized publication. Use the agent's existing GitHub/HTTP tools; smabar has no submission tool. The submit endpoint needs no store account or token.",
+      "result": "Read every accepted/rejected item in the response and report its actual result, including warnings. A successful HTTP response can contain rejected items. On rejection, explain the returned rule and fix it before retrying. For HTTP 429 honor the returned retry time; do not loop. HTTP 403 can indicate a blocked source. Never claim publication merely because the request was sent."
+    },
+    "verification": "After acceptance, confirm the listed plugin/theme with store_refresh then store_detail and check its id, version, source and images. Link the published page at https://smabar.com/store/plugins/<id>/ or https://smabar.com/store/themes/<name>/. Listing checks format, not code safety or review.",
+    "documentation": "https://smabar.com/docs/publish/"
   },
   "capabilities": {
     "scope": "smabar supplies reusable host primitives; the user supplies the product idea. Bundled and custom plugins are optional. Discover installed IDs with plugin_list before reusing anything. The bundled plugins are worked examples you can read in full with plugin_read(id): weather (list-plus-detail flyout on data-tabs, place search, one request for many places, cached forecast), clock (shell-ticked clocks, analog tile cover, context menus, sibling modules), crypto (name search, persisted cache), todos (SQLite, forms, popups, agent commands).",

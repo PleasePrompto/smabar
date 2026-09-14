@@ -8,8 +8,8 @@ import { reportError } from "./log";
  * The Community Store's contract with the core (`commands/store.rs`): one
  * cached overview of every catalog entry, details on demand, and mutating
  * commands that answer with the fresh overview. The catalog itself is
- * fetched and verified by the core on its own timer; the shell never talks
- * to the network.
+ * fetched and verified by the core on its own timer. The webview loads
+ * presentation images directly from the permitted GitHub hosts.
  */
 
 export type StoreKind = "plugin" | "theme";
@@ -64,6 +64,8 @@ export interface StoreEntry {
   version: string;
   description: string;
   keywords: string[];
+  icon: string | null;
+  screenshots: string[];
   author: { login: string; url: string };
   repo: {
     url: string;

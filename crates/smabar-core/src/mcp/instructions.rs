@@ -24,7 +24,8 @@ reload.warnings.count is 0; otherwise fix the first warning and write again. \
 bar_screenshot and bar_ui_state calls; inspect each PNG.\n\
 Pointers: plugin_guide(section=manifest|sdk|storage|lifecycle|debugging|template) for \
 building; ui_kit(sections=[…]) for markup, behaviour hooks and conventions; theme_get FIRST \
-for themes and fonts. External services: current official documentation. Installed \
+for themes and fonts; plugin_guide(section=\"publishing\") for public sharing of either. \
+External services: current official documentation. Installed \
 plugins: plugin_list, then plugin_commands(id) and plugin_call for their data operations.\n\
 Two traps no tool reply can raise: app.set_settings replaces the whole settings object — \
 write {**app.settings, key: value}; the first render and every app.t() belong in \

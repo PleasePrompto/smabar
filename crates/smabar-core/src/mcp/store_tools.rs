@@ -60,7 +60,7 @@ impl SmabarMcp {
         description = "The Community Store catalog joined with what is installed: every listed \
                        plugin and theme with version, repository, exact commit, requirements \
                        (smabar version, OS, external programs), installed state, pending \
-                       update, block reason and whether it is installable here. Served from the \
+                       update, block reason, optional icon/screenshots and whether it is installable here. Served from the \
                        verified cache without touching the network; `catalogState` says how \
                        current it is — call store_refresh for a fresh one."
     )]

@@ -5,6 +5,7 @@ import { t } from "../../i18n/t";
 import type { StoreEntry, StoreOverview } from "../../ipc/store";
 import { ConfirmRow } from "./controls";
 import { StoreStateBadge } from "./StoreBadge";
+import { StoreAvatar, StoreIcon } from "./StoreMedia";
 import {
   ActionButtons,
   actionLabel,
@@ -53,7 +54,10 @@ export function Meta({
 }) {
   return (
     <p className="settings-store-meta">
-      <span>{entry.author.login}</span>
+      <span className="settings-store-author">
+        <StoreAvatar login={entry.author.login} />
+        {entry.author.login}
+      </span>
       <span className="sb-mono">{entry.version}</span>
       <span>{formatDate(entry.updatedAt, language)}</span>
     </p>
@@ -95,13 +99,16 @@ function Row({
   return (
     <li data-store-entry={`${entry.kind}:${entry.id}`}>
       <div className="settings-store-row">
-        <div className="settings-store-main">
-          <div className="settings-store-heading">
-            <span className="settings-store-name">{entry.name}</span>
-            <StoreStateBadge entry={entry} />
+        <div className="settings-store-identity">
+          <StoreIcon entry={entry} />
+          <div className="settings-store-main">
+            <div className="settings-store-heading">
+              <span className="settings-store-name">{entry.name}</span>
+              <StoreStateBadge entry={entry} />
+            </div>
+            <Meta entry={entry} language={language} />
+            <p className="settings-store-description">{entry.description}</p>
           </div>
-          <Meta entry={entry} language={language} />
-          <p className="settings-store-description">{entry.description}</p>
         </div>
         <div className="settings-store-side">
           <Stars entry={entry} language={language} />

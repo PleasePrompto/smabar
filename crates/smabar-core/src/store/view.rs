@@ -75,6 +75,10 @@ pub struct StoreEntry {
     pub version: String,
     pub description: String,
     pub keywords: Vec<String>,
+    /// HTTPS GitHub image URL, or null when absent or unsuitable for display.
+    pub icon: Option<String>,
+    /// At most six HTTPS GitHub image URLs, in catalog order. Always present.
+    pub screenshots: Vec<String>,
     pub author: Author,
     pub repo: RepoView,
     pub runtime: Option<PluginRuntime>,
@@ -356,6 +360,17 @@ fn view_entry(entry: &Entry, listing: &Listing, input: &OverviewInput<'_>) -> St
         version: common.version.clone(),
         description: common.description.clone(),
         keywords: common.keywords.clone(),
+        icon: common
+            .icon
+            .clone()
+            .filter(|url| super::readme::github_image_url(url)),
+        screenshots: common
+            .screenshots
+            .iter()
+            .filter(|url| super::readme::github_image_url(url))
+            .take(6)
+            .cloned()
+            .collect(),
         author: common.author.clone(),
         repo: repo_view(common),
         runtime: match entry {

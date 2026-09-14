@@ -4,7 +4,8 @@
 
 use rmcp::handler::server::wrapper::Parameters;
 
-use super::plugin_types::{PluginWriteFileParams, PluginWriteResult};
+use super::guide_tools::PUBLISHING_HINT;
+use super::plugin_types::{PluginIdParams, PluginWriteFileParams, PluginWriteResult};
 use super::tests::{test_handler, unwrap_json};
 
 fn write_params(id: &str, path: &str, content: &str) -> Parameters<PluginWriteFileParams> {
@@ -54,11 +55,12 @@ fn exec_manifest(id: &str) -> String {
 }
 
 async fn start(mcp: &super::SmabarMcp, id: &str, script: &str) -> PluginWriteResult {
-    unwrap_json(
+    let sibling = unwrap_json(
         mcp.plugin_write_file(write_params(id, "main.py", script))
             .await,
     )
     .expect("write fixture");
+    assert!(!sibling.message.contains(PUBLISHING_HINT));
     unwrap_json(
         mcp.plugin_write_file(write_params(id, "smabar.json", &exec_manifest(id)))
             .await,
@@ -168,6 +170,7 @@ async fn a_render_into_an_undeclared_tile_is_a_warning_the_reply_cannot_hide() {
 async fn a_clean_start_says_so_and_ticks_the_host_checked_criteria() {
     let (_dir, mcp) = test_handler().await;
     let written = start(&mcp, "clean", &rendering_fixture(&["w"])).await;
+    assert!(written.message.contains(PUBLISHING_HINT));
     let reload = written.reload.expect("reload");
     assert_eq!(reload.warnings.count, 0, "{:?}", reload.warnings.messages);
     assert_eq!(reload.rendered, vec!["w".to_string()]);
@@ -184,5 +187,24 @@ async fn a_clean_start_says_so_and_ticks_the_host_checked_criteria() {
     let review = reload.design_review.expect("review");
     assert_eq!(review["done"][0]["met"], true);
     assert_eq!(review["done"][1]["met"], true);
+    for (path, content) in [
+        ("main.py", rendering_fixture(&["w"])),
+        ("smabar.json", exec_manifest("clean")),
+    ] {
+        let edit = unwrap_json(
+            mcp.plugin_write_file(write_params("clean", path, &content))
+                .await,
+        )
+        .expect("edit");
+        assert!(!edit.message.contains(PUBLISHING_HINT));
+    }
+    let reloaded = unwrap_json(
+        mcp.plugin_reload(Parameters(PluginIdParams {
+            id: "clean".to_string(),
+        }))
+        .await,
+    )
+    .expect("reload");
+    assert!(!reloaded.message.contains(PUBLISHING_HINT));
     mcp.supervisor.shutdown_all().await;
 }

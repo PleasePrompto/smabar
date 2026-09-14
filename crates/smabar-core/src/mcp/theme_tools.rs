@@ -45,7 +45,8 @@ impl SmabarMcp {
                        square, phosphor-green strip) and keep its recipe: the tile tokens \
                        style tile cards AND shortcut dock buttons together, and \
                        tile-hover-lift/-scale set the hover pop (headroom follows \
-                       automatically)."
+                       automatically). For public sharing of a finished new theme, \
+                       read plugin_guide(section=\"publishing\")."
     )]
     pub(super) async fn theme_get(
         &self,
@@ -94,7 +95,9 @@ impl SmabarMcp {
                        dotted paths from contract.settings.allowedPaths, applied one-shot on \
                        every activation; tokens never go under appearance.tokens. Bundled \
                        names (default, paper, terminal, topbar) are read-only. Rewriting the \
-                       active theme requires switching away and back to re-apply it."
+                       active theme requires switching away and back to re-apply it. \
+                       After creating and verifying a new theme, follow \
+                       plugin_guide(section=\"publishing\").offer."
     )]
     pub(super) async fn theme_write(
         &self,
@@ -150,6 +153,11 @@ impl SmabarMcp {
         };
         // MCP semantics stay create-or-replace; the collision confirm lives
         // in the settings UI, not here.
+        let new_theme = !self
+            .paths
+            .themes_dir()
+            .join(format!("{name}.json"))
+            .exists();
         let target = themes::io::write_theme(&self.paths, &name, &document, true)
             .map_err(|error| McpError::internal_error(error.to_string(), None))?;
 
@@ -169,13 +177,16 @@ impl SmabarMcp {
                 block.len()
             )
         };
-        Ok(Json(AckResult {
-            message: format!(
-                "wrote {} with {} token(s){settings_note}; {hint}",
-                target.display(),
-                document.tokens.len()
-            ),
-        }))
+        let mut message = format!(
+            "wrote {} with {} token(s){settings_note}; {hint}",
+            target.display(),
+            document.tokens.len()
+        );
+        if new_theme {
+            message.push(' ');
+            message.push_str(super::guide_tools::PUBLISHING_HINT);
+        }
+        Ok(Json(AckResult { message }))
     }
 
     #[tool(

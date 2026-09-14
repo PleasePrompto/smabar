@@ -85,7 +85,7 @@ fn images_load_only_from_github_hosts() {
     );
     assert!(
         html.contains(&format!(
-            "<img src=\"https://raw.githubusercontent.com/mira-dev/smabar-plugins/{COMMIT}/plugins/foo/shot.png\" alt=\"shot\""
+            "src=\"https://raw.githubusercontent.com/mira-dev/smabar-plugins/{COMMIT}/plugins/foo/shot.png\" alt=\"shot\""
         )),
         "{html}"
     );
@@ -94,11 +94,11 @@ fn images_load_only_from_github_hosts() {
         "{html}"
     );
     assert!(
-        html.contains("<img src=\"https://raw.githubusercontent.com/o/r/c/a.png\""),
+        html.contains("src=\"https://raw.githubusercontent.com/o/r/c/a.png\""),
         "{html}"
     );
     assert!(
-        html.contains("<img src=\"https://user-images.githubusercontent.com/1/2.png\""),
+        html.contains("src=\"https://user-images.githubusercontent.com/1/2.png\""),
         "{html}"
     );
     assert!(
@@ -106,6 +106,13 @@ fn images_load_only_from_github_hosts() {
         "{html}"
     );
     assert_eq!(html.matches("<img").count(), 3, "{html}");
+    for attribute in [
+        "loading=\"lazy\"",
+        "decoding=\"async\"",
+        "referrerpolicy=\"no-referrer\"",
+    ] {
+        assert_eq!(html.matches(attribute).count(), 3, "{html}");
+    }
     assert!(!html.contains("x.png") && !html.contains("data:"), "{html}");
     for text in ["up", "data"] {
         assert!(html.contains(text), "{text} missing: {html}");

@@ -4501,7 +4501,7 @@ dependencies = [
 
 [[package]]
 name = "smabar"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "anyhow",
  "cairo-rs",
@@ -4538,7 +4538,7 @@ dependencies = [
 
 [[package]]
 name = "smabar-core"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "axum",
  "base64 0.23.1",

@@ -83,7 +83,8 @@ export function PluginZone({ style }: { style?: CSSProperties }) {
       style={zoneStyle}
     >
       {tiles.length === 0 ? (
-        <span className="px-2 text-xs whitespace-nowrap text-faint">
+        // self-center: see ShortcutZone's empty state.
+        <span className="self-center px-2 text-xs whitespace-nowrap text-faint">
           {t("plugins.empty")}
         </span>
       ) : (

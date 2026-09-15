@@ -4,7 +4,8 @@ import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 
-import { ShortcutItem } from "./ShortcutZone";
+import { useSmabar } from "../../store/bar";
+import { ShortcutItem, ShortcutZone } from "./ShortcutZone";
 
 test("a separator is neither launchable nor a magnified shortcut tile", () => {
   const html = renderToStaticMarkup(
@@ -82,4 +83,16 @@ test("a downloaded favicon replaces exhausted remote candidates without repinnin
     });
     actEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
   }
+});
+
+test("the empty dock centers its hint in the stretched zone", () => {
+  useSmabar.setState(useSmabar.getInitialState(), true);
+  const html = renderToStaticMarkup(<ShortcutZone />);
+
+  expect(html).toContain("No shortcuts pinned yet");
+  // The zone stretches its children to the row height (equal-height dock
+  // buttons); the one-line hint must center itself instead of sitting on top.
+  expect(html).toMatch(
+    /<span class="[^"]*\bself-center\b[^"]*">No shortcuts pinned yet/,
+  );
 });

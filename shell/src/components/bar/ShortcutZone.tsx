@@ -150,7 +150,9 @@ export function ShortcutZone({ style }: { style?: CSSProperties }) {
       style={zoneStyle}
     >
       {shortcuts.pinned.length === 0 ? (
-        <span className="px-2 text-xs whitespace-nowrap text-faint">
+        // self-center: the stretched zone would otherwise pin this one-line
+        // text to its top edge (tiles center their own content).
+        <span className="self-center px-2 text-xs whitespace-nowrap text-faint">
           {t("shortcuts.empty")}
         </span>
       ) : (

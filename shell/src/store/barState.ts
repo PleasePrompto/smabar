@@ -61,6 +61,8 @@ export interface SmabarState {
   registryVersion: number;
   pluginStatus: Record<string, PluginStatusInfo>;
   runtimeStatus: RuntimeStatusInfo | null;
+  /** The current runtime failure episode was already toasted. */
+  runtimeFailureNoticed: boolean;
   updateStatus: UpdateStatus;
   updateChannel: "app" | "store" | null;
   /** Last confirmed offer survives a failed/background check and permits retry. */
@@ -113,6 +115,7 @@ export interface SmabarState {
   bumpRegistryVersion: () => void;
   setPluginStatus: (pluginId: string, info: PluginStatusInfo) => void;
   setRuntimeStatus: (info: RuntimeStatusInfo) => void;
+  markRuntimeFailureNoticed: () => void;
   setUpdateStatus: (status: UpdateStatus) => void;
   setCommunityUpdates: (entries: StoreEntry[]) => void;
   setLegalRequired: (required: boolean) => void;

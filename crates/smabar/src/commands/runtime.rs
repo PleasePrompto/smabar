@@ -16,9 +16,8 @@ pub fn get_runtime_status(state: State<AppState>) -> RuntimeStatus {
 }
 
 /// Kicks provisioning off again after a failure and returns immediately;
-/// progress and the outcome arrive as `runtime-status` events. A successful
-/// install also revives python plugins that parked while the runtime was
-/// missing (the supervisor's nudge task).
+/// progress and the outcome arrive as `runtime-status` events. Python
+/// plugins waiting for the runtime wake up on the resulting `Ready`.
 #[tauri::command]
 pub fn retry_provisioning(state: State<AppState>) {
     let runtime = state.supervisor.runtime();

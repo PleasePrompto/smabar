@@ -324,8 +324,20 @@ export const useSmabar = create<SmabarState>((set, get) => ({
   },
   pluginStatus: {},
   runtimeStatus: null,
+  runtimeFailureNoticed: false,
   setRuntimeStatus: (info) => {
-    set({ runtimeStatus: info });
+    set((s) => ({
+      runtimeStatus: info,
+      // A ready or absent runtime ends the failure episode; installing and
+      // repeated failures continue it.
+      runtimeFailureNoticed:
+        info.state === "ready" || info.state === "absent"
+          ? false
+          : s.runtimeFailureNoticed,
+    }));
+  },
+  markRuntimeFailureNoticed: () => {
+    set({ runtimeFailureNoticed: true });
   },
   updateStatus: { state: "idle" },
   updateChannel: null,

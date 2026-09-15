@@ -22,7 +22,7 @@ use super::events::PluginEvents;
 pub(super) use super::lifecycle_guard::lifecycle_guard;
 use super::logfile::PluginDiagnostics;
 use super::manifest::{MANIFEST_FILE, PluginManifest, PluginRuntime};
-use super::provision::{self, RuntimeProvisioner};
+use super::provision::RuntimeProvisioner;
 use super::runner::{PluginCommand, RunCtx, run_lifecycle};
 use super::status::{self, StatusMap};
 use super::watcher::{config_change_loop, dir_change_loop, list_plugin_dirs, spawn_dir_watcher};
@@ -56,7 +56,7 @@ pub(super) struct Inner {
     pub(super) lifecycle_locks: Mutex<HashMap<String, Weak<tokio::sync::Mutex<()>>>>,
     /// Blocks shutdown until every in-flight lifecycle transition has left.
     pub(super) lifecycle_barrier: tokio::sync::RwLock<()>,
-    /// Terminal gate shared by watcher, config and runtime-ready tasks.
+    /// Terminal gate shared by the watcher and config tasks.
     pub(super) shutdown: CancellationToken,
     /// Installed plugins the user switched off (see [`super::activation`]).
     /// They have no process but stay visible, so they can be switched on.
@@ -139,11 +139,6 @@ impl PluginSupervisor {
             diagnostics,
             watcher: Mutex::new(watcher),
         });
-        let runtime_task = tokio::spawn(provision::nudge_on_ready(
-            Arc::downgrade(&inner),
-            inner.runtime.subscribe(),
-        ));
-
         // Subscribe before the synchronous boot scan. A config write during
         // that scan must be queued instead of leaving the just-started
         // processes on a stale activation/settings snapshot.
@@ -163,12 +158,7 @@ impl PluginSupervisor {
         ));
         Self {
             inner,
-            background_tasks: Arc::new(Mutex::new(vec![
-                status_task,
-                runtime_task,
-                directory_task,
-                config_task,
-            ])),
+            background_tasks: Arc::new(Mutex::new(vec![status_task, directory_task, config_task])),
         }
     }
 

@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
-use notify::{RecommendedWatcher, RecursiveMode, Watcher as _};
+use notify::event::ModifyKind;
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher as _};
 use serde_json::json;
 use tokio::sync::{broadcast, mpsc};
 
@@ -51,11 +52,8 @@ pub(super) fn spawn_dir_watcher(
     let root = plugins_dir.to_path_buf();
     let handler = move |result: Result<notify::Event, notify::Error>| match result {
         Ok(event) => {
-            if event.kind.is_access() {
-                return;
-            }
             for path in &event.paths {
-                if let Some(folder) = affected_folder(&root, path) {
+                if let Some(folder) = folder_for_event(&root, &event.kind, path) {
                     // Send fails only while the supervisor is being dropped.
                     let _ = tx.send(folder);
                 }
@@ -79,6 +77,27 @@ pub(super) fn spawn_dir_watcher(
         return None;
     }
     Some(watcher)
+}
+
+/// The plugin folder an event should reload, if any. Reads never count. A
+/// content or metadata change reported on a DIRECTORY is dropped too:
+/// Windows reports the parent folder as modified whenever an entry appears
+/// inside it, so the first `__pycache__` of a fresh profile would otherwise
+/// restart every plugin right after its first start. The entry itself
+/// arrives as its own event and is judged by [`affected_folder`]; folder
+/// renames stay `Modify(Name)` and are kept, as are create and remove.
+fn folder_for_event(root: &Path, kind: &EventKind, changed: &Path) -> Option<String> {
+    if kind.is_access() {
+        return None;
+    }
+    if matches!(
+        kind,
+        EventKind::Modify(ModifyKind::Any | ModifyKind::Data(_) | ModifyKind::Metadata(_))
+    ) && changed.is_dir()
+    {
+        return None;
+    }
+    affected_folder(root, changed)
 }
 
 /// Maps a changed path to the top-level plugin folder it belongs to.
@@ -273,4 +292,64 @@ fn warn_bad_reload(inner: &Inner, plugin_id: &str, reason: &str) {
          manifest using plugin_guide, then save it again."
     );
     inner.diagnostics.warn_once(plugin_id, &message, None);
+}
+
+#[cfg(test)]
+mod tests {
+    use notify::event::{DataChange, RenameMode};
+
+    use super::*;
+
+    #[test]
+    fn folder_modifications_are_ignored_but_their_entries_and_renames_are_not() {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let root = dir.path();
+        fs::create_dir_all(root.join("clock/__pycache__")).expect("plugin dir");
+        fs::write(root.join("clock/plugin.py"), b"x").expect("script");
+        let clock = root.join("clock");
+        let modified = [
+            EventKind::Modify(ModifyKind::Any),
+            EventKind::Modify(ModifyKind::Data(DataChange::Any)),
+            EventKind::Modify(ModifyKind::Metadata(notify::event::MetadataKind::Any)),
+        ];
+        for kind in &modified {
+            assert_eq!(
+                folder_for_event(root, kind, &clock),
+                None,
+                "{kind:?} on the folder"
+            );
+            assert_eq!(
+                folder_for_event(root, kind, &clock.join("plugin.py")),
+                Some("clock".into()),
+                "{kind:?} on a file"
+            );
+        }
+        assert_eq!(
+            folder_for_event(
+                root,
+                &EventKind::Create(notify::event::CreateKind::Any),
+                &clock.join("__pycache__")
+            ),
+            None
+        );
+        for kind in [
+            EventKind::Modify(ModifyKind::Name(RenameMode::To)),
+            EventKind::Create(notify::event::CreateKind::Folder),
+            EventKind::Remove(notify::event::RemoveKind::Folder),
+        ] {
+            assert_eq!(
+                folder_for_event(root, &kind, &clock),
+                Some("clock".into()),
+                "{kind:?}"
+            );
+        }
+        assert_eq!(
+            folder_for_event(
+                root,
+                &EventKind::Access(notify::event::AccessKind::Any),
+                &clock.join("plugin.py")
+            ),
+            None
+        );
+    }
 }

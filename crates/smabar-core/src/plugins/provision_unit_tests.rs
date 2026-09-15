@@ -50,14 +50,3 @@ fn failure_classification_spots_network_errors() {
         RuntimeFailureKind::Other
     );
 }
-
-#[test]
-fn only_parked_python_plugins_are_revivable() {
-    let entries = vec![
-        ("parked".into(), PluginRuntime::Python, true),
-        ("running".into(), PluginRuntime::Python, false),
-        ("exec".into(), PluginRuntime::Exec, true),
-    ];
-    let revived = revivable(entries.into_iter());
-    assert_eq!(revived, vec!["parked".to_string()]);
-}

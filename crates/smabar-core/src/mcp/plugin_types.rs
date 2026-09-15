@@ -72,7 +72,8 @@ pub struct PluginInfoOut {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     pub status: PluginStatus,
-    /// Failure reason when status is `failed`.
+    /// Failure reason when status is `failed`; while `starting`, what the
+    /// start waits for (the managed Python runtime).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -235,7 +236,8 @@ pub struct ReloadWarnings {
 pub struct ReloadOutcomeOut {
     /// `running`, `failed`, `starting`, or `stopped`.
     pub status: PluginStatus,
-    /// Why it failed, when `status` is `failed`.
+    /// Why it failed, when `status` is `failed`; while `starting`, what the
+    /// start waits for (the managed Python runtime).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
     /// `false` when the wait timed out before the plugin settled; `status` is

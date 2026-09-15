@@ -26,6 +26,9 @@ export function RuntimeGroup() {
       <SettingRow
         label={t("settings.system.runtime")}
         description={t("settings.system.runtimeDescription")}
+        // A failure needs the row's full width: the message on one line, a
+        // prominent Retry underneath instead of a button squeezed beside it.
+        wide={runtime?.state === "failed"}
       >
         {runtime === null || runtime.state === "absent" ? (
           <span className="sb-faint">{t("settings.system.runtimeAbsent")}</span>
@@ -42,13 +45,16 @@ export function RuntimeGroup() {
         ) : runtime.state === "ready" ? (
           <span className="sb-ok">{t("settings.system.runtimeReady")}</span>
         ) : (
-          <div className="settings-font-error" role="alert">
-            <span title={runtime.message ?? undefined}>
+          <div className="flex w-full flex-col gap-2" role="alert">
+            <p
+              className="settings-plugin-error"
+              title={runtime.message ?? undefined}
+            >
               {failureText(runtime)}
-            </span>
+            </p>
             <button
               type="button"
-              className="sb-btn sb-btn-ghost"
+              className="sb-btn sb-btn-primary sb-btn--lg w-full font-semibold"
               onClick={() => {
                 void call("retry_provisioning").catch(reportError);
               }}

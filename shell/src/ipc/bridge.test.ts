@@ -69,21 +69,19 @@ test("keyboard-capable plugin controls request focus for the dock window", () =>
   expect(needsKeyboardFocus(document.getElementById("plain"))).toBe(false);
 });
 
-test("only the transition INTO failed produces a runtime toast", () => {
+test("only the first failure of an episode produces a runtime toast", () => {
   const failed = { state: "failed", kind: "offline" } as const;
   const installing = { state: "installing" } as const;
   const ready = { state: "ready" } as const;
 
-  expect(runtimeFailureNotice(null, failed)).toBe(
+  expect(runtimeFailureNotice(failed, false)).toBe(
     "settings.system.runtimeFailedNotice",
   );
-  expect(runtimeFailureNotice(installing, failed)).toBe(
-    "settings.system.runtimeFailedNotice",
-  );
-  // A repeated failure event must not re-toast.
-  expect(runtimeFailureNotice(failed, failed)).toBeNull();
-  expect(runtimeFailureNotice(installing, ready)).toBeNull();
-  expect(runtimeFailureNotice(null, installing)).toBeNull();
+  // The automatic retry cycles failed → installing → failed; once noticed,
+  // the episode stays silent until the runtime is ready again.
+  expect(runtimeFailureNotice(failed, true)).toBeNull();
+  expect(runtimeFailureNotice(installing, false)).toBeNull();
+  expect(runtimeFailureNotice(ready, false)).toBeNull();
 });
 
 test("startup events and the newest shortcut refresh win asynchronous races", async () => {

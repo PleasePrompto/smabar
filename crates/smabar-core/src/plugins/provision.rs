@@ -2,30 +2,38 @@
 //! `uv python install` instead of the invisible one inside the first
 //! script environment preparation.
 //!
-//! The provisioner is the single authority on the runtime's state. Plugin
-//! starts call [`RuntimeProvisioner::ensure`] before spawning, the headless
-//! `smabar --provision` entrypoint calls it from the installer, and the
-//! shell's retry button calls it again after a failure. Concurrent callers
-//! coalesce on one install; uv itself locks the install directory, so a
-//! second smabar process (the installer hook racing the app) at worst runs
-//! one redundant, short-lived "already installed" command. An interrupted
-//! download needs no bookkeeping either: nothing marks the attempt, the
-//! probe still reports the runtime absent, and the next trigger re-runs the
-//! idempotent install.
+//! The provisioner is the single authority on the runtime's state. Python
+//! plugins wait in [`await_runtime`] before spawning, the headless
+//! `smabar --provision` entrypoint calls [`RuntimeProvisioner::ensure`] from
+//! the installer, and the shell's retry button calls it again after a
+//! failure. Concurrent callers coalesce on one install attempt — its outcome,
+//! Ready or Failed, is shared instead of repeated; uv itself locks the
+//! install directory, so a second smabar process (the installer hook racing
+//! the app) at worst runs one redundant, short-lived "already installed"
+//! command. An interrupted download needs no bookkeeping either: nothing
+//! marks the attempt, the probe still reports the runtime absent, and the
+//! next trigger re-runs the idempotent install.
+//!
+//! A missing, downloading or failed runtime is a WAIT for a python plugin,
+//! never a plugin failure: the plugin reports `starting` with the reason and
+//! retries on the [`runtime_retry_delay`] cadence, so a first start without
+//! network recovers by itself once the network is back.
 
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast, mpsc};
 
-use super::manifest::PluginRuntime;
+use super::PluginStatus;
+use super::backoff::runtime_retry_delay;
 use super::process::resolve_uv;
-use super::supervisor::{Inner, lifecycle_guard, start_plugin, stop_handle};
+use super::runner::{PluginCommand, RunCtx, backoff_wait};
 use crate::util::lock_unpoisoned;
 
 /// The managed interpreter line smabar provisions. The bundled plugins and
@@ -115,6 +123,10 @@ struct ProvisionerInner {
     events: broadcast::Sender<RuntimeStatus>,
     /// Coalesces concurrent [`RuntimeProvisioner::ensure`] calls.
     install: tokio::sync::Mutex<()>,
+    /// Completed install attempts. A caller that queued behind the lock
+    /// while an attempt finished shares that attempt's outcome instead of
+    /// running uv again — six plugins booting offline cost one uv run.
+    attempts: AtomicU64,
 }
 
 /// Cheap-clone handle onto the one runtime state (same shape as
@@ -148,6 +160,7 @@ impl RuntimeProvisioner {
                 status: Mutex::new(initial),
                 events,
                 install: tokio::sync::Mutex::new(()),
+                attempts: AtomicU64::new(0),
             }),
         }
     }
@@ -169,19 +182,25 @@ impl RuntimeProvisioner {
     }
 
     /// Makes sure the managed runtime exists: fast path when Ready, otherwise
-    /// one install run shared by all concurrent callers. A Failed outcome
-    /// poisons nothing — the next call tries again.
+    /// one install run shared by all concurrent callers — whichever way it
+    /// ends. A Failed outcome poisons nothing: the next call after it tries
+    /// again.
     pub async fn ensure(&self) -> RuntimeStatus {
         if self.status() == RuntimeStatus::Ready {
             return RuntimeStatus::Ready;
         }
+        let seen = self.inner.attempts.load(Ordering::Acquire);
         let _guard = self.inner.install.lock().await;
-        if self.status() == RuntimeStatus::Ready {
-            // A concurrent caller finished the install while we waited.
-            return RuntimeStatus::Ready;
+        if self.status() == RuntimeStatus::Ready
+            || self.inner.attempts.load(Ordering::Acquire) != seen
+        {
+            // A concurrent caller finished an attempt while we waited; its
+            // outcome is this call's answer.
+            return self.status();
         }
         let outcome = self.install().await;
         self.transition(outcome.clone());
+        self.inner.attempts.fetch_add(1, Ordering::AcqRel);
         outcome
     }
 
@@ -289,83 +308,80 @@ impl RuntimeProvisioner {
     }
 }
 
-/// Which of the supervisor's plugins a fresh runtime should revive: python
-/// plugins whose lifecycle parked as `failed` (e.g. every start failed while
-/// the runtime was missing or offline). Running, starting, stopped, exec, and
-/// deactivated plugins are left alone — and `start_plugin`'s activation gate
-/// refuses deactivated ones a second time anyway.
-fn revivable(entries: impl Iterator<Item = (String, PluginRuntime, bool)>) -> Vec<String> {
-    entries
-        .filter(|(_, runtime, ended)| is_revivable(*runtime, *ended))
-        .map(|(id, _, _)| id)
-        .collect()
+/// What a waiting python plugin reports as its `starting` reason.
+fn wait_reason(status: &RuntimeStatus) -> String {
+    match status {
+        RuntimeStatus::Failed { message, .. } => {
+            format!("waiting for the Python runtime: {message}")
+        }
+        _ => "waiting for the Python runtime: downloading".to_string(),
+    }
 }
 
-fn is_revivable(runtime: PluginRuntime, lifecycle_ended: bool) -> bool {
-    runtime == PluginRuntime::Python && lifecycle_ended
-}
-
-/// Watches the provisioner bus and restarts parked python plugins on every
-/// `Ready` — which only ever follows a completed install (see
-/// [`RuntimeProvisioner::subscribe`]). Edge-triggered: revived plugins
-/// re-enter the normal backoff, so a still-broken plugin parks again instead
-/// of looping. Holds only a `Weak` so this task never keeps the supervisor
-/// alive (house pattern: [`super::status::track_events`] via `StatusMap`).
-pub(super) async fn nudge_on_ready(inner: Weak<Inner>, mut rx: broadcast::Receiver<RuntimeStatus>) {
+/// Holds a python plugin's lifecycle until the managed runtime is Ready.
+///
+/// Every round is one shared [`RuntimeProvisioner::ensure`]; a failed round
+/// reports the reason as `starting` (never `failed`, never a consecutive
+/// failure) and sleeps [`runtime_retry_delay`], waking early when the bus
+/// says Ready — the timer, not the bus, guarantees the next round, so a
+/// lost or lagged Ready costs at most one delay. Returns `false` when the
+/// plugin was told to shut down meanwhile.
+pub(super) async fn await_runtime(
+    ctx: &RunCtx,
+    commands: &mut mpsc::Receiver<PluginCommand>,
+) -> bool {
+    let mut attempts: u32 = 0;
     loop {
-        let Some(owner) = inner.upgrade() else { return };
-        let shutdown = owner.shutdown.clone();
-        drop(owner);
-        let received = tokio::select! {
-            biased;
-            () = shutdown.cancelled() => return,
-            received = rx.recv() => received,
-        };
-        match received {
-            Ok(RuntimeStatus::Ready) => {
-                let Some(inner) = inner.upgrade() else { return };
-                revive_parked(&inner).await;
-            }
-            Ok(_) => {}
-            Err(broadcast::error::RecvError::Lagged(skipped)) => {
-                tracing::warn!(skipped, "runtime status stream lagged");
-            }
-            Err(broadcast::error::RecvError::Closed) => return,
+        // Subscribe before ensure so a Ready produced by another caller
+        // during this round is not missed by the wait below.
+        let mut updates = ctx.runtime.subscribe();
+        if !matches!(
+            ctx.runtime.status(),
+            RuntimeStatus::Ready | RuntimeStatus::Failed { .. }
+        ) {
+            ctx.emit_status(
+                PluginStatus::Starting,
+                Some(wait_reason(&RuntimeStatus::Absent)),
+            );
+        }
+        let status = ctx.runtime.ensure().await;
+        if status == RuntimeStatus::Ready {
+            return true;
+        }
+        attempts += 1;
+        let delay = runtime_retry_delay(attempts);
+        tracing::info!(
+            plugin = %ctx.manifest.id,
+            attempts,
+            delay_secs = delay.as_secs(),
+            "python runtime unavailable; plugin waits for the next install attempt"
+        );
+        ctx.emit_status(PluginStatus::Starting, Some(wait_reason(&status)));
+        if !runtime_wait(commands, &mut updates, delay).await {
+            return false;
         }
     }
 }
 
-async fn revive_parked(inner: &Arc<Inner>) {
-    let parked = {
-        let plugins = lock_unpoisoned(&inner.plugins);
-        revivable(plugins.iter().map(|(id, handle)| {
-            (
-                id.clone(),
-                handle.manifest.runtime,
-                handle.commands.is_closed(),
-            )
-        }))
-    };
-    for id in parked {
-        let Some((_transition, _lifecycle)) = lifecycle_guard(inner, &id).await else {
-            return;
-        };
-        // An explicit restart may have replaced the failed handle while this
-        // task waited, so re-read its runtime and command channel under the
-        // lifecycle lock.
-        let dir = {
-            let plugins = lock_unpoisoned(&inner.plugins);
-            plugins.get(&id).and_then(|handle| {
-                is_revivable(handle.manifest.runtime, handle.commands.is_closed())
-                    .then(|| handle.dir.clone())
-            })
-        };
-        let Some(dir) = dir else { continue };
-        tracing::info!(plugin = %id, "python runtime ready; reviving parked plugin");
-        let handle = lock_unpoisoned(&inner.plugins).remove(&id);
-        if let Some(handle) = handle {
-            stop_handle(handle).await;
-            start_plugin(inner, &dir);
+/// The shutdown-responsive backoff sleep, cut short by a Ready on the bus.
+async fn runtime_wait(
+    commands: &mut mpsc::Receiver<PluginCommand>,
+    updates: &mut broadcast::Receiver<RuntimeStatus>,
+    delay: Duration,
+) -> bool {
+    let mut sleep = std::pin::pin!(backoff_wait(commands, delay));
+    loop {
+        tokio::select! {
+            keep_going = &mut sleep => return keep_going,
+            update = updates.recv() => match update {
+                Ok(RuntimeStatus::Ready) => return true,
+                Ok(_) => {}
+                // Lagged: the Ready may be among the dropped events; the
+                // next round re-checks the level. Closed cannot happen while
+                // the context holds the provisioner, and would only mean the
+                // same.
+                Err(_) => return true,
+            },
         }
     }
 }

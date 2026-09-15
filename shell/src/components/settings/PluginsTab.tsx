@@ -28,6 +28,7 @@ import {
   setConfigsSequentially,
 } from "./persist";
 import { PluginCards } from "./PluginCards";
+import { RuntimeGroup } from "./RuntimeGroup";
 import { usePluginManagement } from "./usePluginManagement";
 import { clearTokens, writeTokens } from "./tokens";
 import { PluginList } from "./PluginList";
@@ -42,6 +43,7 @@ export function PluginsTab() {
   const effects = useSmabar((state) => state.effects);
   const tileChrome = useSmabar((state) => state.appearance.tileChrome);
   const pluginAlign = useSmabar((state) => state.appearance.pluginAlign);
+  const runtime = useSmabar((state) => state.runtimeStatus);
   const gap = useSmabar((state) =>
     tokenNumber(state.appearance.tokens, "--sb-tile-gap", GAP_DEFAULT),
   );
@@ -64,6 +66,12 @@ export function PluginsTab() {
         ])
       }
     >
+      {runtime !== null &&
+        (runtime.state === "installing" || runtime.state === "failed") && (
+          // Python plugins wait for the runtime: its download or failure
+          // (with Retry) belongs where the waiting cards are.
+          <RuntimeGroup />
+        )}
       <SettingGroup title={t("settings.plugins.installed")} updateKey="plugin">
         <SettingRow
           label={t("settings.plugins.installed")}

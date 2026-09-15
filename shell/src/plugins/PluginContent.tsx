@@ -449,7 +449,13 @@ export function PluginContent({
         ) : tileHtml === undefined ? (
           <span
             className="flex items-center gap-1.5"
-            data-sb-tooltip={t("plugin.loading")}
+            data-sb-tooltip={
+              status?.status === "starting" &&
+              status.error !== undefined &&
+              status.error !== ""
+                ? t("plugin.waitingRuntime")
+                : t("plugin.loading")
+            }
           >
             <span className="live-dot bg-accent h-1.5 w-1.5 rounded-full" />
             <span className="text-muted">{tile.name}</span>

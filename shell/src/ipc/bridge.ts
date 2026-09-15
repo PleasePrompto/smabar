@@ -83,14 +83,16 @@ export interface PluginUiEvent {
 
 /**
  * The toast key for a runtime transition, or null when nothing should toast:
- * only the transition INTO `failed` notifies — repeated failure events and
- * every other state stay silent (the settings row is the full surface).
+ * only the first `failed` of an episode notifies. The automatic retry cycles
+ * failed → installing → failed while offline; `noticed` (store, cleared once
+ * the runtime is ready) keeps those cycles silent — the settings row is the
+ * full surface.
  */
 export function runtimeFailureNotice(
-  previous: RuntimeStatusInfo | null,
   next: RuntimeStatusInfo,
+  noticed: boolean,
 ): string | null {
-  if (next.state === "failed" && previous?.state !== "failed") {
+  if (next.state === "failed" && !noticed) {
     return "settings.system.runtimeFailedNotice";
   }
   return null;
@@ -284,10 +286,11 @@ export async function initBridge(role: SurfaceRole = "bar"): Promise<void> {
     "runtime-status",
     afterStartup((payload) => {
       const store = useSmabar.getState();
-      const notice = runtimeFailureNotice(store.runtimeStatus, payload);
+      const notice = runtimeFailureNotice(payload, store.runtimeFailureNoticed);
       store.setRuntimeStatus(payload);
-      if (notice !== null && role === "bar") {
-        void showNotice(notice).catch(reportError);
+      if (notice !== null) {
+        store.markRuntimeFailureNoticed();
+        if (role === "bar") void showNotice(notice).catch(reportError);
       }
     }),
   );

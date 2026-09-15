@@ -105,6 +105,13 @@ function TileCard({
             {t("settings.plugins.startFailed")}
           </p>
         )}
+        {status === "starting" &&
+          plugin.error != null &&
+          plugin.error !== "" && (
+            <p className="settings-help">
+              {t("settings.plugins.waitingRuntime")}
+            </p>
+          )}
         {plugin.blocked !== null && (
           <p className="settings-plugin-error">
             {t("settings.plugins.originBlocked").replace(

@@ -17,6 +17,17 @@ pub(crate) fn restart_delay(consecutive_failures: u32) -> Duration {
     Duration::from_secs((1u64 << exponent).min(CAP_SECS))
 }
 
+/// Delay before the Nth automatic retry of a failed managed-runtime install
+/// (1-based): 15, 30, 60, 120, 240 seconds, capped at 300. uv fails fast
+/// offline, so this starts slower than [`restart_delay`] and never hammers
+/// a dead network.
+pub(crate) fn runtime_retry_delay(attempt: u32) -> Duration {
+    const BASE_SECS: u64 = 15;
+    const CAP_SECS: u64 = 300;
+    let exponent = attempt.saturating_sub(1).min(5);
+    Duration::from_secs((BASE_SECS << exponent).min(CAP_SECS))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -38,5 +49,27 @@ mod tests {
         assert_eq!(restart_delay(0), Duration::from_secs(1));
         assert_eq!(restart_delay(100), Duration::from_secs(60));
         assert_eq!(restart_delay(u32::MAX), Duration::from_secs(60));
+    }
+
+    #[test]
+    fn runtime_retries_start_slow_and_cap_at_five_minutes() {
+        let expected = [
+            (1, 15),
+            (2, 30),
+            (3, 60),
+            (4, 120),
+            (5, 240),
+            (6, 300),
+            (7, 300),
+        ];
+        for (attempt, seconds) in expected {
+            assert_eq!(
+                runtime_retry_delay(attempt),
+                Duration::from_secs(seconds),
+                "attempt: {attempt}"
+            );
+        }
+        assert_eq!(runtime_retry_delay(0), Duration::from_secs(15));
+        assert_eq!(runtime_retry_delay(u32::MAX), Duration::from_secs(300));
     }
 }

@@ -161,7 +161,7 @@ afterEach(() => {
   act(() => {
     root.unmount();
   });
-  for (const id of ["Clock", "Media", "Off", "Broken", "Multi"])
+  for (const id of ["Clock", "Media", "Off", "Broken", "Multi", "Waiting"])
     unregisterPluginTiles(id);
   container.remove();
   Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
@@ -461,4 +461,40 @@ test("a pending action blocks duplicate writes from both views", async () => {
   });
   expect(useSmabar.getState().pluginsHidden).toEqual(["plugin:Clock:main"]);
   expect(card("Clock").querySelector("fieldset")?.disabled).toBe(false);
+});
+
+test("a plugin waiting for the Python runtime says so, and the runtime row joins the tab until the runtime is ready", async () => {
+  plugins.push(
+    plugin("Waiting", {
+      status: "starting",
+      tiles: [],
+      error:
+        "waiting for the Python runtime: error sending request C:\\private",
+    }),
+  );
+  useSmabar.getState().setRuntimeStatus({
+    state: "failed",
+    kind: "offline",
+    message: "error sending request",
+  });
+  await settle(() => {
+    root.render(<PluginsTab />);
+  });
+
+  const waiting = card("Waiting").textContent;
+  expect(waiting).toContain("Starting");
+  expect(waiting).toContain("Waiting for the Python runtime");
+  expect(waiting).not.toContain("Could not start");
+  expect(waiting).not.toContain("private");
+  expect(container.textContent).toContain("No connection");
+  expect(button(container, "Try again")).toBeDefined();
+
+  await settle(() => {
+    useSmabar.getState().setRuntimeStatus({ state: "ready" });
+  });
+  expect(container.textContent).not.toContain("No connection");
+  const buttons = [...container.querySelectorAll("button")];
+  expect(buttons.some((entry) => entry.textContent === "Try again")).toBe(
+    false,
+  );
 });

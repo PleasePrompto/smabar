@@ -354,6 +354,19 @@ test("setPluginStatus keeps one status per plugin", () => {
   });
 });
 
+test("a runtime failure episode is noticed once until the runtime is ready", () => {
+  const store = useSmabar.getState();
+  store.setRuntimeStatus({ state: "failed", kind: "offline" });
+  store.markRuntimeFailureNoticed();
+  // The automatic retry keeps the episode open …
+  store.setRuntimeStatus({ state: "installing" });
+  store.setRuntimeStatus({ state: "failed", kind: "offline" });
+  expect(useSmabar.getState().runtimeFailureNoticed).toBe(true);
+  // … and a ready runtime ends it.
+  store.setRuntimeStatus({ state: "ready" });
+  expect(useSmabar.getState().runtimeFailureNoticed).toBe(false);
+});
+
 test("setPluginUi stores html under its target key", () => {
   useSmabar.getState().setPluginUi("a/w/tile", "<b>x</b>");
   useSmabar.getState().setPluginUi("a/w/tile", "<b>y</b>");

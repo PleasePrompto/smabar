@@ -19,7 +19,7 @@ use super::events::PluginEvents;
 use super::handlers;
 use super::logfile::{PluginDiagnostics, PluginLog};
 use super::manifest::{PluginManifest, PluginRuntime};
-use super::provision::{RuntimeProvisioner, RuntimeStatus};
+use super::provision::{RuntimeProvisioner, await_runtime};
 use crate::platform::ProcessSignal;
 
 use super::process::{PluginProcess, spawn_plugin};
@@ -84,7 +84,7 @@ impl RunCtx {
         let _ = self.events.send(event);
     }
 
-    fn emit_status(&self, status: PluginStatus, error: Option<String>) {
+    pub(super) fn emit_status(&self, status: PluginStatus, error: Option<String>) {
         self.emit(PluginEvent::Status {
             plugin_id: self.manifest.id.clone(),
             status,
@@ -125,6 +125,16 @@ pub(crate) async fn run_lifecycle(ctx: RunCtx, mut commands: mpsc::Receiver<Plug
     let mut failures: u32 = 0;
     loop {
         ctx.emit_status(PluginStatus::Starting, None);
+        // A missing runtime is waited out, not failed: see `await_runtime`.
+        // The wait precedes `started` so a long download never counts as a
+        // stable run.
+        if ctx.manifest.runtime == PluginRuntime::Python
+            && !await_runtime(&ctx, &mut commands).await
+        {
+            ctx.emit_status(PluginStatus::Stopped, None);
+            tracing::info!(plugin = %ctx.manifest.id, "plugin stopped while waiting for the python runtime");
+            return;
+        }
         let started = Instant::now();
         match run_once(&ctx, &mut commands, &mut log).await {
             RunEnd::Shutdown => {
@@ -148,8 +158,15 @@ pub(crate) async fn run_lifecycle(ctx: RunCtx, mut commands: mpsc::Receiver<Plug
                     );
                     return;
                 }
-                ctx.emit_status(PluginStatus::Failed, Some(reason));
                 let delay = restart_delay(failures);
+                ctx.emit_status(
+                    PluginStatus::Failed,
+                    Some(format!(
+                        "{reason} — restarting in {}s ({failures} of \
+                         {MAX_CONSECUTIVE_FAILURES} consecutive failures)",
+                        delay.as_secs()
+                    )),
+                );
                 tracing::info!(
                     plugin = %ctx.manifest.id,
                     delay_secs = delay.as_secs(),
@@ -166,7 +183,10 @@ pub(crate) async fn run_lifecycle(ctx: RunCtx, mut commands: mpsc::Receiver<Plug
 
 /// Sleeps the backoff delay while staying responsive to `Shutdown`. Returns
 /// `false` when the plugin should stop instead of restarting.
-async fn backoff_wait(commands: &mut mpsc::Receiver<PluginCommand>, delay: Duration) -> bool {
+pub(super) async fn backoff_wait(
+    commands: &mut mpsc::Receiver<PluginCommand>,
+    delay: Duration,
+) -> bool {
     let deadline = Instant::now() + delay;
     loop {
         tokio::select! {
@@ -192,14 +212,6 @@ async fn run_once(
     commands: &mut mpsc::Receiver<PluginCommand>,
     log: &mut PluginLog,
 ) -> RunEnd {
-    // A python plugin needs the managed runtime first; a Failed outcome feeds
-    // the normal backoff, and once the runtime installs, the provisioner's
-    // Ready event revives plugins that parked while it was missing.
-    if ctx.manifest.runtime == PluginRuntime::Python
-        && let RuntimeStatus::Failed { message, .. } = ctx.runtime.ensure().await
-    {
-        return RunEnd::Failure(format!("python runtime unavailable: {message}"));
-    }
     let data_dir = ctx.data_dir();
     // The plugin may write here from its very first handler, so the directory
     // has to exist before the process does.
@@ -466,31 +478,5 @@ async fn kill_and_reap(process: &mut PluginProcess) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn backoff_rejects_instead_of_acknowledging_an_action() {
-        let (commands, mut receiver) = mpsc::channel(2);
-        let (accepted, result) = oneshot::channel();
-        commands
-            .send(PluginCommand::Action {
-                tile_id: "status".into(),
-                action: "refresh".into(),
-                value: None,
-                accepted,
-            })
-            .await
-            .expect("queue action");
-        commands
-            .send(PluginCommand::Shutdown)
-            .await
-            .expect("queue shutdown");
-
-        assert!(!backoff_wait(&mut receiver, Duration::from_secs(60)).await);
-        assert!(
-            result.await.is_err(),
-            "a down process must not accept actions"
-        );
-    }
-}
+#[path = "runner_tests.rs"]
+mod tests;

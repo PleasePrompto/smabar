@@ -154,7 +154,7 @@
         },
         {
           "file": "shell/src/styles/bar.css",
-          "selector": ":where(:root:not([data-sb-pointer-outside])) .zone-divider:hover .zone-divider-grip",
+          "selector": ":where(:root:not([data-sb-pointer-outside])) .zone-divider:not([data-fixed]):hover .zone-divider-grip",
           "fallbacks": []
         },
         {

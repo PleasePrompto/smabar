@@ -160,8 +160,8 @@ export function BarShell() {
   const autoHide = layout.behavior === "autohide";
 
   // At auto width the zones size by content: their usual flex-1 (basis 0)
-  // would corrupt the fit-content dock's intrinsic width and squeeze a zone
-  // into scrolling. Shrink stays allowed for the max-width cap.
+  // would corrupt the content-sized dock's intrinsic width and squeeze a
+  // zone into scrolling. Shrink stays allowed for the max-width cap.
   const zoneStyle: CSSProperties | undefined = auto
     ? { flex: "0 1 auto" }
     : undefined;
@@ -188,35 +188,21 @@ export function BarShell() {
     );
   } else if (layout.variant === "split") {
     const ratio = clampDividerRatio(layout.dividerRatio);
-    // A percentage flex basis only works at full width (percent of
-    // fit-content would be circular). At auto the ratio caps each zone
-    // against the viewport instead: a fitting zone stays content-sized, an
-    // overflowing one stops at its share and scrolls — so the divider still
-    // allocates the space once the dock reaches the screen edge.
-    const available = `(var(--sb-work-area-width, 100vw) - ${String(2 * margin)}px)`;
+    // The divider ratio is a percentage flex basis, which only works at full
+    // width (percent of a content-sized dock would be circular). At auto both
+    // zones are content-sized and the divider is inert (ZoneDivider).
+    // ponytail: once an auto dock reaches the screen edge both zones shrink
+    // in proportion to their content and scroll; allocating that space by
+    // hand exists at full width only.
     rows = (
       <BarRow>
         <ShortcutZone
           style={
-            auto
-              ? {
-                  ...zoneStyle,
-                  maxWidth: `calc(${ratio.toFixed(4)} * ${available})`,
-                }
-              : { flex: `0 0 ${(ratio * 100).toFixed(2)}%` }
+            auto ? zoneStyle : { flex: `0 0 ${(ratio * 100).toFixed(2)}%` }
           }
         />
         <ZoneDivider />
-        <PluginZone
-          style={
-            auto
-              ? {
-                  ...zoneStyle,
-                  maxWidth: `calc(${(1 - ratio).toFixed(4)} * ${available})`,
-                }
-              : zoneStyle
-          }
-        />
+        <PluginZone style={zoneStyle} />
         <SettingsButton />
       </BarRow>
     );
@@ -306,15 +292,23 @@ export function BarShell() {
 
   // The dock wrapper floats centered and keeps the edge margin on every
   // side, in BOTH width modes — only how it claims horizontal space differs:
-  // auto shrinks to its content, full takes what the margins leave. The
+  // auto sizes to its content, full takes what the margins leave. The
   // explicit cap applies to full alone (auto is content-sized already), and
   // the margin cap always wins so the bar cannot outgrow its own inset.
+  // max-content, NOT fit-content: the native window follows the dock's
+  // measured width (inputShape.ts), so the viewport is exactly as wide as
+  // the dock — and fit-content is capped at the viewport. Content that grew
+  // after the last measurement (tiles registering after start, a zone
+  // getting its room back) could then never widen the dock, and the window
+  // stayed narrow with the last tile cut off. max-content ignores the
+  // containing block; the dock overflows the window for one frame, the
+  // geometry report grows the window, and the auto margins re-center it.
   // data-bar-root stays on the rows INSIDE the wrapper, so strut and input
   // shape follow the dock surface, not the screen.
   const edgeCap = `calc(var(--sb-work-area-width, 100vw) - ${String(2 * margin)}px)`;
   const cap = auto ? 0 : clampMaxWidth(layout.maxWidth);
   const dockStyle: CSSProperties = {
-    width: auto ? "fit-content" : "100%",
+    width: auto ? "max-content" : "100%",
     maxWidth: cap === 0 ? edgeCap : `min(${String(cap)}px, ${edgeCap})`,
     marginInline: "auto",
     ...(layout.position === "top"

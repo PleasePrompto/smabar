@@ -63,10 +63,35 @@ test("full width is centered and capped while auto width ignores maxWidth", () =
   });
   renderBar();
   const autoDock = document.querySelector<HTMLElement>("[data-bar-dock]");
-  expect(autoDock?.style.width).toBe("fit-content");
+  // max-content, not fit-content: the window follows the dock, so a
+  // viewport-capped dock could never grow with late content (BarShell).
+  expect(autoDock?.style.width).toBe("max-content");
   expect(autoDock?.style.maxWidth).toBe(
     "calc(var(--sb-work-area-width, 100vw) - 24px)",
   );
+});
+
+test("the divider ratio allocates the split row at full width only", () => {
+  const state = useSmabar.getState();
+  state.setLayout({ ...state.layout, variant: "split", dividerRatio: 0.3 });
+  renderBar();
+  const zone = (selector: string) =>
+    document.querySelector<HTMLElement>(selector);
+  expect(zone("[data-shortcut-zone]")?.style.flex).toBe("0 0 30.00%");
+  expect(zone("[data-plugin-zone]")?.style.flex).toBe("");
+  expect(zone('[role="separator"]')?.hasAttribute("data-fixed")).toBe(false);
+
+  // Auto: both zones content-sized, no share caps, the divider inert.
+  useSmabar.getState().setLayout({
+    ...useSmabar.getState().layout,
+    width: "auto",
+  });
+  renderBar();
+  for (const selector of ["[data-shortcut-zone]", "[data-plugin-zone]"]) {
+    expect(zone(selector)?.style.flex).toBe("0 1 auto");
+    expect(zone(selector)?.style.maxWidth).toBe("");
+  }
+  expect(zone('[role="separator"]')?.hasAttribute("data-fixed")).toBe(true);
 });
 
 test("a full-width bar can be inset and rounded like a floating one", () => {
@@ -230,7 +255,7 @@ test("unaccepted terms reduce the bar to one tile that opens the legal settings"
   expect(document.querySelector("[data-zone-align]")).toBeNull();
   expect(
     document.querySelector<HTMLElement>("[data-bar-dock]")?.style.width,
-  ).toBe("fit-content");
+  ).toBe("max-content");
   expect(
     document.querySelector<HTMLElement>("[data-bar-root]")?.style.marginInline,
   ).toBe("auto");

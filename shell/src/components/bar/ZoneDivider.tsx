@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, type PointerEvent } from "react";
 
 import { t } from "../../i18n/t";
 import { DIVIDER_DEFAULT, clampDividerRatio, useSmabar } from "../../store/bar";
-import { clampMargin } from "../settings/model";
 import { reportError } from "../../ipc/log";
 
 const PERSIST_DEBOUNCE_MS = 300;
@@ -16,17 +15,6 @@ interface DividerGesture {
   clientX: number;
   dirty: boolean;
   appliedRatio: number;
-  /** Pointer x at drag start (delta mapping, auto width). */
-  startX: number;
-  /** Ratio at drag start (delta mapping, auto width). */
-  startRatio: number;
-  /** Stable denominator at auto width (viewport minus edge margins); null
-   * selects the absolute row mapping of the full-width bar. At auto the row
-   * is the content-sized, re-centering dock — mapping the pointer against
-   * its live geometry feeds the drag back into itself and the grip judders
-   * away from the cursor. The delta form moves the ratio by exactly what
-   * the hand moved, against the same denominator the zone caps use. */
-  available: number | null;
 }
 
 function persistRatio(value: number): void {
@@ -41,8 +29,14 @@ function persistRatio(value: number): void {
  * The split-variant grip between the zones: pointer-drag adjusts the ratio
  * live in the store and persists it debounced through `update_config`;
  * double-click resets to the default.
+ *
+ * Draggable at full width only. At auto width the zones are content-sized
+ * and the ratio has no share to allocate (BarShell), so the grip stays a
+ * plain separator: a drag there could only squeeze a zone into scrolling
+ * while the screen has room.
  */
 export function ZoneDivider() {
+  const draggable = useSmabar((s) => s.layout.width !== "auto");
   const setDividerRatio = useSmabar((s) => s.setDividerRatio);
   const gesture = useRef<DividerGesture | null>(null);
   const frame = useRef(0);
@@ -68,22 +62,14 @@ export function ZoneDivider() {
     (current: DividerGesture) => {
       if (!current.dirty) return;
       current.dirty = false;
-      let ratio: number;
-      if (current.available !== null) {
-        ratio = clampDividerRatio(
-          current.startRatio +
-            (current.clientX - current.startX) / current.available,
-        );
-      } else {
-        const rect = current.row.getBoundingClientRect();
-        if (rect.width > 0) {
-          current.left = rect.left;
-          current.width = rect.width;
-        }
-        ratio = clampDividerRatio(
-          (current.clientX - current.left) / current.width,
-        );
+      const rect = current.row.getBoundingClientRect();
+      if (rect.width > 0) {
+        current.left = rect.left;
+        current.width = rect.width;
       }
+      const ratio = clampDividerRatio(
+        (current.clientX - current.left) / current.width,
+      );
       if (ratio === current.appliedRatio) return;
       current.appliedRatio = ratio;
       setDividerRatio(ratio);
@@ -130,8 +116,6 @@ export function ZoneDivider() {
     if (row === null) return;
     const rect = row.getBoundingClientRect();
     if (rect.width <= 0) return;
-    const { layout } = useSmabar.getState();
-    const startRatio = clampDividerRatio(layout.dividerRatio);
     gesture.current = {
       pointerId: e.pointerId,
       row,
@@ -139,13 +123,7 @@ export function ZoneDivider() {
       width: rect.width,
       clientX: e.clientX,
       dirty: false,
-      appliedRatio: startRatio,
-      startX: e.clientX,
-      startRatio,
-      available:
-        layout.width === "auto"
-          ? Math.max(1, window.innerWidth - 2 * clampMargin(layout.margin))
-          : null,
+      appliedRatio: clampDividerRatio(useSmabar.getState().layout.dividerRatio),
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
@@ -189,6 +167,19 @@ export function ZoneDivider() {
     persistRatio(DIVIDER_DEFAULT);
   };
 
+  if (!draggable) {
+    return (
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t("bar.divider")}
+        className="zone-divider flex h-full w-2 shrink-0 items-center justify-center"
+        data-fixed
+      >
+        <span className="zone-divider-grip h-2/3 w-0.5 rounded-full" />
+      </div>
+    );
+  }
   return (
     <div
       role="separator"

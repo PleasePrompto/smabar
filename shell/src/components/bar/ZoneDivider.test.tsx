@@ -205,24 +205,24 @@ test("cleanup flushes an unpainted sample and its persistence", () => {
   });
 });
 
-test("auto width drags by pointer delta against the viewport, not the row", () => {
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    value: 1024,
-  });
+test("auto width renders the divider as an inert separator", () => {
   const { layout } = useSmabar.getState();
-  useSmabar.setState({
-    layout: { ...layout, width: "auto", margin: 10, dividerRatio: 0.5 },
+  act(() => {
+    useSmabar.setState({ layout: { ...layout, width: "auto" } });
   });
+  const fixed = container.querySelector<HTMLDivElement>('[role="separator"]');
+  if (fixed === null) throw new Error("divider missing at auto width");
+  divider = fixed;
+  expect(divider.hasAttribute("data-fixed")).toBe(true);
+  expect(divider.className).not.toContain("cursor-col-resize");
 
+  // A content-sized dock has no share to allocate: dragging changes nothing,
+  // measures nothing and persists nothing.
   pointer("pointerdown", 600, 1);
   pointer("pointermove", 851, 1);
   flushFrames();
-
-  // available = innerWidth (1024) − 2 × margin (10) = 1004; Δ251/1004 = 0.25.
-  expect(useSmabar.getState().layout.dividerRatio).toBeCloseTo(0.75, 5);
-  // The content-sized dock re-centers while dragging — its live geometry
-  // must never feed back into the ratio (only pointerdown measured it).
-  expect(rectReads).toBe(1);
   pointer("pointerup", 851, 0);
+  expect(useSmabar.getState().layout.dividerRatio).toBe(0.5);
+  expect(rectReads).toBe(0);
+  expect(invokeMock).not.toHaveBeenCalled();
 });

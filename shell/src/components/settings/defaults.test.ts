@@ -51,6 +51,7 @@ test("each settings section maps to the config model defaults", () => {
     pluginOrder: [],
     "appearance.tileChrome": "card",
     "appearance.pluginAlign": "center",
+    "appearance.pluginAccent": "theme",
     "effects.hoverPeek.enabled": true,
     "effects.hoverPeek.delayMs": 400,
   });

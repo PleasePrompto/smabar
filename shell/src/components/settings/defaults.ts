@@ -56,6 +56,7 @@ export const PLUGINS_DEFAULTS = [
   { path: "pluginOrder", value: [] },
   { path: "appearance.tileChrome", value: "card" },
   { path: "appearance.pluginAlign", value: "center" },
+  { path: "appearance.pluginAccent", value: "theme" },
   { path: "effects.hoverPeek.enabled", value: true },
   { path: "effects.hoverPeek.delayMs", value: 400 },
 ] as const satisfies readonly ConfigWrite[];

@@ -73,6 +73,8 @@
   "settings.appearance.whitespaceDescription": "Sets the breathing room above and below the bar content; the bar shrinks and grows with it.",
   "settings.appearance.pluginAlign": "Plugin alignment",
   "settings.appearance.pluginAlignDescription": "Aligns the plugin tiles inside their zone.",
+  "settings.appearance.pluginAccent": "Plugin accent colors",
+  "settings.appearance.pluginAccentDescription": "Let plugins show their own accent color instead of the theme's.",
   "settings.bar.arrangement": "Arrangement",
   "settings.bar.notifications": "Notifications",
   "settings.bar.placement": "Placement",

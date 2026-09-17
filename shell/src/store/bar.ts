@@ -97,6 +97,7 @@ export const useSmabar = create<SmabarState>((set, get) => ({
     tileChrome: "flat",
     shortcutAlign: "center",
     pluginAlign: "center",
+    pluginAccent: "theme",
     tokens: {},
   },
   popups: { enabled: true, position: "bottom-right" },

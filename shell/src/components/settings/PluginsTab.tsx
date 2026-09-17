@@ -43,6 +43,7 @@ export function PluginsTab() {
   const effects = useSmabar((state) => state.effects);
   const tileChrome = useSmabar((state) => state.appearance.tileChrome);
   const pluginAlign = useSmabar((state) => state.appearance.pluginAlign);
+  const pluginAccent = useSmabar((state) => state.appearance.pluginAccent);
   const runtime = useSmabar((state) => state.runtimeStatus);
   const gap = useSmabar((state) =>
     tokenNumber(state.appearance.tokens, "--sb-tile-gap", GAP_DEFAULT),
@@ -137,6 +138,23 @@ export function PluginsTab() {
               ))}
             </ChoiceGrid>
           </SettingRow>
+
+          <SettingRow
+            label={t("settings.appearance.pluginAccent")}
+            description={t("settings.appearance.pluginAccentDescription")}
+            control={
+              <Switch
+                label={t("settings.appearance.pluginAccent")}
+                checked={pluginAccent === "plugin"}
+                onChange={(enabled) => {
+                  setConfig(
+                    "appearance.pluginAccent",
+                    enabled ? "plugin" : "theme",
+                  );
+                }}
+              />
+            }
+          />
 
           <SettingRow
             label={t("settings.appearance.tileGap")}

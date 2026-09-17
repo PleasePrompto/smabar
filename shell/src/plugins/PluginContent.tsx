@@ -20,7 +20,7 @@ import {
   useMemoryProbeHtml,
 } from "../ipc/memoryProbe";
 import { useSmabar, type TileChrome } from "../store/bar";
-import { brandingStyle, type BrandingStyle } from "./branding";
+import { brandingStyle, hostBranding, type BrandingStyle } from "./branding";
 import { captureChartMemory, clearChartMemory, enhanceCharts } from "./charts";
 import { enhanceClocks } from "./clock";
 import {
@@ -381,8 +381,12 @@ export function PluginContent({
     tile.usePluginIcon === true ? definition.iconDataUrl : undefined;
   const flyoutId = `plugin:${pluginId}:${tileId}`;
   const uiKey = `${pluginId}/${tileId}`;
+  const pluginAccent = useSmabar((s) => s.appearance.pluginAccent);
   // Branding resolves colours through DOM probes; only a new tile changes it.
-  const branding = useMemo(() => brandingStyle(tile), [tile]);
+  const branding = useMemo(
+    () => hostBranding(pluginAccent, brandingStyle(tile)),
+    [tile, pluginAccent],
+  );
   const status = useSmabar((s) => s.pluginStatus[pluginId]);
   const tileHtml = useSmabar((s) => s.pluginUi[`${uiKey}/tile`]);
   // The bar only needs to know THAT hover html exists: selecting the string

@@ -104,9 +104,9 @@ pub struct ThemeWriteParams {
     pub tokens: Value,
     /// Optional behavior block: a JSON object of dotted config paths applied
     /// ONE-SHOT each time the theme is activated (allowed: layout.*,
-    /// appearance chrome/alignment, effects.*, shortcuts labels/sizes,
-    /// zOrder, popups.position; never appearance.tokens). Example:
-    /// {"layout.width": "auto",
+    /// appearance chrome/alignment/pluginAccent, effects.*, shortcuts
+    /// labels/sizes, zOrder, popups.position; never appearance.tokens).
+    /// Example: {"layout.width": "auto",
     /// "appearance.tileChrome": "flat"}. Omit for a pure look theme.
     #[schemars(schema_with = "json_object_schema")]
     pub settings: Option<Value>,

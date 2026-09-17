@@ -21,7 +21,7 @@ import {
   type FlyoutRequest,
 } from "../ipc/overlay";
 import { useSmabar } from "../store/bar";
-import { brandingStyle } from "../plugins/branding";
+import { brandingStyle, hostBranding } from "../plugins/branding";
 import { SUPPRESS_DELEGATED_CLICK_ATTR } from "../plugins/behaviour/delegate";
 import { ShadowHost } from "../plugins/PluginContent";
 import { cssLength } from "../theme/cssLength";
@@ -55,6 +55,7 @@ function hasEmbed(html: string | undefined): boolean {
 
 export function OverlaySurface({ onReady }: { onReady?: () => void }) {
   const registryVersion = useSmabar((state) => state.registryVersion);
+  const pluginAccent = useSmabar((state) => state.appearance.pluginAccent);
   const [request, setRequest] = useState<FlyoutRequest | null>(null);
   const [placement, setPlacement] = useState<FlyoutPlacement | null>(null);
   const [closing, setClosing] = useState(false);
@@ -337,7 +338,10 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
                 memoryScope={source}
                 probeGeneration={request.generation}
                 allowEmbeds={request.mode === "pinned" && hasEmbed(html)}
-                style={brandingStyle(definition.tile)}
+                style={hostBranding(
+                  pluginAccent,
+                  brandingStyle(definition.tile),
+                )}
               />
             ) : (
               <p className="text-xs text-faint">{t("plugin.noContent")}</p>

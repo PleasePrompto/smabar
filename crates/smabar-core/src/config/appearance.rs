@@ -30,6 +30,19 @@ pub enum BarChrome {
     Flat,
 }
 
+/// Whose accent a plugin's tile, flyout and popup use. `Theme` keeps every
+/// plugin on the active theme's `--sb-accent`; `Plugin` lets a tile's
+/// manifest `accent`/`accent2`/`accentFg` override it.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
+)]
+#[serde(rename_all = "lowercase")]
+pub enum PluginAccent {
+    #[default]
+    Theme,
+    Plugin,
+}
+
 /// Horizontal alignment of the tiles inside a bar zone.
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, schemars::JsonSchema,
@@ -53,6 +66,8 @@ pub struct AppearanceConfig {
     pub shortcut_align: ZoneAlign,
     /// Alignment of the tile tiles inside their zone.
     pub plugin_align: ZoneAlign,
+    /// Whether a tile's manifest accent may override the theme accent.
+    pub plugin_accent: PluginAccent,
     /// Per-token theme overrides (`--sb-*` custom properties), applied by
     /// the shell AFTER the active theme — the appearance sliders write
     /// these. Values are plain CSS values; the shell sets them via CSSOM.
@@ -70,6 +85,7 @@ mod tests {
         assert_eq!(appearance.tile_chrome, TileChrome::Card);
         assert_eq!(appearance.shortcut_align, ZoneAlign::Center);
         assert_eq!(appearance.plugin_align, ZoneAlign::Center);
+        assert_eq!(appearance.plugin_accent, PluginAccent::Theme);
         assert!(appearance.tokens.is_empty());
     }
 
@@ -82,6 +98,7 @@ mod tests {
                 "tileChrome": "card",
                 "shortcutAlign": "center",
                 "pluginAlign": "center",
+                "pluginAccent": "theme",
                 "tokens": {},
             })
         );
@@ -94,6 +111,7 @@ mod tests {
             tile_chrome: TileChrome::Flat,
             shortcut_align: ZoneAlign::Left,
             plugin_align: ZoneAlign::Right,
+            plugin_accent: PluginAccent::Plugin,
             tokens: BTreeMap::from([("--sb-bar-opacity".to_string(), "62%".to_string())]),
         };
         let json = serde_json::to_string(&appearance).expect("serialize");
@@ -119,5 +137,6 @@ mod tests {
         assert!(
             serde_json::from_str::<AppearanceConfig>(r#"{"shortcutAlign":"justify"}"#).is_err()
         );
+        assert!(serde_json::from_str::<AppearanceConfig>(r#"{"pluginAccent":"rainbow"}"#).is_err());
     }
 }

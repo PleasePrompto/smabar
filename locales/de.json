@@ -73,6 +73,8 @@
   "settings.appearance.whitespaceDescription": "Legt den Freiraum über und unter dem Inhalt der Bar fest; die Bar wird damit schmaler oder höher.",
   "settings.appearance.pluginAlign": "Ausrichtung der Plugins",
   "settings.appearance.pluginAlignDescription": "Richtet die Plugin-Kacheln in ihrem Bereich aus.",
+  "settings.appearance.pluginAccent": "Plugin-Akzentfarben",
+  "settings.appearance.pluginAccentDescription": "Plugins dürfen ihre eigene Akzentfarbe statt der Theme-Farbe zeigen.",
   "settings.bar.arrangement": "Anordnung",
   "settings.bar.notifications": "Benachrichtigungen",
   "settings.bar.placement": "Platzierung",

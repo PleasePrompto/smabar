@@ -1229,6 +1229,15 @@
   border-radius: var(--sb-radius-s);
   background: var(--sb-accent-gradient);
   color: var(--sb-on-accent);
+  /* One kit size for every header badge, whatever text surrounds it. */
+  font-size: var(--sb-fs-xl);
+}
+/* The kit sizes the glyph: width/height attributes on a plugin's inline SVG
+   lose to the CSS property, so custom SVGs and data-lucide icons match. */
+.sb-icon-badge > svg,
+.sb-icon-badge > [data-lucide] > svg {
+  inline-size: 1em;
+  block-size: 1em;
 }
 
 /* === KPIs, progress, charts ================================== */

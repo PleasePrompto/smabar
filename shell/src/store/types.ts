@@ -39,11 +39,19 @@ export type BarChrome = "card" | "flat";
 /** Tile alignment inside a bar zone (mirrors `config::ZoneAlign`). */
 export type ZoneAlign = "left" | "center" | "right";
 
+/**
+ * Whose accent a plugin's tile, flyout and popup use (mirrors
+ * `config::PluginAccent`): `theme` keeps every plugin on the theme accent,
+ * `plugin` lets a tile's manifest accent override it.
+ */
+export type PluginAccent = "theme" | "plugin";
+
 export interface AppearanceConfig {
   barChrome: BarChrome;
   tileChrome: TileChrome;
   shortcutAlign: ZoneAlign;
   pluginAlign: ZoneAlign;
+  pluginAccent: PluginAccent;
   /** Per-token theme overrides, applied on :root AFTER the active theme. */
   tokens: Record<string, string>;
 }

@@ -16,7 +16,7 @@ pub mod update;
 mod validation;
 mod watcher;
 
-pub use appearance::{AppearanceConfig, BarChrome, TileChrome, ZoneAlign};
+pub use appearance::{AppearanceConfig, BarChrome, PluginAccent, TileChrome, ZoneAlign};
 pub use model::{
     ConfigError, McpConfig, RenderingMode, SettingsWindowConfig, SmabarConfig, ZOrder,
 };

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 
+import type { PluginAccent } from "../store/types";
 import { readableTextOn } from "../theme/contrast";
 import type { PluginTileDef } from "./PluginContent";
 
@@ -45,6 +46,19 @@ export function brandingStyle(tile: PluginTileDef): BrandingStyle | undefined {
   const onAccent = readableTextOn(tile.accent, declared) ?? declared;
   if (onAccent !== undefined) style["--sb-on-accent"] = onAccent;
   return style;
+}
+
+/**
+ * The style a host actually applies: a tile's branding counts only while
+ * `appearance.pluginAccent` is `plugin`; the default `theme` keeps every
+ * plugin on the theme accent. Gated where the host renders, not where the
+ * branding is registered, so switching the setting re-styles live surfaces.
+ */
+export function hostBranding(
+  mode: PluginAccent,
+  style: BrandingStyle | undefined,
+): BrandingStyle | undefined {
+  return mode === "plugin" ? style : undefined;
 }
 
 /**

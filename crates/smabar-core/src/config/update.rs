@@ -290,6 +290,12 @@ mod tests {
             updated.appearance.tile_chrome,
             super::super::TileChrome::Flat
         );
+        let updated =
+            set_config_path(&config, "appearance.pluginAccent", json!("plugin")).expect("set");
+        assert_eq!(
+            updated.appearance.plugin_accent,
+            super::super::PluginAccent::Plugin
+        );
         let updated = set_config_path(&config, "popups.enabled", json!(false)).expect("set");
         assert!(!updated.popups.enabled);
         let updated = set_config_path(&config, "popups.position", json!("top-left")).expect("set");
@@ -341,6 +347,10 @@ mod tests {
 
         let err = set_config_path(&config, "appearance.tileChrome", json!("raised"))
             .expect_err("invalid tile chrome");
+        assert!(matches!(err, SetPathError::Rejected { .. }));
+
+        let err = set_config_path(&config, "appearance.pluginAccent", json!("rainbow"))
+            .expect_err("invalid plugin accent");
         assert!(matches!(err, SetPathError::Rejected { .. }));
 
         // Intermediates are only created under plugins.

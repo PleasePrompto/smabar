@@ -18,7 +18,7 @@ use super::ThemeSettings;
 /// makes the theme contract and runtime validation agree; in particular,
 /// `appearance.tokens` is deliberately excluded because tokens have their
 /// own top-level channel in the theme document.
-pub const ALLOWED_PATHS: [&str; 23] = [
+pub const ALLOWED_PATHS: [&str; 24] = [
     "zOrder",
     "layout.position",
     "layout.variant",
@@ -33,6 +33,7 @@ pub const ALLOWED_PATHS: [&str; 23] = [
     "appearance.tileChrome",
     "appearance.shortcutAlign",
     "appearance.pluginAlign",
+    "appearance.pluginAccent",
     "effects.hoverMagnify.enabled",
     "effects.hoverMagnify.scale",
     "effects.hoverMagnify.neighbors",
@@ -56,7 +57,7 @@ pub fn is_allowed_setting_path(path: &str) -> bool {
 
 /// Human-readable list of what a settings block may contain (for errors and
 /// tool descriptions).
-pub const ALLOWED_SUMMARY: &str = "layout.* except layout.monitor, appearance.barChrome/tileChrome/shortcutAlign/pluginAlign, \
+pub const ALLOWED_SUMMARY: &str = "layout.* except layout.monitor, appearance.barChrome/tileChrome/shortcutAlign/pluginAlign/pluginAccent, \
      effects.*, shortcuts.labels/iconSize/labelSize, zOrder, popups.position (tokens belong in \
      the theme's top-level --sb-* map, never appearance.tokens)";
 

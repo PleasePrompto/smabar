@@ -115,6 +115,7 @@
     "appearance.shortcutAlign": "center",
     "appearance.tileChrome": "card",
     "appearance.pluginAlign": "center",
+    "appearance.pluginAccent": "theme",
     "effects.hoverMagnify.enabled": true,
     "effects.hoverMagnify.neighbors": 2,
     "effects.hoverMagnify.scale": 1.2,

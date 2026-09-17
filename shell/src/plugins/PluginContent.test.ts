@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { expect, test } from "vitest";
 
-import { brandingStyle } from "./branding";
+import { brandingStyle, hostBranding } from "./branding";
 import { findActionRange, rangeActionIntent } from "./fields";
 import {
   collectFieldValues,
@@ -209,6 +209,13 @@ test("hover preview shows hover content, a pinned flyout the click content", () 
   // Nothing pushed yet.
   expect(flyoutContentFor("peek", undefined, undefined)).toBeUndefined();
   expect(flyoutContentFor(null, undefined, undefined)).toBeUndefined();
+});
+
+test("hostBranding applies a tile's branding only in plugin accent mode", () => {
+  const style = { "--sb-accent": "#336699" };
+  expect(hostBranding("plugin", style)).toBe(style);
+  expect(hostBranding("theme", style)).toBeUndefined();
+  expect(hostBranding("plugin", undefined)).toBeUndefined();
 });
 
 test("brandingStyle builds host token overrides only when accent is set", () => {

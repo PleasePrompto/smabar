@@ -9,7 +9,7 @@
     "sanitizer": "What the HTML sanitizer keeps and drops, native interaction (details/dialog/popover) and reporting; carries media, formContract and branding.",
     "media": "Images, audio, video, tracks, remote players and links: allowed URLs, attributes and classes.",
     "formContract": "How data-field values reach the plugin and how the shell restores them.",
-    "branding": "Per-tile accent colors from the manifest and what they change.",
+    "branding": "Per-tile accent colors from the manifest, when they apply (appearance.pluginAccent) and why the theme accent is preferred.",
     "renderTargets": "tile, flyout, hover and popup: what each surface is for and its limits.",
     "tileChrome": "Global and per-plugin tile chrome (card/flat) and tileScale.",
     "charts": "data-chart donut, sparkline and the CSS bar/row/legend charts; a 340px flyout fits six bar columns.",
@@ -291,8 +291,8 @@
     },
     {
       "name": "sb-icon-badge",
-      "purpose": "Rounded accent icon tile (for a custom color set --sb-accent and --sb-on-accent together via style, not background)",
-      "example": "<span class=\"sb-icon-badge\" style=\"--sb-accent:#0ea5e9;--sb-on-accent:#04141a\"><span data-lucide=\"cloud-sun\"></span></span>",
+      "purpose": "Rounded accent icon tile at one fixed kit size: the kit sizes the glyph, width/height attributes on an inline SVG are ignored. Re-coloring via style (--sb-accent and --sb-on-accent together, never background) is possible but not preferred — the user's theme supplies the accent so every plugin header looks alike.",
+      "example": "<span class=\"sb-icon-badge\"><span data-lucide=\"cloud-sun\"></span></span>",
       "category": "data"
     },
     {
@@ -1039,9 +1039,9 @@
   },
   "branding": {
     "fields": "Per tile in smabar.json: iconSvg (optional inline custom SVG, prepended to tile HTML), usePluginIcon (boolean, false by default; opt in to the folder icon in the cover), accent (CSS color), accent2 (optional, falls back to accent), accentFg (optional text color on accent surfaces).",
-    "effect": "The shell sanitizes iconSvg and prepends it to the tile, using the plugin-folder icon as fallback only when usePluginIcon is true. With neither choice the shell adds no cover icon. With an icon selected, an empty tile render makes an intentional compact icon-only tile. It also sets --sb-accent, --sb-accent-2, --sb-on-accent, --sb-accent-gradient and --sb-accent-glow on the plugin's tile, flyout and popup hosts, so kit classes and any var(--sb-accent*) usage brand automatically. --sb-on-accent is DERIVED from your accent when you omit accentFg, and is also corrected when a declared accentFg would be unreadable on it (below a 4.5:1 contrast ratio) — a light brand color never ends up with white text.",
+    "effect": "The shell sanitizes iconSvg and prepends it to the tile, using the plugin-folder icon as fallback only when usePluginIcon is true. With neither choice the shell adds no cover icon. With an icon selected, an empty tile render makes an intentional compact icon-only tile. It also sets --sb-accent, --sb-accent-2, --sb-on-accent, --sb-accent-gradient and --sb-accent-glow on the plugin's tile, flyout and popup hosts, so kit classes and any var(--sb-accent*) usage brand automatically. --sb-on-accent is DERIVED from your accent when you omit accentFg, and is also corrected when a declared accentFg would be unreadable on it (below a 4.5:1 contrast ratio) — a light brand color never ends up with white text. The manifest accent applies only while the user's appearance.pluginAccent is plugin (themes may set it); the default theme keeps every plugin on the theme's accent, so treat accent as an optional brand hint and design for the theme accent first.",
     "validation": "accent, accent2 and accentFg must be simple CSS color values of at most 128 chars: no ';', '{', '}', control characters, or url() other than data:/https:. iconSvg is limited to one sanitized <svg> root and 8192 UTF-8 bytes; scripts, event handlers, styles, classes and external URLs are removed and reported once in the plugin log.",
-    "inline": "Any element can re-brand its own subtree by setting the tokens in its style attribute: --sb-accent, --sb-accent-2, --sb-accent-gradient and --sb-on-accent. Accent surfaces (sb-hero, sb-btn-primary, sb-icon-badge) derive every text step from --sb-on-accent, so when you write style=\"background:…\" on one of them, set --sb-on-accent in the SAME style attribute — otherwise the background changes while the text stays tuned for the old one. Automatic correction only covers the manifest accent, not backgrounds you paint yourself. Put the tokens on a wrapper to brand a whole section.",
+    "inline": "Possible, not preferred: the user's theme supplies --sb-accent for every plugin, and the default appearance.pluginAccent=theme deliberately keeps plugin surfaces alike — re-brand a subtree only when the color carries meaning. Any element can re-brand its own subtree by setting the tokens in its style attribute: --sb-accent, --sb-accent-2, --sb-accent-gradient and --sb-on-accent. Accent surfaces (sb-hero, sb-btn-primary, sb-icon-badge) derive every text step from --sb-on-accent, so when you write style=\"background:…\" on one of them, set --sb-on-accent in the SAME style attribute — otherwise the background changes while the text stays tuned for the old one. Automatic correction only covers the manifest accent, not backgrounds you paint yourself. Put the tokens on a wrapper to brand a whole section.",
     "folderIcon": "Plugin-wide raster icons use the icon.* file convention documented by plugin_guide(section=\"manifest\").folderIcon, including all three cover examples. Settings and the sort list use these icons automatically; covers opt in through usePluginIcon. These files do not add asset access to plugin markup."
   },
   "tileChrome": {

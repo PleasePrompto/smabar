@@ -5310,6 +5310,11 @@
         },
         {
           "file": "shell/src/styles/ui-kit.css",
+          "selector": ".sb-icon-badge",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-kpi-value",
           "fallbacks": []
         },
@@ -12769,6 +12774,15 @@
         "type": "boolean",
         "default": true,
         "meaning": "Enables shortcut fisheye magnification."
+      },
+      "appearance.pluginAccent": {
+        "type": "enum",
+        "values": [
+          "theme",
+          "plugin"
+        ],
+        "default": "theme",
+        "meaning": "\"theme\" keeps every plugin on the theme's --sb-accent; \"plugin\" lets a tile's manifest accent/accent2/accentFg override it on that plugin's tile, flyout and popup."
       },
       "effects.hoverMagnify.neighbors": {
         "type": "integer",

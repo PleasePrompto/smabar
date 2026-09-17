@@ -13,7 +13,7 @@ import { reportError } from "../ipc/log";
 import { reportPopup } from "../ipc/managedPopups";
 import { stageNotificationUpdate } from "../ipc/surface";
 import { useSmabar } from "../store/bar";
-import { brandingFor } from "../plugins/branding";
+import { brandingFor, hostBranding } from "../plugins/branding";
 import { ShadowHost } from "../plugins/PluginContent";
 import { popupVertical, type PopupItem } from "../plugins/popupQueue";
 
@@ -60,6 +60,7 @@ export function PluginPopup({ children }: { children?: ReactNode }) {
  */
 function PopupToast({ item }: { item: PopupItem }) {
   const dismiss = useSmabar((state) => state.dismissPopup);
+  const pluginAccent = useSmabar((state) => state.appearance.pluginAccent);
   const dismissing = useRef(false);
   const remainingMs = useRef(0);
   const [hovered, setHovered] = useState(false);
@@ -160,7 +161,10 @@ function PopupToast({ item }: { item: PopupItem }) {
           target="popup"
           memoryScope={String(item.id)}
           popupInstanceId={item.instanceId}
-          style={brandingFor(item.pluginId, item.tileId)}
+          style={hostBranding(
+            pluginAccent,
+            brandingFor(item.pluginId, item.tileId),
+          )}
         />
       </div>
     </div>

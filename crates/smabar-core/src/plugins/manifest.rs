@@ -87,7 +87,9 @@ pub struct PluginTileDef {
     #[serde(default)]
     pub use_plugin_icon: bool,
     /// Branding accent color for this tile (any simple CSS color value);
-    /// overrides `--sb-accent` inside the plugin's tile and flyout.
+    /// overrides `--sb-accent` inside the plugin's tile, flyout and popup —
+    /// only while `appearance.pluginAccent` is `plugin`. The default `theme`
+    /// keeps every plugin on the active theme's accent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub accent: Option<String>,
     /// Secondary branding color (`--sb-accent-2`); falls back to `accent`.

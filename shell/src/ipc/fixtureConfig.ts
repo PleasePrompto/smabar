@@ -198,6 +198,12 @@ export function updateConfig(path: string, value: unknown): void {
         ),
       });
       break;
+    case "appearance.pluginAccent":
+      store.setAppearance({
+        ...store.appearance,
+        pluginAccent: asChoice(value, ["theme", "plugin"] as const, path),
+      });
+      break;
     case "appearance.tokens":
       store.setAppearance({
         ...store.appearance,

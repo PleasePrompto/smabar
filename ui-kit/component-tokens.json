@@ -3126,6 +3126,13 @@
         },
         {
           "file": "shell/src/styles/ui-kit.css",
+          "selector": ".sb-split",
+          "fallbacks": [
+            "var(--sb-space-m)"
+          ]
+        },
+        {
+          "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-stack",
           "fallbacks": [
             "var(--sb-space-m)"
@@ -3183,6 +3190,10 @@
             {
               "file": "shell/src/styles/ui-kit.css",
               "selector": ".sb-accordion-item__body"
+            },
+            {
+              "file": "shell/src/styles/ui-kit.css",
+              "selector": ".sb-split"
             },
             {
               "file": "shell/src/styles/ui-kit.css",
@@ -5316,6 +5327,30 @@
           "selector": ".sb-otp__slot",
           "fallbacks": [
             "2rem"
+          ]
+        }
+      ],
+      "dependencies": []
+    },
+    "--sb-pane-max-height": {
+      "scope": "component",
+      "themeable": true,
+      "type": "dimension",
+      "default": "24rem",
+      "allowed": {
+        "syntax": "<length> or dimension expression"
+      },
+      "meaning": "Optional component-level override for pane max height.",
+      "group": "component.pane",
+      "consumers": [
+        "shell/src/styles/ui-kit.css"
+      ],
+      "cssConsumers": [
+        {
+          "file": "shell/src/styles/ui-kit.css",
+          "selector": ".sb-split > .sb-scroll",
+          "fallbacks": [
+            "24rem"
           ]
         }
       ],
@@ -10560,7 +10595,7 @@
       "scope": "runtime",
       "themeable": false,
       "type": "dimension",
-      "default": null,
+      "default": "100vh",
       "allowed": {
         "syntax": "<length> or dimension expression"
       },
@@ -10570,9 +10605,18 @@
         "shell/src/components/OverlaySurface.tsx",
         "shell/src/components/PluginPopup.tsx",
         "shell/src/ipc/inputShape.ts",
-        "shell/src/ipc/surface.ts"
+        "shell/src/ipc/surface.ts",
+        "shell/src/styles/ui-kit.css"
       ],
-      "cssConsumers": [],
+      "cssConsumers": [
+        {
+          "file": "shell/src/styles/ui-kit.css",
+          "selector": ".sb-split > .sb-scroll",
+          "fallbacks": [
+            "100vh"
+          ]
+        }
+      ],
       "dependencies": [],
       "nonThemeable": true
     },

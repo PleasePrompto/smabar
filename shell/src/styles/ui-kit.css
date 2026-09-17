@@ -103,6 +103,8 @@
   :is(
     [data-tabs],
     [data-tab-panel],
+    [data-sb-flyout-width],
+    .sb-split > *,
     .sb-reveal,
     .sb-accordion-item__body,
     .sb-collapsible__body
@@ -131,6 +133,8 @@
   :is(
     [data-tabs],
     [data-tab-panel],
+    [data-sb-flyout-width],
+    .sb-split > *,
     .sb-reveal,
     .sb-accordion-item__body,
     .sb-collapsible__body
@@ -150,6 +154,8 @@
   :is(
     [data-tabs],
     [data-tab-panel],
+    [data-sb-flyout-width],
+    .sb-split > *,
     .sb-reveal,
     .sb-accordion-item__body,
     .sb-collapsible__body
@@ -291,6 +297,43 @@
   grid-template-columns: repeat(var(--sb-grid-cols, 3), minmax(0, 1fr));
   gap: var(--sb-gap, var(--sb-space-s));
 }
+
+/* Query the split itself, not the native overlay's changing viewport. The
+   children span both tracks when narrow, and one each when wide. */
+.sb-split {
+  container: sb-split / inline-size;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: var(--sb-gap, var(--sb-space-m));
+}
+[data-sb-flyout-width],
+.sb-split > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sb-split > * {
+  grid-column: 1 / -1;
+  min-height: 0;
+  margin-block-start: 0;
+}
+.sb-split > .sb-scroll {
+  max-height: none;
+  overflow-y: visible;
+}
+@container sb-split (min-width: 36rem) {
+  .sb-split > * {
+    grid-column: auto;
+  }
+  .sb-split > .sb-scroll {
+    max-height: min(
+      var(--sb-pane-max-height, 24rem),
+      calc(var(--sb-work-area-height, 100vh) * 0.6)
+    );
+    overflow-y: auto;
+  }
+}
+
 .sb-cols-2,
 .sb-cols-3,
 .sb-cols-4,

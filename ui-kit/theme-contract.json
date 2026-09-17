@@ -1505,9 +1505,9 @@
       "group": "layout",
       "dependencies": [],
       "consumers": [
-        "shell/src/components/OverlaySurface.tsx",
         "shell/src/components/bar/BarShell.tsx",
         "shell/src/components/bar/metrics.ts",
+        "shell/src/components/overlay/useFlyoutMeasure.ts",
         "shell/src/components/settings/BarTab.tsx",
         "shell/src/components/settings/defaults.ts",
         "shell/src/components/settings/model.ts",
@@ -9071,6 +9071,7 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/OverlaySurface.tsx",
+        "shell/src/components/overlay/useFlyoutMeasure.ts",
         "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
@@ -9467,12 +9468,17 @@
         },
         {
           "file": "shell/src/styles/ui-kit.css",
-          "selector": ".sb-root > * + *, .sb-root :is( [data-tabs], [data-tab-panel], .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > * + *",
+          "selector": ".sb-root > * + *, .sb-root :is( [data-tabs], [data-tab-panel], [data-sb-flyout-width], .sb-split > *, .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > * + *",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-section",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/ui-kit.css",
+          "selector": ".sb-split",
           "fallbacks": []
         },
         {
@@ -10144,7 +10150,7 @@
         },
         {
           "file": "shell/src/styles/ui-kit.css",
-          "selector": ".sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tab-panel] ) + *, .sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tab-panel] ), .sb-root:not([data-target=\"tile\"]) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tabs] ) + *, .sb-root:not([data-target=\"tile\"]) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tabs] )",
+          "selector": ".sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], [data-sb-flyout-width], .sb-split > *, .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tab-panel] ) + *, .sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], [data-sb-flyout-width], .sb-split > *, .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tab-panel] ), .sb-root:not([data-target=\"tile\"]) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tabs] ) + *, .sb-root:not([data-target=\"tile\"]) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tabs] )",
           "fallbacks": []
         }
       ]
@@ -12770,11 +12776,6 @@
         "default": "center",
         "meaning": "Tile-zone horizontal alignment."
       },
-      "effects.hoverMagnify.enabled": {
-        "type": "boolean",
-        "default": true,
-        "meaning": "Enables shortcut fisheye magnification."
-      },
       "appearance.pluginAccent": {
         "type": "enum",
         "values": [
@@ -12783,6 +12784,11 @@
         ],
         "default": "theme",
         "meaning": "\"theme\" keeps every plugin on the theme's --sb-accent; \"plugin\" lets a tile's manifest accent/accent2/accentFg override it on that plugin's tile, flyout and popup."
+      },
+      "effects.hoverMagnify.enabled": {
+        "type": "boolean",
+        "default": true,
+        "meaning": "Enables shortcut fisheye magnification."
       },
       "effects.hoverMagnify.neighbors": {
         "type": "integer",

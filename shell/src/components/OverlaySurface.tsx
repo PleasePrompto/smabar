@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 
 import { getTile } from "./registry";
@@ -15,7 +15,6 @@ import { createPluginUiPull } from "../ipc/pluginUiPull";
 import {
   closeFlyoutSurface,
   pinFlyoutSurface,
-  reportFlyoutMeasure,
   reportOverlayPointer,
   type FlyoutPlacement,
   type FlyoutRequest,
@@ -24,7 +23,8 @@ import { useSmabar } from "../store/bar";
 import { brandingStyle, hostBranding } from "../plugins/branding";
 import { SUPPRESS_DELEGATED_CLICK_ATTR } from "../plugins/behaviour/delegate";
 import { ShadowHost } from "../plugins/PluginContent";
-import { cssLength } from "../theme/cssLength";
+import { DEFAULT_FLYOUT_WIDTH } from "../plugins/flyoutWidth";
+import { useFlyoutMeasure } from "./overlay/useFlyoutMeasure";
 
 const CLOSE_DELAY_MS = 160;
 
@@ -54,23 +54,18 @@ function hasEmbed(html: string | undefined): boolean {
 }
 
 export function OverlaySurface({ onReady }: { onReady?: () => void }) {
-  const registryVersion = useSmabar((state) => state.registryVersion);
+  useSmabar((state) => state.registryVersion);
   const pluginAccent = useSmabar((state) => state.appearance.pluginAccent);
   const [request, setRequest] = useState<FlyoutRequest | null>(null);
   const [placement, setPlacement] = useState<FlyoutPlacement | null>(null);
   const [closing, setClosing] = useState(false);
   const [contentSettled, setContentSettled] = useState(true);
-  const rootRef = useRef<HTMLDivElement>(null);
   const flyoutRef = useRef<HTMLDivElement>(null);
   // A closed generation remains as a tombstone: a staged open can arrive late.
   const requestRef = useRef<
     FlyoutRequest | { generation: number; mode: null } | null
   >(null);
   const contentFrame = useRef(0);
-  // The last geometry handed to the core. A plugin re-rendering its open
-  // flyout every second must not re-run the native place/reveal chain (a
-  // WebKit snapshot plus forced paints) when nothing about the box changed.
-  const lastMeasure = useRef("");
   const definition = request === null ? undefined : getTile(request.tileId);
   const uiKey =
     definition === undefined
@@ -83,6 +78,11 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
     uiKey === null ? undefined : state.pluginUi[`${uiKey}/flyout`],
   );
   const html = flyoutContentFor(request?.mode ?? null, hoverHtml, flyoutHtml);
+  const { rootRef, applyWidth, resetMeasure } = useFlyoutMeasure(
+    request,
+    html,
+    definition,
+  );
 
   useEffect(() => {
     let disposed = false;
@@ -153,7 +153,7 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
           nextRequest.mode === "pinned";
         const replacing = upgrading && nextRequest.preserveContent !== true;
         // Only staged replacements need another native place/reveal chain.
-        if (!upgrading || replacing) lastMeasure.current = "";
+        if (!upgrading || replacing) resetMeasure();
         requestRef.current = nextRequest;
         window.cancelAnimationFrame(contentFrame.current);
         setContentSettled(!replacing);
@@ -200,36 +200,7 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
       window.cancelAnimationFrame(contentFrame.current);
       cleanup();
     };
-  }, [onReady]);
-
-  useLayoutEffect(() => {
-    const element = rootRef.current;
-    if (element === null || request === null) return;
-    const report = () => {
-      const measure = {
-        generation: request.generation,
-        width: element.offsetWidth,
-        height: element.offsetHeight,
-        inset: cssLength("--sb-space-m", 16),
-        // The core measures the gap from the TILE; adding the row padding
-        // puts the flyout body one --sb-space-m off the bar's edge, above
-        // and below alike.
-        gap: cssLength("--sb-space-m", 8) + cssLength("--sb-bar-pad-y", 6),
-        pointerReserve: 0,
-      };
-      const key = JSON.stringify(measure);
-      if (key === lastMeasure.current) return;
-      lastMeasure.current = key;
-      void reportFlyoutMeasure(measure).catch(reportError);
-    };
-    report();
-    if (typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(report);
-    observer.observe(element);
-    return () => {
-      observer.disconnect();
-    };
-  }, [html, registryVersion, request]);
+  }, [onReady, resetMeasure]);
 
   useEffect(() => {
     if (request === null) return;
@@ -286,8 +257,8 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
         position: "absolute",
         left: x,
         top: y,
-        width:
-          "min(21.25rem, calc(var(--sb-work-area-width) - 2 * var(--sb-space-m)))",
+        width: DEFAULT_FLYOUT_WIDTH,
+        maxWidth: "calc(var(--sb-work-area-width) - 2 * var(--sb-space-m))",
         visibility:
           placement?.generation === request.generation ? "visible" : "hidden",
       }}
@@ -321,7 +292,7 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
           }}
         >
           <div
-            className="surface-scroll flyout-content-transition overflow-y-auto p-4"
+            className="surface-scroll flyout-content-transition overflow-x-hidden overflow-y-auto p-4"
             style={{
               maxHeight: "calc(var(--sb-work-area-height) * 0.78)",
             }}
@@ -337,6 +308,7 @@ export function OverlaySurface({ onReady }: { onReady?: () => void }) {
                 html={html}
                 memoryScope={source}
                 probeGeneration={request.generation}
+                onFlyoutWidth={applyWidth}
                 allowEmbeds={request.mode === "pinned" && hasEmbed(html)}
                 style={hostBranding(
                   pluginAccent,

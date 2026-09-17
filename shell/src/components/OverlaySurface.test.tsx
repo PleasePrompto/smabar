@@ -286,3 +286,123 @@ test("keeps only the active tile's one-shot content, including empty HTML", () =
     "kitshow/kit/flyout": "recovered",
   });
 });
+
+test("applies a sanitized width before the first measurement and updates without remounting", async () => {
+  const widthSpy = vi
+    .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+    .mockImplementation(function (this: HTMLElement) {
+      const match = /^([\d.]+)(px|rem)$/.exec(this.style.width);
+      return match === null
+        ? 0
+        : Number(match[1]) * (match[2] === "rem" ? 16 : 1);
+    });
+  try {
+    emit("surface-flyout", {
+      generation: 1,
+      tileId: "plugin:systeminfo:system",
+      mode: "pinned",
+      content: {
+        hover: null,
+        flyout: '<section data-sb-flyout-width="wide">Sports</section>',
+      },
+    });
+    expect(reportMeasureMock).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ width: 680 }),
+    );
+    const shadowHost = host.querySelector("[data-plugin-id]");
+    const scroller = host.querySelector(".surface-scroll");
+    if (scroller !== null) scroller.scrollTop = 42;
+    for (const [html, expected] of [
+      ['<section data-sb-flyout-width="720">Table</section>', 720],
+      ['<section data-sb-flyout-width="720">Updated table</section>', 720],
+      ["<section>Standard</section>", 340],
+      ['<section data-sb-flyout-width="wide">Wide again</section>', 680],
+      ["", 340],
+    ] as const) {
+      await deliver([
+        {
+          generation: 1,
+          pluginId: "systeminfo",
+          tileId: "system",
+          target: "flyout",
+          html,
+        },
+      ]);
+      expect(reportMeasureMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ width: expected }),
+      );
+      expect(host.querySelector("[data-plugin-id]")).toBe(shadowHost);
+      expect(scroller?.scrollTop).toBe(42);
+    }
+    expect(reportMeasureMock).toHaveBeenCalledTimes(5);
+    emit("surface-flyout", {
+      generation: 2,
+      tileId: "plugin:kitshow:kit",
+      mode: "pinned",
+      content: { hover: null, flyout: null },
+    });
+    expect(reportMeasureMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ generation: 2, width: 340 }),
+    );
+  } finally {
+    widthSpy.mockRestore();
+  }
+});
+
+test("preview width follows the displayed content, preserves DOM on pin, and rejects stale updates", async () => {
+  const full = '<section data-sb-flyout-width="wide">Full</section>';
+  const preview = '<section data-sb-flyout-width="420">Preview</section>';
+  emit("surface-flyout", {
+    generation: 2,
+    tileId: "plugin:systeminfo:system",
+    mode: "peek",
+    content: { hover: preview, flyout: full },
+  });
+  expect(host.firstElementChild?.getAttribute("style")).toContain(
+    "width: 420px",
+  );
+  emit("surface-flyout", {
+    generation: 2,
+    tileId: "plugin:systeminfo:system",
+    mode: "pinned",
+    preserveContent: false,
+  });
+  expect(host.firstElementChild?.getAttribute("style")).toContain(
+    "width: 42.5rem",
+  );
+  await deliver(
+    [
+      {
+        generation: 1,
+        pluginId: "systeminfo",
+        tileId: "system",
+        target: "flyout",
+        html: preview,
+      },
+    ],
+    2,
+  );
+  expect(host.firstElementChild?.getAttribute("style")).toContain(
+    "width: 42.5rem",
+  );
+  emit("surface-flyout", {
+    generation: 3,
+    tileId: "plugin:systeminfo:system",
+    mode: "peek",
+    content: { hover: null, flyout: full },
+  });
+  const content =
+    host.querySelector("[data-plugin-id]")?.shadowRoot?.firstElementChild;
+  emit("surface-flyout", {
+    generation: 3,
+    tileId: "plugin:systeminfo:system",
+    mode: "pinned",
+    preserveContent: true,
+  });
+  expect(
+    host.querySelector("[data-plugin-id]")?.shadowRoot?.firstElementChild,
+  ).toBe(content);
+  expect(host.firstElementChild?.getAttribute("style")).toContain(
+    "width: 42.5rem",
+  );
+});

@@ -108,6 +108,7 @@
     }
   ],
   "style": {
+    "flyout": "Choose width and scroll layout before writing flyout HTML: ui_kit(sections=[\"conventions\",\"layout\",\"snippets\"]) documents data-sb-flyout-width, sb-split, and the wideFlyout, screenFlyout and splitFlyout examples. Wide or screen-width content can use one outer scroller; independent scroll columns are opt-in. The kit owns the exact sizing and responsive rules.",
     "rule": "Layout, spacing, type and color come from the kit: sb-* classes plus the data-sb-* hooks the shell runs. style= carries only a data value (a progress width, --sb-chart-value) or a documented token (--sb-grid-cols; --sb-accent is possible but not preferred, the user's theme owns accent colors); the shell reports every other inline style into your log.",
     "layout": "sb-field = input + button on one line; sb-inline = horizontal cluster; sb-stack = vertical group; sb-push = align to the end of a row; sb-grid with style=\"--sb-grid-cols:N\" = N columns; sb-text-xs/-s/-m/-l/-xl/-hero = the type scale; sb-ok/-warn/-crit = status colors; sb-meta = a quiet trailing line; sb-reveal + sb-active = smooth expand; sb-tile-stack = two lines in a tile. Rhythm between blocks, inside cards, tabs and reveals, is automatic.",
     "tile": "The tile is one of nine covers: ui_kit(sections=[\"coverLayouts\"]) — pick by whenToUse and fill it with your data; tileSizing explains the height budget and stable widths. Details belong in the flyout, actions in its header (sb-header-actions).",

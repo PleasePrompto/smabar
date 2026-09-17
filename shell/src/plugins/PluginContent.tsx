@@ -40,6 +40,7 @@ import { resolveEmbed } from "./embeds";
 import { reportMarkupDrops, reportUnknownKitClasses } from "./markupReport";
 import { reportMarkupLint } from "./markupLint";
 import { sanitizeHtml, type SanitizerDrop } from "./sanitize";
+import { readFlyoutWidth } from "./flyoutWidth";
 import {
   collectFieldValues,
   rangeActionIntent,
@@ -120,6 +121,8 @@ interface ShadowHostProps {
   memoryScope?: string;
   /** Native flyout generation, used only for diagnostic correlation. */
   probeGeneration?: number;
+  /** Synchronous sanitized width request, before the parent measures. */
+  onFlyoutWidth?: (width: string) => void;
   /** Managed toast identity; core rejects actions after its session ends. */
   popupInstanceId?: number;
   className?: string;
@@ -144,6 +147,7 @@ export function ShadowHost({
   allowEmbeds = false,
   memoryScope,
   probeGeneration,
+  onFlyoutWidth,
   popupInstanceId,
   className,
   style,
@@ -206,6 +210,8 @@ export function ShadowHost({
       (drop) => drops.push(drop),
       allowEmbeds ? resolveEmbed : null,
     );
+    const width = readFlyoutWidth(markup, target, (drop) => drops.push(drop));
+    onFlyoutWidth?.(width);
     reportMarkupDrops(pluginId, tileId, target, drops);
     reportUnknownKitClasses(pluginId, tileId, target, markup);
     reportMarkupLint(pluginId, tileId, target, markup);
@@ -286,6 +292,7 @@ export function ShadowHost({
     memoryKey,
     memoryScope,
     probeGeneration,
+    onFlyoutWidth,
     popupInstanceId,
   ]);
 

@@ -6,6 +6,7 @@
 use rmcp::handler::server::wrapper::Parameters;
 use serde_json::Value;
 
+use super::plugin_types::GuideParams;
 use super::tests::{test_handler, unwrap_json};
 use super::types::{UiKitParams, UiKitResult};
 use super::ui_kit_tools::{CATEGORIES, RIDERS, SECTIONS};
@@ -61,6 +62,70 @@ async fn the_bare_call_answers_with_a_small_index() {
         size < 16_000,
         "the index must stay readable, got {size} bytes"
     );
+}
+
+#[tokio::test]
+async fn plugin_authors_discover_flyout_width_and_both_scroll_layouts_through_mcp() {
+    let (_dir, mcp) = test_handler().await;
+    let guide = unwrap_json(
+        mcp.plugin_guide(Parameters(GuideParams { section: None }))
+            .await,
+    )
+    .expect("plugin guide start");
+    let style = guide.style.expect("start carries style guidance");
+    let flyout = style["flyout"].as_str().expect("flyout guidance");
+    for term in [
+        "data-sb-flyout-width",
+        "conventions",
+        "layout",
+        "snippets",
+        "sb-split",
+    ] {
+        assert!(flyout.contains(term), "plugin guide omits {term}");
+    }
+    let index = unwrap_json(mcp.ui_kit(params(None)).await).expect("kit index");
+    let sections = index.sections.expect("section index");
+    assert!(
+        sections["sections"]["conventions"]
+            .as_str()
+            .expect("conventions")
+            .contains("width")
+    );
+    let kit = unwrap_json(
+        mcp.ui_kit(params(Some(&["conventions", "layout", "snippets"])))
+            .await,
+    )
+    .expect("documented follow-up call");
+    let conventions = kit.conventions.expect("conventions");
+    assert_eq!(
+        conventions["flyoutWidth"]["attribute"],
+        "data-sb-flyout-width"
+    );
+    let classes = kit.classes.expect("layout classes");
+    assert!(
+        classes
+            .as_array()
+            .expect("class entries")
+            .iter()
+            .any(|class| class["name"] == "sb-split")
+    );
+    let snippets = kit.snippets.expect("copyable snippets");
+    for name in ["wideFlyout", "screenFlyout", "splitFlyout"] {
+        assert!(flyout.contains(name), "guide does not point to {name}");
+        assert!(
+            sections["snippets"]
+                .as_array()
+                .expect("snippet index")
+                .iter()
+                .any(|entry| entry == name)
+        );
+        assert!(
+            snippets[name]
+                .as_str()
+                .expect("HTML example")
+                .contains("data-sb-flyout-width")
+        );
+    }
 }
 
 #[tokio::test]

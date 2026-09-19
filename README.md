@@ -69,6 +69,11 @@ More plugins and themes are in the [Plugin Store](https://smabar.com/store/).
 They live in public GitHub repositories; the catalog is signed, and the app
 asks before it installs anything.
 
+To build a plugin in a web AI chat, share [Build my plugin](https://smabar.com/build-my-plugin/)
+or its [Markdown entry](https://smabar.com/build-my-plugin.md). It links the full SDK,
+styling contracts and complete examples and guides the AI to a ZIP for manual installation.
+The AI needs browsing and file creation tools; checks in the running app happen after installation.
+
 ## MCP: your agent builds and uses plugins
 
 The bar runs an MCP server at `http://127.0.0.1:7627/mcp`, localhost only.
@@ -134,6 +139,12 @@ just check   # every gate: format, lint, tests
 just dev     # the app against the Vite dev server
 just build   # release bundles for this machine
 ```
+
+With the website checkout alongside this repository, `just plugin-docs ../website`
+exports the public authoring references. `just plugin-docs-check ../website` detects
+stale output without writing. The exporter uses the app's Rust schema/theme functions
+and tracked guide, UI-kit and example files; it never connects to a live profile.
+Commit source changes before exporting so the website records their source revision.
 
 ## Contributing
 

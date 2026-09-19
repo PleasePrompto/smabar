@@ -45,6 +45,13 @@ fmt:
     cd shell && bunx prettier --write .
     cd sdk/python && uv run ruff format
 
+# Website snapshots are separate from app builds; never require a sibling repo in CI.
+plugin-docs WEBSITE="../website":
+    python3 scripts/export-plugin-docs.py "{{WEBSITE}}"
+
+plugin-docs-check WEBSITE="../website":
+    python3 scripts/export-plugin-docs.py "{{WEBSITE}}" --check
+
 # Run the app against the Vite dev server. Always goes through scripts/dev.sh,
 # which kills stray instances and refuses to start a second one.
 dev:

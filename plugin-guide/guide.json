@@ -141,7 +141,7 @@
       "screenshots": "Optional: up to six PNG/WebP/JPEG images, each at most 3 MiB. Plugins: screenshots/ beside smabar.json, ordered by filename. Themes: themes/<name>.png then <name>-2.png, <name>-3.png etc. in numeric order; the other supported extensions work too. Prefer readable 3:2 frames, e.g. 1200x800. Capture the finished app with bar_screenshot and inspect each image before including it. GitHub hosts all images; no separate upload service.",
       "author": "The store author/avatar comes from the GitHub repository owner, not from a separately uploaded avatar."
     },
-    "versions": "The store chooses the highest matching published GitHub Release (not draft/prerelease): v<version> for a root plugin, <id>-v<version> for collection plugins and themes. The file's version must match that release. A bare git tag is not a published GitHub Release. Without a matching release the default branch is used. For updates, bump the file version and publish a matching release if the item uses releases; otherwise push the default branch. Listed repositories are crawled hourly.",
+    "versions": "The store chooses the highest matching published GitHub Release (not draft/prerelease): v<version> for a root plugin, <id>-v<version> for collection plugins and themes. The file's version must match that release. A bare git tag is not a published GitHub Release. Without a matching release the default branch is used. For updates, bump the file version and publish a matching release if the item uses releases; otherwise push the default branch. Listed repositories are crawled every 15 minutes.",
     "submit": {
       "method": "POST",
       "url": "https://store.smabar.com/submit",

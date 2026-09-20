@@ -17,6 +17,10 @@ const THEMES: ThemeSummary[] = [
     name: "default",
     source: "bundled",
     active: true,
+    preview: {
+      layout: useSmabar.getInitialState().layout,
+      appearance: useSmabar.getInitialState().appearance,
+    },
     colors: {
       accent: "#8b5cf6",
       accent2: "#ec4899",
@@ -29,6 +33,10 @@ const THEMES: ThemeSummary[] = [
     name: "carbon",
     source: "bundled",
     active: false,
+    preview: {
+      layout: useSmabar.getInitialState().layout,
+      appearance: useSmabar.getInitialState().appearance,
+    },
     colors: {
       accent: "#f59e0b",
       accent2: "#fcd34d",

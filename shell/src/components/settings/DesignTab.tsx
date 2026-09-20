@@ -1,4 +1,4 @@
-import { RotateCcw, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { t } from "../../i18n/t";
@@ -17,7 +17,10 @@ import {
   SettingsSection,
   SliderRow,
 } from "./controls";
-import { DESIGN_DEFAULTS, DESIGN_TOKENS } from "./defaults";
+import { DESIGN_TOKENS, PLUGINS_TOKENS, SHORTCUTS_TOKENS } from "./defaults";
+import { pageDefaults } from "./pageDefaults";
+import { PluginPresentation } from "./PluginPresentation";
+import { ShortcutPresentation } from "./ShortcutPresentation";
 import {
   BAR_BORDER_DEFAULT,
   BAR_BORDER_MAX,
@@ -36,39 +39,16 @@ import {
 import { BarChromePictogram } from "./Pictograms";
 import { setConfig, setConfigsSequentially } from "./persist";
 import { ThemeManager } from "./ThemeManager";
-import { UpdateDot } from "./UpdateBadge";
-import { themeDisplayName } from "./model";
-import { clearTokens, dropTokens, writeTokens } from "./tokens";
+import { clearTokens, writeTokens } from "./tokens";
 
 const CHROME = ["card", "flat"] as const satisfies readonly TileChrome[];
 
-/**
- * Mini bar mock: surface strip with accent dots and a text line. Sizing and
- * layout come from `.settings-swatch` in settings.css — utility classes lose
- * against that un-layered file, so only colors are set here. Every color,
- * the hairline included, is the PREVIEWED theme's, never the active one.
- */
-function ThemeSwatch({ colors }: { colors: ThemeSummary["colors"] }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="settings-swatch"
-      style={{
-        background: colors.surface,
-        borderColor: `color-mix(in srgb, ${colors.text} 22%, transparent)`,
-      }}
-    >
-      <span style={{ background: colors.accent }} />
-      <span style={{ background: colors.accent2 }} />
-      <span style={{ background: colors.text }} />
-    </span>
-  );
-}
-
 /** Theme, colours, and the look of the bar's own surface. */
-export function DesignTab() {
-  const active = useSmabar((state) => state.theme);
-  const updates = useSmabar((state) => state.communityUpdates);
+export function DesignTab({
+  page = "themes",
+}: {
+  page?: "themes" | "colors" | "appearance";
+}) {
   const setGroup = useSmabar((state) => state.setSettingsGroup);
   const barChrome = useSmabar((state) => state.appearance.barChrome);
   const radius = useSmabar((state) =>
@@ -95,194 +75,177 @@ export function DesignTab() {
       FLYOUT_OPACITY_DEFAULT,
     ),
   );
-  const customized = useSmabar((state) =>
-    [...COLOR_TOKENS, ...FONT_TOKENS].some(
-      (key) => key in state.appearance.tokens,
-    ),
-  );
   const [themes, setThemes] = useState<ThemeSummary[]>([]);
-  // Overrides win over the theme (theme/apply.ts), so the theme tile alone
-  // would keep claiming a look the bar no longer has.
+  const active = useSmabar((state) => state.theme);
+  const layout = useSmabar((state) => state.layout);
 
   useEffect(() => {
-    call<ThemeSummary[]>("list_themes").then(setThemes).catch(reportError);
-  }, []);
+    let disposed = false;
+    call<ThemeSummary[]>("list_themes")
+      .then((result) => {
+        if (!disposed) setThemes(result);
+      })
+      .catch(reportError);
+    return () => {
+      disposed = true;
+    };
+  }, [active, layout]);
 
   return (
     <SettingsSection
-      title={t("settings.group.design")}
+      title={t(`settings.page.${page}`)}
       onReset={() =>
         setConfigsSequentially([
-          ...DESIGN_DEFAULTS,
-          clearTokens([...DESIGN_TOKENS, ...COLOR_TOKENS, ...FONT_TOKENS]),
+          ...pageDefaults(page),
+          ...(page === "themes"
+            ? []
+            : [
+                clearTokens(
+                  page === "colors"
+                    ? [...COLOR_TOKENS, ...FONT_TOKENS]
+                    : [
+                        ...DESIGN_TOKENS,
+                        ...PLUGINS_TOKENS,
+                        ...SHORTCUTS_TOKENS,
+                      ],
+                ),
+              ]),
         ])
       }
     >
-      <SettingGroup title={t("settings.design.theme")} updateKey="theme">
-        <SettingRow
-          label={t("settings.appearance.theme")}
-          description={t("settings.appearance.themeDescription")}
-          wide
-        >
-          <ChoiceGrid label={t("settings.appearance.theme")}>
-            {themes.map((theme) => (
-              <Choice
-                key={theme.name}
-                label={themeDisplayName(theme)}
-                active={theme.name === active}
-                onClick={() => {
-                  setConfig("theme", theme.name);
-                }}
-              >
-                <ThemeSwatch colors={theme.colors} />
-                {updates.some(
-                  (entry) => entry.kind === "theme" && entry.id === theme.name,
-                ) && <UpdateDot />}
-              </Choice>
-            ))}
-          </ChoiceGrid>
-          {themes.length === 0 && (
-            <div className="sb-faint">{t("settings.themes.empty")}</div>
-          )}
-          {customized && (
-            <div
-              className="sb-inline"
-              style={{ marginTop: "var(--sb-space-xs)" }}
-            >
-              <span className="sb-badge sb-badge-warn">
-                {t("settings.design.customized")}
-              </span>
-              <button
-                className="sb-btn sb-btn-ghost sb-push"
-                onClick={() => {
-                  dropTokens([...COLOR_TOKENS, ...FONT_TOKENS]);
-                }}
-              >
-                <RotateCcw size="1em" aria-hidden="true" />
-                {t("settings.design.resetOverrides")}
-              </button>
-            </div>
-          )}
-        </SettingRow>
-        <SettingRow
-          label={t("settings.themes.communityTitle")}
-          description={t("settings.themes.storeTeaser")}
-          control={
-            <button
-              type="button"
-              className="sb-btn"
-              onClick={() => {
-                setGroup("design/themes");
-              }}
-            >
-              <Store size="1em" aria-hidden="true" />
-              {t("settings.themes.storeTeaserAction")}
-            </button>
-          }
-        />
-      </SettingGroup>
-
-      <ThemeManager themes={themes} onThemes={setThemes} />
-
-      <SettingGroup title={t("settings.design.colors")}>
-        <ColorSettings themes={themes} />
-      </SettingGroup>
-
-      <SettingGroup title={t("settings.design.typography")}>
-        <FontSettings themes={themes} />
-      </SettingGroup>
-
-      <SettingGroup title={t("settings.design.surface")}>
-        <SettingRow
-          label={t("settings.appearance.barChrome")}
-          description={t("settings.appearance.barChromeDescription")}
-        >
-          <ChoiceGrid label={t("settings.appearance.barChrome")}>
-            {CHROME.map((value) => (
-              <Choice
-                key={value}
-                label={t(`settings.appearance.barChrome.${value}`)}
-                active={barChrome === value}
-                onClick={() => {
-                  setConfig("appearance.barChrome", value);
-                }}
-              >
-                <BarChromePictogram value={value} />
-              </Choice>
-            ))}
-          </ChoiceGrid>
-        </SettingRow>
-
-        <SettingReveal visible={barChrome === "card"}>
-          <SettingRow
-            label={t("settings.appearance.barBorderWidth")}
-            description={t("settings.appearance.barBorderWidthDescription")}
-          >
-            <SliderRow
-              label={t("settings.appearance.barBorderWidth")}
-              min={BAR_BORDER_MIN}
-              max={BAR_BORDER_MAX}
-              step={1}
-              value={barBorder}
-              display={`${String(barBorder)}px`}
-              onChange={(value) => {
-                writeTokens({ "--sb-bar-border-width": `${String(value)}px` });
-              }}
+      {page === "themes" && (
+        <>
+          <ThemeManager themes={themes} onThemes={setThemes} />
+          <SettingGroup title={t("settings.themes.communityTitle")}>
+            <SettingRow
+              label={t("settings.themes.communityTitle")}
+              description={t("settings.themes.storeTeaser")}
+              control={
+                <button
+                  type="button"
+                  className="sb-btn"
+                  onClick={() => {
+                    setGroup("design/themes");
+                  }}
+                >
+                  <Store size="1em" aria-hidden="true" />
+                  {t("settings.themes.storeTeaserAction")}
+                </button>
+              }
             />
-          </SettingRow>
-        </SettingReveal>
+          </SettingGroup>
+        </>
+      )}
+      {page === "colors" && (
+        <>
+          <SettingGroup title={t("settings.design.colors")}>
+            <ColorSettings themes={themes} />
+          </SettingGroup>
 
-        <SettingRow
-          label={t("settings.appearance.barRadius")}
-          description={t("settings.appearance.barRadiusDescription")}
-        >
-          <SliderRow
-            label={t("settings.appearance.barRadius")}
-            min={BAR_RADIUS_MIN}
-            max={BAR_RADIUS_MAX}
-            step={2}
-            value={radius}
-            display={`${String(radius)}px`}
-            onChange={(value) => {
-              writeTokens({ "--sb-bar-radius": pxToRem(value) });
-            }}
-          />
-        </SettingRow>
+          <SettingGroup title={t("settings.design.typography")}>
+            <FontSettings themes={themes} />
+          </SettingGroup>
+        </>
+      )}
+      {page === "appearance" && (
+        <>
+          <SettingGroup title={t("settings.design.surface")}>
+            <SettingRow
+              label={t("settings.appearance.barChrome")}
+              description={t("settings.appearance.barChromeDescription")}
+            >
+              <ChoiceGrid label={t("settings.appearance.barChrome")}>
+                {CHROME.map((value) => (
+                  <Choice
+                    key={value}
+                    label={t(`settings.appearance.barChrome.${value}`)}
+                    active={barChrome === value}
+                    onClick={() => {
+                      setConfig("appearance.barChrome", value);
+                    }}
+                  >
+                    <BarChromePictogram value={value} />
+                  </Choice>
+                ))}
+              </ChoiceGrid>
+            </SettingRow>
 
-        <SettingRow
-          label={t("settings.appearance.barOpacity")}
-          description={t("settings.appearance.barOpacityDescription")}
-        >
-          <SliderRow
-            label={t("settings.appearance.barOpacity")}
-            min={BAR_OPACITY_MIN}
-            max={BAR_OPACITY_MAX}
-            step={5}
-            value={opacity}
-            display={`${String(opacity)}%`}
-            onChange={(value) => {
-              writeTokens({ "--sb-bar-opacity": `${String(value)}%` });
-            }}
-          />
-        </SettingRow>
+            <SettingReveal visible={barChrome === "card"}>
+              <SettingRow
+                label={t("settings.appearance.barBorderWidth")}
+                description={t("settings.appearance.barBorderWidthDescription")}
+              >
+                <SliderRow
+                  label={t("settings.appearance.barBorderWidth")}
+                  min={BAR_BORDER_MIN}
+                  max={BAR_BORDER_MAX}
+                  step={1}
+                  value={barBorder}
+                  display={`${String(barBorder)}px`}
+                  onChange={(value) => {
+                    writeTokens({
+                      "--sb-bar-border-width": `${String(value)}px`,
+                    });
+                  }}
+                />
+              </SettingRow>
+            </SettingReveal>
 
-        <SettingRow
-          label={t("settings.appearance.flyoutOpacity")}
-          description={t("settings.appearance.flyoutOpacityDescription")}
-        >
-          <SliderRow
-            label={t("settings.appearance.flyoutOpacity")}
-            min={BAR_OPACITY_MIN}
-            max={BAR_OPACITY_MAX}
-            step={5}
-            value={flyoutOpacity}
-            display={`${String(flyoutOpacity)}%`}
-            onChange={(value) => {
-              writeTokens({ "--sb-flyout-opacity": `${String(value)}%` });
-            }}
-          />
-        </SettingRow>
-      </SettingGroup>
+            <SettingRow
+              label={t("settings.appearance.barRadius")}
+              description={t("settings.appearance.barRadiusDescription")}
+            >
+              <SliderRow
+                label={t("settings.appearance.barRadius")}
+                min={BAR_RADIUS_MIN}
+                max={BAR_RADIUS_MAX}
+                step={2}
+                value={radius}
+                display={`${String(radius)}px`}
+                onChange={(value) => {
+                  writeTokens({ "--sb-bar-radius": pxToRem(value) });
+                }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("settings.appearance.barOpacity")}
+              description={t("settings.appearance.barOpacityDescription")}
+            >
+              <SliderRow
+                label={t("settings.appearance.barOpacity")}
+                min={BAR_OPACITY_MIN}
+                max={BAR_OPACITY_MAX}
+                step={5}
+                value={opacity}
+                display={`${String(opacity)}%`}
+                onChange={(value) => {
+                  writeTokens({ "--sb-bar-opacity": `${String(value)}%` });
+                }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("settings.appearance.flyoutOpacity")}
+              description={t("settings.appearance.flyoutOpacityDescription")}
+            >
+              <SliderRow
+                label={t("settings.appearance.flyoutOpacity")}
+                min={BAR_OPACITY_MIN}
+                max={BAR_OPACITY_MAX}
+                step={5}
+                value={flyoutOpacity}
+                display={`${String(flyoutOpacity)}%`}
+                onChange={(value) => {
+                  writeTokens({ "--sb-flyout-opacity": `${String(value)}%` });
+                }}
+              />
+            </SettingRow>
+          </SettingGroup>
+          <PluginPresentation />
+          <ShortcutPresentation />
+        </>
+      )}
     </SettingsSection>
   );
 }

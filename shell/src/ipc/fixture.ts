@@ -16,6 +16,7 @@ import {
   fixtureInstallPlugin,
   fixtureInstallTheme,
   fixtureStoreDetail,
+  fixtureStoreThemePreview,
   fixtureStoreOverview,
   fixtureStorePlugins,
   fixtureStoreRefresh,
@@ -130,6 +131,8 @@ export function fixtureCall(
     // has the message already.
     case "ui_log":
       return null;
+    case "choose_settings_file":
+      return null; // Browser fixtures have no native filesystem picker.
     case "list_apps":
       return listApps(args?.query);
     case "get_app_icon":
@@ -249,6 +252,11 @@ export function fixtureCall(
       return fixtureStoreDetail(
         asChoice(args?.kind, STORE_KINDS, "kind"),
         asString(args?.id, "id"),
+      );
+    case "store_theme_preview":
+      return fixtureStoreThemePreview(
+        asString(args?.name, "name"),
+        asString(args?.expectedCommit, "expectedCommit"),
       );
     case "store_install_plugin":
       return fixtureInstallPlugin(

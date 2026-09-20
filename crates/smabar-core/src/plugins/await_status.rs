@@ -45,6 +45,15 @@ impl StatusWatcher {
     /// caller's current [`plugin_infos`](super::PluginSupervisor::plugin_infos)
     /// entry): events give the edge, the status map gives the level.
     pub async fn settle(mut self, timeout: Duration, fallback: PluginStatus) -> ReloadOutcome {
+        // A completed deactivation can leave the old process's shutdown failure
+        // queued. It says nothing about the replacement, which must stay off.
+        if fallback == PluginStatus::Deactivated {
+            return ReloadOutcome {
+                status: fallback,
+                error: None,
+                settled: true,
+            };
+        }
         let deadline = tokio::time::Instant::now() + timeout;
         loop {
             let event = match tokio::time::timeout_at(deadline, self.rx.recv()).await {
@@ -143,6 +152,19 @@ mod tests {
             .await;
         assert_eq!(outcome.status, PluginStatus::Failed);
         assert_eq!(outcome.error.as_deref(), Some("boom"));
+        assert!(outcome.settled);
+    }
+
+    #[tokio::test]
+    async fn deactivation_ignores_a_failure_queued_while_stopping_the_old_process() {
+        let (tx, _) = broadcast::channel(8);
+        let watcher = StatusWatcher::new(tx.subscribe(), "demo");
+        tx.send(status("demo", PluginStatus::Failed)).expect("send");
+        let outcome = watcher
+            .settle(Duration::from_secs(5), PluginStatus::Deactivated)
+            .await;
+        assert_eq!(outcome.status, PluginStatus::Deactivated);
+        assert!(outcome.error.is_none());
         assert!(outcome.settled);
     }
 

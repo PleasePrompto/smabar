@@ -8,9 +8,9 @@ import { AudioGroup } from "./AudioGroup";
 import { NumberRow } from "./NumberRow";
 import { AboutGroup } from "./AboutGroup";
 import { SettingGroup, SettingRow, SettingsSection, Switch } from "./controls";
-import { SYSTEM_DEFAULTS } from "./defaults";
+import { pageDefaults } from "./pageDefaults";
+import { BarTab } from "./BarTab";
 import { LanguageChoice } from "./LanguageChoice";
-import { SettingColumns } from "./layout";
 import { LegalDocuments } from "./LegalTab";
 import { RenderingGroup, type RenderingStatus } from "./RenderingGroup";
 import { RuntimeGroup } from "./RuntimeGroup";
@@ -35,7 +35,11 @@ interface SystemSettings {
 }
 
 /** Product information followed by system-facing settings. */
-export function SystemTab() {
+export function SystemTab({
+  page = "general",
+}: {
+  page?: "general" | "advanced" | "about" | "audio" | "legal";
+}) {
   const language = useSmabar((state) => state.language);
   const [system, setSystem] = useState<SystemSettings | null>(null);
   const autostart = useAutostart();
@@ -65,98 +69,113 @@ export function SystemTab() {
 
   return (
     <SettingsSection
-      title={t("settings.group.system")}
-      onReset={async () => {
-        await setConfigsSequentially(SYSTEM_DEFAULTS);
-        if (autostart.status?.state !== "unavailable") {
-          await autostart.setEnabled(true);
-        }
-      }}
+      title={t(`settings.page.${page}`)}
+      onReset={
+        page === "about" || page === "legal" || page === "audio"
+          ? undefined
+          : async () => {
+              await setConfigsSequentially(pageDefaults(page));
+              if (
+                page === "general" &&
+                autostart.status?.state !== "unavailable"
+              ) {
+                await autostart.setEnabled(true);
+              }
+            }
+      }
     >
-      <AboutGroup />
-      <SettingColumns>
-        <SettingGroup title={t("settings.system.general")}>
-          <SettingRow
-            label={t("settings.system.autostart")}
-            description={t("settings.system.autostartDescription")}
-            disabledReason={
-              autostart.status?.state === "unavailable"
-                ? t("settings.system.autostartUnavailable")
-                : undefined
-            }
-            control={
-              <Switch
-                label={t("settings.system.autostart")}
-                checked={autostartRegistered ?? false}
-                disabled={autostart.busy || autostartRegistered === null}
-                onChange={(enabled) => {
-                  void autostart.setEnabled(enabled);
-                }}
-              />
-            }
-          >
-            {autostart.failed && (
-              <div className="settings-font-error" role="alert">
-                <span>{t("settings.system.autostartFailed")}</span>
-                <button
-                  type="button"
-                  className="sb-btn sb-btn-ghost"
-                  disabled={autostart.busy}
-                  onClick={() => {
-                    void autostart.refresh();
+      {page === "about" && (
+        <>
+          <AboutGroup />
+          {system?.updateChannel === "app" && <UpdateGroup />}
+        </>
+      )}
+      <>
+        {page === "general" && (
+          <SettingGroup title={t("settings.system.general")}>
+            <SettingRow
+              label={t("settings.system.autostart")}
+              description={t("settings.system.autostartDescription")}
+              disabledReason={
+                autostart.status?.state === "unavailable"
+                  ? t("settings.system.autostartUnavailable")
+                  : undefined
+              }
+              control={
+                <Switch
+                  label={t("settings.system.autostart")}
+                  checked={autostartRegistered ?? false}
+                  disabled={autostart.busy || autostartRegistered === null}
+                  onChange={(enabled) => {
+                    void autostart.setEnabled(enabled);
                   }}
-                >
-                  {t("settings.system.autostartRefresh")}
-                </button>
-              </div>
-            )}
-          </SettingRow>
-          <SettingRow
-            label={t("settings.system.language")}
-            description={t("settings.system.languageDescription")}
-          >
-            <LanguageChoice languages={system?.languages ?? [language]} />
-          </SettingRow>
-        </SettingGroup>
+                />
+              }
+            >
+              {autostart.failed && (
+                <div className="settings-font-error" role="alert">
+                  <span>{t("settings.system.autostartFailed")}</span>
+                  <button
+                    type="button"
+                    className="sb-btn sb-btn-ghost"
+                    disabled={autostart.busy}
+                    onClick={() => {
+                      void autostart.refresh();
+                    }}
+                  >
+                    {t("settings.system.autostartRefresh")}
+                  </button>
+                </div>
+              )}
+            </SettingRow>
+            <SettingRow
+              label={t("settings.system.language")}
+              description={t("settings.system.languageDescription")}
+            >
+              <LanguageChoice languages={system?.languages ?? [language]} />
+            </SettingRow>
+          </SettingGroup>
+        )}
+        {page === "advanced" && (
+          <SettingGroup title={t("settings.system.agent")}>
+            <SettingRow
+              label={t("settings.system.mcp")}
+              description={t("settings.system.mcpDescription")}
+              control={
+                <Switch
+                  label={t("settings.system.mcp")}
+                  checked={system?.mcp.enabled ?? false}
+                  disabled={system === null}
+                  onChange={(enabled) => {
+                    patchMcp({ enabled });
+                    setConfig("mcp.enabled", enabled);
+                  }}
+                />
+              }
+            />
 
-        <SettingGroup title={t("settings.system.agent")}>
-          <SettingRow
-            label={t("settings.system.mcp")}
-            description={t("settings.system.mcpDescription")}
-            control={
-              <Switch
-                label={t("settings.system.mcp")}
-                checked={system?.mcp.enabled ?? false}
-                disabled={system === null}
-                onChange={(enabled) => {
-                  patchMcp({ enabled });
-                  setConfig("mcp.enabled", enabled);
+            <SettingRow
+              label={t("settings.system.mcpPort")}
+              description={t("settings.system.mcpPortDescription")}
+              disabledReason={mcpOff ? t("settings.system.mcpOff") : undefined}
+            >
+              <NumberRow
+                label={t("settings.system.mcpPort")}
+                min={PORT_MIN}
+                max={PORT_MAX}
+                value={system?.mcp.port ?? PORT_MIN}
+                disabled={system === null || mcpOff}
+                onChange={(port) => {
+                  patchMcp({ port });
+                  setConfigDebounced("mcp.port", port);
                 }}
               />
-            }
-          />
+            </SettingRow>
+          </SettingGroup>
+        )}
+      </>
 
-          <SettingRow
-            label={t("settings.system.mcpPort")}
-            description={t("settings.system.mcpPortDescription")}
-            disabledReason={mcpOff ? t("settings.system.mcpOff") : undefined}
-          >
-            <NumberRow
-              label={t("settings.system.mcpPort")}
-              min={PORT_MIN}
-              max={PORT_MAX}
-              value={system?.mcp.port ?? PORT_MIN}
-              disabled={system === null || mcpOff}
-              onChange={(port) => {
-                patchMcp({ port });
-                setConfigDebounced("mcp.port", port);
-              }}
-            />
-          </SettingRow>
-        </SettingGroup>
-      </SettingColumns>
-
-      {rendering !== null && (
+      {page === "advanced" && rendering !== null && (
         <RenderingGroup
           status={rendering}
           onModeChange={(mode) => {
@@ -172,16 +191,20 @@ export function SystemTab() {
         />
       )}
 
-      <SettingColumns>
-        <RuntimeGroup />
-        {system?.updateChannel === "app" && <UpdateGroup />}
-      </SettingColumns>
+      {page === "advanced" && <RuntimeGroup />}
 
-      <AudioGroup />
+      {page === "audio" && (
+        <>
+          <BarTab page="notifications" />
+          <AudioGroup />
+        </>
+      )}
       {/* Accepted at first start; kept here, folded, for whoever wants to reread. */}
-      <SettingGroup title={t("settings.group.legal")} collapsible>
-        <LegalDocuments />
-      </SettingGroup>
+      {page === "legal" && (
+        <SettingGroup title={t("settings.group.legal")}>
+          <LegalDocuments />
+        </SettingGroup>
+      )}
     </SettingsSection>
   );
 }

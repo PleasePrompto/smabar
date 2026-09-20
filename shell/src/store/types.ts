@@ -172,6 +172,8 @@ export interface ThemeSummary {
   active: boolean;
   colors: ThemeColors;
   fonts: { sans: ThemeFont; mono: ThemeFont };
+  /** Read-only activation result; omitted settings retain current values. */
+  preview: { layout: LayoutConfig; appearance: AppearanceConfig };
   meta?: ThemeMeta;
 }
 

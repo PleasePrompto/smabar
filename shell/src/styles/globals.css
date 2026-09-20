@@ -5,6 +5,7 @@
 @import "./settings.css";
 @import "./settings-store.css";
 @import "./settings-fonts.css";
+@import "./settings-themes.css";
 @import "./ui-kit.css";
 
 /* Mirror selected theme tokens (colors + radii ONLY) as Tailwind theme

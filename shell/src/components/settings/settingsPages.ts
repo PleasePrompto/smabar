@@ -1,55 +1,66 @@
 import type { StoreKind } from "../../ipc/store";
 
-/**
- * A page a settings group opens beside its scrolling sections. The two
- * Community Store lists are pages: they replace the group's content and
- * carry their own back button, but stay listed under Plugins and Design.
- *
- * A page id is `<group>/<page>`; everything before the slash is the group
- * the navigation highlights.
- */
+export const SETTINGS_GROUPS = [
+  "bar",
+  "shortcuts",
+  "plugins",
+  "system",
+] as const;
 export interface SettingsPage {
   id: string;
   group: string;
-  kind: StoreKind;
-  /** The i18n key of the navigation label. */
   labelKey: string;
-  /**
-   * The section (by index) the entry is listed after; omitted, it follows
-   * the last one. The Plugin Store belongs right under Installed.
-   */
-  after?: number;
+  kind?: StoreKind;
 }
-
 export const SETTINGS_PAGES: readonly SettingsPage[] = [
+  ...["layout", "behavior", "themes", "colors", "appearance"].map((page) => ({
+    id: `bar/${page}`,
+    group: "bar",
+    labelKey: `settings.page.${page}`,
+  })),
+  {
+    id: "bar/community",
+    group: "bar",
+    kind: "theme",
+    labelKey: "settings.themes.communityTitle",
+  },
+  { id: "shortcuts", group: "shortcuts", labelKey: "settings.group.shortcuts" },
+  { id: "plugins", group: "plugins", labelKey: "settings.page.installed" },
   {
     id: "plugins/store",
     group: "plugins",
     kind: "plugin",
     labelKey: "settings.store.title",
-    after: 0,
   },
-  {
-    id: "design/themes",
-    group: "design",
-    kind: "theme",
-    labelKey: "settings.themes.communityTitle",
-    after: 0,
-  },
+  ...["general", "audio", "advanced", "about", "legal"].map((page) => ({
+    id: `system/${page}`,
+    group: "system",
+    labelKey: `settings.page.${page}`,
+  })),
 ];
-
-/** The group a settings id belongs to: `plugins/store` → `plugins`. */
+const ALIASES: Readonly<Record<string, string>> = {
+  bar: "bar/layout",
+  design: "bar/themes",
+  "design/themes": "bar/community",
+  system: "system/general",
+  "system/updates": "system/about",
+  legal: "system/legal",
+};
+export function resolveSettingsPage(id: string): string {
+  const resolved = ALIASES[id] ?? id;
+  return SETTINGS_PAGES.some((page) => page.id === resolved) ||
+    /^plugins\/detail\/[a-z0-9-]+$/.test(resolved)
+    ? resolved
+    : "bar/layout";
+}
 export function groupOf(id: string): string {
-  const slash = id.indexOf("/");
-  return slash === -1 ? id : id.slice(0, slash);
+  return resolveSettingsPage(id).split("/")[0] ?? "bar";
 }
-
-/** The page an id names, or null for a plain group. */
 export function pageOf(id: string): SettingsPage | null {
-  return SETTINGS_PAGES.find((page) => page.id === id) ?? null;
+  return (
+    SETTINGS_PAGES.find((page) => page.id === resolveSettingsPage(id)) ?? null
+  );
 }
-
-/** The pages listed under one group. */
 export function pagesOf(group: string): SettingsPage[] {
   return SETTINGS_PAGES.filter((page) => page.group === group);
 }

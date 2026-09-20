@@ -8,6 +8,8 @@ use super::{CatalogError, FetchError, archive};
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
     #[error("{0}")]
+    LocalArchive(String),
+    #[error("{0}")]
     Fetch(#[from] FetchError),
     #[error("{0}")]
     Catalog(#[from] CatalogError),
@@ -33,7 +35,7 @@ pub enum StoreError {
         expected: String,
         actual: String,
     },
-    #[error("\"{id}\" ships with smabar; it cannot be installed from the store")]
+    #[error("\"{id}\" ships with smabar; bundled plugins cannot be replaced")]
     BasePlugin { id: String },
     #[error(
         "\"{id}\" exists as your own plugin in {} without a store receipt; the store never replaces it — remove it first",

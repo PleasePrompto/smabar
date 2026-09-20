@@ -89,20 +89,20 @@ function CatalogStatus({
 export function StorePage({
   kind,
   onBack,
-  initialEntryId,
 }: {
   kind: StoreKind;
   onBack?: () => void;
-  initialEntryId?: string;
 }) {
   const language = useSmabar((state) => state.language);
+  const selectedId = useSmabar((state) =>
+    state.settingsStoreEntry?.kind === kind
+      ? state.settingsStoreEntry.id
+      : null,
+  );
   const { overview, refreshing, error, refresh, reload, apply } =
     useStoreOverview();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<StoreSortKey>(DEFAULT_STORE_SORT);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    initialEntryId ?? null,
-  );
   const page = useRef<HTMLElement>(null);
 
   const entries =
@@ -141,7 +141,11 @@ export function StorePage({
         overview={overview}
         actions={actions}
         onBack={() => {
-          setSelectedId(null);
+          useSmabar
+            .getState()
+            .setSettingsGroup(
+              kind === "plugin" ? "plugins/store" : "bar/community",
+            );
           // The row's Details button exists again after the re-render.
           requestAnimationFrame(() => {
             page.current
@@ -253,7 +257,7 @@ export function StorePage({
           overview={overview}
           language={language}
           onDetails={(entry) => {
-            setSelectedId(entry.id);
+            useSmabar.getState().openStoreEntry(kind, entry.id);
           }}
           action={action}
         />

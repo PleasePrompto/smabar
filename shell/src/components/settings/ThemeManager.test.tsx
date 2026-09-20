@@ -1,319 +1,201 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-
-import { useSmabar, type ThemeSummary } from "../../store/bar";
 import { ThemeManager } from "./ThemeManager";
+import { setConfigDebounced } from "./persist";
 import {
   BUNDLED,
-  createThemeManagerTestHarness,
   DROPIN,
-  flush,
   FRESH_LIST,
+  createThemeManagerTestHarness,
+  flush,
   typeInput,
   type ThemeManagerTestHarness,
 } from "./ThemeManager.testHarness";
-import { themeDisplayName } from "./model";
-
 const { callMock } = vi.hoisted(() => ({ callMock: vi.fn() }));
 vi.mock("../../ipc/call", () => ({ call: callMock }));
 let harness: ThemeManagerTestHarness;
-
-beforeEach(() => {
+const document = '{"--sb-accent":"#123456"}';
+beforeEach(async () => {
   harness = createThemeManagerTestHarness();
   callMock.mockReset();
   callMock.mockImplementation((command: string) =>
-    command === "get_theme_export_dir"
-      ? Promise.resolve({ configured: "", effective: "/x/export" })
-      : Promise.resolve(null),
+    Promise.resolve(
+      command === "choose_settings_file"
+        ? "/downloads/new-one.json"
+        : command === "save_theme_copy"
+          ? {
+              themes: FRESH_LIST,
+              document,
+              path: "/downloads/new-one.json",
+              fileError: null,
+            }
+          : command === "delete_theme"
+            ? [BUNDLED]
+            : command === "theme_file_document"
+              ? document
+              : null,
+    ),
+  );
+  await harness.render(
+    <ThemeManager themes={[BUNDLED, DROPIN]} onThemes={harness.onThemes} />,
   );
 });
-
 afterEach(() => {
   harness.dispose();
 });
-
-async function render(themes: ThemeSummary[]): Promise<void> {
-  await harness.render(
-    <ThemeManager themes={themes} onThemes={harness.onThemes} />,
-  );
+async function name(value: string) {
+  await flush(() => {
+    typeInput(harness.input("Theme name"), value);
+  });
 }
-
-test("saving slugifies the typed name and reports the fresh list", async () => {
-  callMock.mockImplementation((command: string) =>
-    Promise.resolve(command === "save_custom_theme" ? FRESH_LIST : null),
-  );
-  await render([BUNDLED]);
+async function click(label: string) {
   await flush(() => {
-    typeInput(harness.input("Save current look"), "My Look (1)");
+    harness.button(label).click();
   });
-  await flush(() => {
-    harness.button("Save").click();
-  });
-  expect(callMock).toHaveBeenCalledWith("save_custom_theme", {
-    name: "my-look-1",
+}
+test("one save persists the latest slider edit before capturing and saving both copies", async () => {
+  await name("New One");
+  setConfigDebounced("appearance.tokens", { "--sb-accent": "#123456" });
+  await click("Save theme…");
+  expect(callMock).toHaveBeenCalledWith("save_theme_copy", {
+    name: "new-one",
     overwrite: false,
+    path: "/downloads/new-one.json",
   });
+  const commands = callMock.mock.calls.map(([command]) => String(command));
+  expect(commands.indexOf("update_config")).toBeLessThan(
+    commands.indexOf("save_theme_copy"),
+  );
   expect(harness.onThemes).toHaveBeenCalledWith(FRESH_LIST);
-  expect(useSmabar.getState().notice).toBe("settings.themes.saved");
-  expect(harness.input("Save current look").value).toBe("");
+  expect(harness.container.textContent).toContain("Theme file saved:");
 });
-
-test("saving over an existing drop-in asks first", async () => {
-  await render([BUNDLED, DROPIN]);
-  await flush(() => {
-    typeInput(harness.input("Save current look"), "Mine");
-  });
-  const save = harness.button("Save");
-  await flush(() => {
-    save.click();
-  });
+test("cancelling the native save dialog leaves the library untouched", async () => {
+  callMock.mockResolvedValue(null);
+  await name("New One");
+  await click("Save theme…");
   expect(callMock).not.toHaveBeenCalledWith(
-    "save_custom_theme",
+    "save_theme_copy",
     expect.anything(),
   );
-  expect(document.activeElement).toBe(harness.button("Cancel"));
-  const confirm =
-    harness.container.querySelector<HTMLElement>("[data-confirm-row]");
-  const question = confirm?.querySelector<HTMLElement>("[id]");
-  expect(confirm?.getAttribute("aria-describedby")).toBe(question?.id);
-  await flush(() => {
-    harness.button("Cancel").click();
-  });
-  expect(document.activeElement).toBe(save);
-  await flush(() => {
-    save.click();
-  });
+  expect(harness.onThemes).not.toHaveBeenCalled();
+});
+test("existing local names ask before saving, bundled names remain protected", async () => {
+  await name("Default");
+  expect(harness.button("Save theme…").disabled).toBe(true);
+  expect(harness.container.textContent).toContain("built-in");
+  await name("Mine");
+  await click("Save theme…");
+  expect(callMock).not.toHaveBeenCalledWith(
+    "choose_settings_file",
+    expect.anything(),
+  );
   await flush(() => {
     harness.confirmAction().click();
   });
-  expect(callMock).toHaveBeenCalledWith("save_custom_theme", {
-    name: "mine",
-    overwrite: true,
-  });
-});
-
-test("a bundled name blocks saving with a hint", async () => {
-  await render([BUNDLED]);
-  await flush(() => {
-    typeInput(harness.input("Save current look"), "Default");
-  });
-  const save = harness.button("Save");
-  const field = harness.input("Save current look");
-  const hintId = field.getAttribute("aria-describedby");
-  expect(save.disabled).toBe(true);
-  expect(field.getAttribute("aria-invalid")).toBe("true");
-  expect(hintId).not.toBeNull();
-  expect(document.getElementById(hintId ?? "")?.getAttribute("role")).toBe(
-    "alert",
-  );
-  expect(document.getElementById(hintId ?? "")?.textContent).toContain(
-    "This name belongs to a built-in theme",
+  expect(callMock).toHaveBeenCalledWith(
+    "save_theme_copy",
+    expect.objectContaining({ name: "mine", overwrite: true }),
   );
 });
-
-test("custom themes show their display name and delete after a confirm", async () => {
+test("a failed external copy retries the exact captured document", async () => {
   callMock.mockImplementation((command: string) =>
-    Promise.resolve(command === "delete_theme" ? FRESH_LIST : null),
+    Promise.resolve(
+      command === "choose_settings_file"
+        ? "/downloads/retry.json"
+        : command === "save_theme_copy"
+          ? {
+              themes: FRESH_LIST,
+              document,
+              path: "/readonly/theme.json",
+              fileError: "permission denied",
+            }
+          : null,
+    ),
   );
-  await render([BUNDLED, DROPIN]);
-  expect(themeDisplayName(DROPIN)).toBe("My Look");
-  expect(harness.container.textContent).toContain("My Look");
-  const remove = harness.container.querySelector<HTMLButtonElement>(
-    '.sb-list button[aria-label="Delete"]',
-  );
-  if (remove === null) throw new Error("no delete button");
-  await flush(() => {
-    remove.click();
-  });
-  expect(callMock).not.toHaveBeenCalledWith("delete_theme", expect.anything());
-  await flush(() => {
-    harness.confirmAction().click();
-  });
-  expect(callMock).toHaveBeenCalledWith("delete_theme", { name: "mine" });
+  await name("New One");
+  await click("Save theme…");
+  expect(harness.container.textContent).toContain("Saved in smabar");
   expect(harness.onThemes).toHaveBeenCalledWith(FRESH_LIST);
-  expect(useSmabar.getState().notice).toBe("settings.themes.deleted");
-});
-
-test("confirmed action failures stay visible, logged, and return focus", async () => {
-  callMock.mockImplementation((command: string) => {
-    if (command === "get_theme_export_dir") {
-      return Promise.resolve({ configured: "", effective: "/x/export" });
-    }
-    if (command === "save_custom_theme") {
-      return Promise.reject(new Error("disk is read-only"));
-    }
-    if (command === "delete_theme") {
-      return Promise.reject(new Error("cannot delete theme"));
-    }
-    if (command === "export_theme") {
-      return Promise.reject(new Error("export directory denied"));
-    }
-    return Promise.resolve(null);
-  });
-  await render([BUNDLED, DROPIN]);
-  await flush(() => {
-    typeInput(harness.input("Save current look"), "Mine");
-  });
-  await flush(() => {
-    harness.button("Save").click();
-  });
-  await flush(() => {
-    harness.confirmAction().click();
-  });
-  await flush(() => {
-    vi.runOnlyPendingTimers();
+  await click("Save file again…");
+  expect(callMock).toHaveBeenCalledWith("write_theme_copy", {
+    path: "/downloads/retry.json",
+    document,
   });
   expect(
-    harness.container.querySelector('[role="alert"]')?.textContent,
-  ).toContain("disk is read-only");
-  expect(document.activeElement).toBe(harness.button("Save"));
-
+    callMock.mock.calls.filter(([command]) => command === "save_theme_copy"),
+  ).toHaveLength(1);
+});
+test("deletion requires confirmation and reports errors without losing the theme", async () => {
   const remove = harness.container.querySelector<HTMLButtonElement>(
-    '.sb-list button[aria-label="Delete"]',
+    '[aria-label="Delete: My Look"]',
   );
-  if (remove === null) throw new Error("no delete button");
-  await flush(() => {
-    remove.click();
-  });
-  await flush(() => {
-    harness.confirmAction().click();
-  });
-  await flush(() => {
-    vi.runOnlyPendingTimers();
-  });
-  expect(
-    harness.container.querySelector('[role="alert"]')?.textContent,
-  ).toContain("cannot delete theme");
-  expect(document.activeElement).toBe(
-    harness.container.querySelector('.sb-list button[aria-label="Delete"]'),
-  );
-
-  await flush(() => {
-    harness.button("Export active theme").click();
-  });
-  await flush(() => {
-    vi.runOnlyPendingTimers();
-  });
-  expect(harness.container.textContent).toContain("export directory denied");
-  expect(document.activeElement).toBe(harness.button("Export active theme"));
-  expect(
-    callMock.mock.calls.filter(([command]) => command === "ui_log"),
-  ).toHaveLength(3);
-});
-
-test("exporting the active theme reports the written path", async () => {
-  callMock.mockImplementation((command: string) => {
-    if (command === "get_theme_export_dir") {
-      return Promise.resolve({ configured: "", effective: "/x/export" });
-    }
-    return Promise.resolve(
-      command === "export_theme" ? "/x/export/default.json" : null,
-    );
-  });
-  await render([BUNDLED]);
-  await flush(() => {
-    harness.button("Export active theme").click();
-  });
-  expect(callMock).toHaveBeenCalledWith("export_theme", {
-    name: "default",
-    directory: "",
-  });
-  expect(harness.container.textContent).toContain("/x/export/default.json");
-  expect(useSmabar.getState().notice).toBe("settings.themes.exported");
-});
-
-test("an invalid configured export path remains editable", async () => {
+  expect(remove).not.toBeNull();
+  await flush(() => remove?.click());
   callMock.mockImplementation((command: string) =>
-    command === "get_theme_export_dir"
-      ? Promise.resolve({
-          configured: "relative/path",
-          effective: null,
-          error: 'themeExportDir: "relative/path" is not an absolute path',
-        })
+    command === "delete_theme"
+      ? Promise.reject(new Error("read only"))
       : Promise.resolve(null),
   );
-  await render([BUNDLED]);
-  expect(harness.input("Export folder").value).toBe("relative/path");
+  await flush(() => {
+    harness.confirmAction().click();
+  });
   expect(
     harness.container.querySelector('[role="alert"]')?.textContent,
-  ).toContain("not an absolute path");
+  ).toContain("read only");
+  expect(harness.onThemes).not.toHaveBeenCalled();
 });
-
-test("a failed export-folder read leaves an editable recovery field", async () => {
-  let rejectRead: (error: Error) => void = () => undefined;
-  const loading = new Promise<never>((_resolve, reject) => {
-    rejectRead = reject;
-  });
-  callMock.mockImplementation((command: string) =>
-    command === "get_theme_export_dir" ? loading : Promise.resolve(null),
-  );
-  await render([BUNDLED]);
-  expect(harness.input("Export folder").disabled).toBe(true);
-  await flush(() => {
-    rejectRead(new Error("cannot read export folder"));
-  });
-  expect(harness.container.textContent).toContain("cannot read export folder");
-  expect(harness.input("Export folder").disabled).toBe(false);
-
-  await flush(() => {
-    typeInput(harness.input("Export folder"), "/recovered");
-  });
-  expect(harness.input("Export folder").value).toBe("/recovered");
-  await flush(() => {
-    vi.advanceTimersByTime(300);
-  });
-  expect(callMock).toHaveBeenCalledWith("update_config", {
-    path: "themeExportDir",
-    value: "/recovered",
-  });
-});
-
-test("export uses the field value immediately without waiting for persistence", async () => {
-  callMock.mockImplementation((command: string) => {
-    if (command === "get_theme_export_dir") {
-      return Promise.resolve({ configured: "", effective: "/x/export" });
-    }
-    return Promise.resolve(
-      command === "export_theme" ? "/fresh/default.json" : null,
-    );
-  });
-  await render([BUNDLED]);
-  await flush(() => {
-    typeInput(harness.input("Export folder"), "/fresh");
-  });
-  await flush(() => {
-    harness.button("Export active theme").click();
-  });
-  expect(callMock).toHaveBeenCalledWith("export_theme", {
-    name: "default",
-    directory: "/fresh",
-  });
-});
-
-test("a pending export ignores double-submit and disables export buttons", async () => {
-  let resolveExport: (path: string) => void = () => undefined;
-  const pending = new Promise<string>((resolve) => {
-    resolveExport = resolve;
-  });
-  callMock.mockImplementation((command: string) => {
-    if (command === "get_theme_export_dir") {
-      return Promise.resolve({ configured: "", effective: "/x/export" });
-    }
-    return command === "export_theme" ? pending : Promise.resolve(null);
-  });
-  await render([BUNDLED, DROPIN]);
-  const exportActive = harness.button("Export active theme");
-  await flush(() => {
-    exportActive.click();
-    exportActive.click();
-  });
+test("pending save ignores duplicate submission", async () => {
+  callMock.mockReturnValue(new Promise(() => undefined));
+  await name("New One");
+  await click("Save theme…");
+  await click("Save theme…");
   expect(
-    callMock.mock.calls.filter(([command]) => command === "export_theme"),
+    callMock.mock.calls.filter(
+      ([command]) => command === "choose_settings_file",
+    ),
   ).toHaveLength(1);
-  expect(exportActive.disabled).toBe(true);
+});
 
-  await flush(() => {
-    resolveExport("/x/export/default.json");
+test("preview shows the theme's position, rows, width cap and autohide before activation", async () => {
+  const theme = {
+    ...DROPIN,
+    preview: {
+      ...DROPIN.preview,
+      layout: {
+        ...DROPIN.preview.layout,
+        position: "top" as const,
+        variant: "rows" as const,
+        primaryZone: "plugins" as const,
+        width: "full" as const,
+        maxWidth: 960,
+        behavior: "autohide" as const,
+      },
+    },
+  };
+  await harness.render(
+    <ThemeManager themes={[theme]} onThemes={harness.onThemes} />,
+  );
+  const card = harness.container.querySelector<HTMLButtonElement>(
+    '[aria-label="My Look"]',
+  );
+  expect(card?.textContent).toContain("Top");
+  expect(card?.textContent).toContain("960 px");
+  expect(card?.textContent).toContain("Rows");
+  expect(card?.textContent).toContain("Auto-hide");
+  expect(
+    card
+      ?.querySelector(".settings-theme-desktop")
+      ?.getAttribute("data-position"),
+  ).toBe("top");
+  const zones = [...(card?.querySelectorAll(".settings-theme-zone") ?? [])];
+  expect(zones.map((zone) => zone.getAttribute("data-zone"))).toEqual([
+    "plugins",
+    "shortcuts",
+  ]);
+  expect(callMock).not.toHaveBeenCalledWith("update_config", expect.anything());
+  await flush(() => card?.click());
+  expect(callMock).toHaveBeenCalledWith("update_config", {
+    path: "theme",
+    value: "mine",
   });
-  expect(exportActive.disabled).toBe(false);
 });

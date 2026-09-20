@@ -437,8 +437,9 @@ pub struct BarUiStateParams {
     pub action: crate::capture::UiAction,
     /// The tile whose flyout to open, e.g. `plugin:weather:current`.
     pub tile_id: Option<String>,
-    /// For `open_settings`: the group to show — `bar`, `design`, `shortcuts`,
-    /// `plugins`, `system`, `system/updates`, `legal`, or a page: `plugins/store` (Community
-    /// Store), `design/themes` (Community Themes). Default `bar`.
+    /// For `open_settings`: `bar/layout`, `bar/behavior`, `bar/themes`, `bar/colors`,
+    /// `bar/appearance`, `bar/community`, `shortcuts`, `plugins`, `plugins/store`,
+    /// `plugins/detail/<id>`, or `system/general`, `system/audio`, `system/advanced`,
+    /// `system/about`, `system/legal`. Legacy group IDs remain accepted. Default `bar`.
     pub group: Option<String>,
 }

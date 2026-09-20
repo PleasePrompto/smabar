@@ -40,6 +40,47 @@ async function settle() {
   });
 }
 
+test.each([
+  ["plugins/store", "Plugin Store"],
+  ["bar/community", "Theme Store"],
+])(
+  "clicking %s in navigation returns from details to the overview",
+  async (group, label) => {
+    useSmabar.getState().setSettingsGroup(group);
+    await harness.render(<SettingsPanel preview />);
+    await settle();
+    const details = harness.container.querySelector<HTMLButtonElement>(
+      "[data-store-details]",
+    );
+    expect(details).not.toBeNull();
+    await act(async () => {
+      details?.click();
+      await Promise.resolve();
+    });
+    await settle();
+    expect(
+      harness.container.querySelector(".settings-store-detail"),
+    ).not.toBeNull();
+    const nav = [
+      ...harness.container.querySelectorAll<HTMLButtonElement>(
+        ".settings-subnav button",
+      ),
+    ].find((button) => button.textContent === label);
+    expect(nav).toBeDefined();
+    await act(async () => {
+      nav?.click();
+      await Promise.resolve();
+    });
+    await settle();
+    expect(
+      harness.container.querySelector(".settings-store-detail"),
+    ).toBeNull();
+    expect(
+      harness.container.querySelector(".settings-store-list"),
+    ).not.toBeNull();
+  },
+);
+
 test("the plugin marker continues through the navigation to the installed card and directly to its store detail", async () => {
   useSmabar.getState().setSettingsGroup("plugins");
   await harness.render(<SettingsPanel preview />);
@@ -50,21 +91,33 @@ test("the plugin marker continues through the navigation to the installed card a
     ),
   ).not.toBeNull();
   expect(
-    harness.container.querySelector(
-      "#settings-tab-design .settings-update-dot",
-    ),
+    harness.container.querySelector("#settings-tab-bar .settings-update-dot"),
   ).toBeNull();
   expect(
-    [...harness.container.querySelectorAll(".settings-subnav button")]
+    [
+      ...harness.container.querySelectorAll(
+        ".settings-subnav button, .settings-plugin-nav button",
+      ),
+    ]
       .filter((button) => button.querySelector(".settings-update-dot") !== null)
       .map((button) => button.textContent),
   ).toEqual(
     expect.arrayContaining([
-      "Installed",
+      "Overview",
       "Plugin Store",
       "GitHub notifications",
     ]),
   );
+  const pluginButton = [
+    ...harness.container.querySelectorAll<HTMLButtonElement>(
+      ".settings-plugin-nav button",
+    ),
+  ].find((button) => button.textContent.includes("GitHub notifications"));
+  await act(async () => {
+    pluginButton?.click();
+    await Promise.resolve();
+  });
+  await settle();
   const link = harness.container.querySelector<HTMLButtonElement>(
     ".settings-plugin-card .settings-update-link",
   );
@@ -95,9 +148,7 @@ test("theme updates use Design navigation and disappear when the overview no lon
   await harness.render(<SettingsPanel preview />);
   await settle();
   expect(
-    harness.container.querySelector(
-      "#settings-tab-design .settings-update-dot",
-    ),
+    harness.container.querySelector("#settings-tab-bar .settings-update-dot"),
   ).not.toBeNull();
   expect(
     harness.container.querySelector(
@@ -105,11 +156,13 @@ test("theme updates use Design navigation and disappear when the overview no lon
     ),
   ).toBeNull();
   const marked = [
-    ...harness.container.querySelectorAll(".settings-subnav button"),
+    ...harness.container.querySelectorAll(
+      ".settings-subnav button, .settings-plugin-nav button",
+    ),
   ]
     .filter((button) => button.querySelector(".settings-update-dot") !== null)
     .map((button) => button.textContent);
-  expect(marked).toEqual(expect.arrayContaining(["Theme", "Theme Store"]));
+  expect(marked).toEqual(expect.arrayContaining(["Themes", "Theme Store"]));
   act(() => {
     useSmabar.getState().setCommunityUpdates([]);
   });

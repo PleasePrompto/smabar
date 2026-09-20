@@ -15,7 +15,12 @@ beforeEach(() => {
   document.body.append(container);
   root = createRoot(container);
   act(() => {
-    root.render(<BarTab />);
+    root.render(
+      <>
+        <BarTab />
+        <BarTab page="behavior" />
+      </>,
+    );
   });
 });
 

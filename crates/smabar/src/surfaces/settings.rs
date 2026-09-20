@@ -159,7 +159,27 @@ pub(super) fn raise_settings(window: &WebviewWindow) -> anyhow::Result<()> {
 
 /// The settings groups and pages the shell knows; anything else opens the
 /// bar group rather than an empty panel.
-pub(super) fn normalize_settings_group(group: &str) -> &'static str {
+pub(super) fn normalize_settings_group(group: &str) -> &str {
+    if [
+        "bar/layout",
+        "bar/behavior",
+        "bar/themes",
+        "bar/colors",
+        "bar/appearance",
+        "bar/community",
+        "system/general",
+        "system/audio",
+        "system/advanced",
+        "system/about",
+        "system/legal",
+    ]
+    .contains(&group)
+        || group
+            .strip_prefix("plugins/detail/")
+            .is_some_and(smabar_core::plugins::is_valid_plugin_id)
+    {
+        return group;
+    }
     match group {
         "design" => "design",
         "shortcuts" => "shortcuts",
@@ -188,6 +208,15 @@ mod tests {
         assert_eq!(normalize_settings_group("plugins/store"), "plugins/store");
         assert_eq!(normalize_settings_group("design/themes"), "design/themes");
         assert_eq!(normalize_settings_group("legal"), "legal");
+        for page in [
+            "bar/themes",
+            "bar/appearance",
+            "system/audio",
+            "plugins/detail/clock",
+        ] {
+            assert_eq!(normalize_settings_group(page), page);
+        }
+        assert_eq!(normalize_settings_group("plugins/detail/../bad"), "bar");
         assert_eq!(normalize_settings_group("../../bad"), "bar");
         let size = clamp_settings_size(Some((1, 2)));
         assert_eq!((size.width, size.height), (640, 480));

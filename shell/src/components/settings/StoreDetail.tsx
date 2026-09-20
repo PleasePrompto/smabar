@@ -11,6 +11,7 @@ import {
 } from "../../ipc/store";
 import { useSmabar } from "../../store/bar";
 import { ConfirmRow } from "./controls";
+import { StoreThemePreview } from "./StoreThemePreview";
 import { StoreStateBadge } from "./StoreBadge";
 import { LinkButton, StoreFacts, StoreNotes, TrustFacts } from "./StoreFacts";
 import { Meta, Stars } from "./StoreList";
@@ -240,6 +241,23 @@ export function StoreDetail({
     if (confirming !== null) buttons.current.get(confirming.action)?.focus();
   };
 
+  const controls = (
+    <div className="settings-store-side">
+      <Stars entry={entry} language={language} />
+      <ActionButtons
+        entry={entry}
+        offered={offered}
+        disabled={locked}
+        onAsk={(next) => {
+          action.ask(entry, next);
+        }}
+        buttonRef={(name, node) => {
+          if (node === null) buttons.current.delete(name);
+          else buttons.current.set(name, node);
+        }}
+      />
+    </div>
+  );
   return (
     <section
       className="settings-group settings-store-detail"
@@ -277,21 +295,7 @@ export function StoreDetail({
             )}
           </div>
         </div>
-        <div className="settings-store-side">
-          <Stars entry={entry} language={language} />
-          <ActionButtons
-            entry={entry}
-            offered={offered}
-            disabled={locked}
-            onAsk={(next) => {
-              action.ask(entry, next);
-            }}
-            buttonRef={(name, node) => {
-              if (node === null) buttons.current.delete(name);
-              else buttons.current.set(name, node);
-            }}
-          />
-        </div>
+        {entry.kind === "plugin" && controls}
         {action.error !== null && (
           <p className="sb-crit settings-store-hero-note" role="alert">
             {action.error}
@@ -319,6 +323,9 @@ export function StoreDetail({
       </header>
 
       <StoreNotes entry={entry} overview={overview} />
+      {entry.kind === "theme" && (
+        <StoreThemePreview entry={entry}>{controls}</StoreThemePreview>
+      )}
       <StoreGallery entry={entry} />
 
       <DetailContents

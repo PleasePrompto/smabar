@@ -9,7 +9,7 @@ import { reportError } from "../../ipc/log";
  */
 export function setConfig(path: string, value: unknown): void {
   cancelDebouncedConfig(path);
-  void call("update_config", { path, value }).catch(reportError);
+  void persist(path, value).catch(reportError);
 }
 
 export interface ConfigWrite {
@@ -26,19 +26,37 @@ export async function setConfigsSequentially(
 ): Promise<void> {
   for (const { path, value } of writes) {
     cancelDebouncedConfig(path);
-    await call("update_config", { path, value });
+    await persist(path, value);
   }
 }
 
 /** Same cadence as the zone divider's drag persistence. */
 const DEBOUNCE_MS = 300;
 
-const timers = new Map<string, number>();
+const timers = new Map<string, { timer: number; value: unknown }>();
+const writes = new Set<Promise<void>>();
+function persist(path: string, value: unknown): Promise<void> {
+  const write = call("update_config", { path, value }).then(() => undefined);
+  writes.add(write);
+  void write.then(
+    () => writes.delete(write),
+    () => writes.delete(write),
+  );
+  return write;
+}
+
+/** Save the exact live look, including edits whose debounce has not fired. */
+export async function flushConfig(): Promise<void> {
+  const pending = [...timers].map(([path, { value }]) => ({ path, value }));
+  for (const { path } of pending) cancelDebouncedConfig(path);
+  await Promise.all([...writes]);
+  await setConfigsSequentially(pending);
+}
 
 function cancelDebouncedConfig(path: string): void {
   const pending = timers.get(path);
   if (pending === undefined) return;
-  window.clearTimeout(pending);
+  window.clearTimeout(pending.timer);
   timers.delete(path);
 }
 
@@ -50,11 +68,11 @@ function cancelDebouncedConfig(path: string): void {
  */
 export function setConfigDebounced(path: string, value: unknown): void {
   cancelDebouncedConfig(path);
-  timers.set(
-    path,
-    window.setTimeout(() => {
+  timers.set(path, {
+    value,
+    timer: window.setTimeout(() => {
       timers.delete(path);
       setConfig(path, value);
     }, DEBOUNCE_MS),
-  );
+  });
 }

@@ -1,27 +1,10 @@
-import { getVersion } from "@tauri-apps/api/app";
-import { useEffect, useState } from "react";
-
 import { t } from "../../i18n/t";
-import { reportError } from "../../ipc/log";
 import { SettingGroup } from "./controls";
+import { useAppVersion } from "./useAppVersion";
 
 /** Product identity and runtime build information; intentionally no settings. */
 export function AboutGroup() {
-  // Cargo.toml is the one version source; only the Tauri window knows it.
-  const [version, setVersion] = useState("dev");
-
-  useEffect(() => {
-    if (!("__TAURI_INTERNALS__" in window)) return;
-    let cancelled = false;
-    getVersion()
-      .then((current) => {
-        if (!cancelled) setVersion(current);
-      })
-      .catch(reportError);
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const version = useAppVersion();
 
   return (
     <SettingGroup title={t("settings.system.about")}>

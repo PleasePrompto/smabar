@@ -168,7 +168,15 @@ fn main() -> anyhow::Result<()> {
                 }
             }
         })
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
+            commands::files::choose_settings_file,
+            commands::files::save_theme_copy,
+            commands::files::theme_file_document,
+            commands::files::write_theme_copy,
+            commands::plugin_import::inspect_plugin_zip,
+            commands::plugin_import::install_plugin_zip,
+
             platform::input_shape::set_input_shape,
             commands::config::get_ui_state,
             commands::plugin_action,
@@ -235,6 +243,7 @@ fn main() -> anyhow::Result<()> {
             commands::store::store_overview,
             commands::store::store_refresh,
             commands::store::store_detail,
+            commands::store::store_theme_preview,
             commands::store::store_install_plugin,
             commands::store::store_install_theme,
             commands::legal::legal_status,
@@ -304,7 +313,7 @@ fn main() -> anyhow::Result<()> {
                 .await;
                 Ok::<_, smabar_core::config::ConfigError>((watcher, supervisor))
             })?;
-            let store = build_store(&paths, &watcher, &supervisor, reserved_ids)?;
+            let store = store_http::build_store(&paths, &watcher, &supervisor, reserved_ids)?;
             platform::autostart::setup(app.handle(), Arc::clone(&watcher));
             let shortcuts = build_shortcuts_service(&paths, &watcher.current().language)?;
             let locale = smabar_core::i18n::resolve(&paths, &watcher.current().language);
@@ -417,32 +426,6 @@ fn bundled_plugin_ids(bundled_dir: &std::path::Path) -> std::collections::BTreeS
                 .collect()
         })
         .unwrap_or_default()
-}
-
-/// The Community Store client over the app's HTTP edge. The endpoint and
-/// the key are the app edge's decisions (environment overrides live here).
-fn build_store(
-    paths: &SmabarPaths,
-    watcher: &Arc<ConfigWatcher>,
-    supervisor: &PluginSupervisor,
-    reserved_ids: std::collections::BTreeSet<String>,
-) -> anyhow::Result<smabar_core::store::StoreService> {
-    let endpoint = store_http::store_endpoint().map_err(anyhow::Error::msg)?;
-    let key = store_http::store_public_key().map_err(anyhow::Error::msg)?;
-    let fetcher = Arc::new(store_http::ReqwestFetcher::new(&endpoint)?);
-    smabar_core::store::StoreService::new(
-        paths.clone(),
-        Arc::clone(watcher),
-        supervisor.clone(),
-        fetcher,
-        smabar_core::store::StoreOptions {
-            endpoint,
-            key,
-            app_version: env!("CARGO_PKG_VERSION").to_string(),
-            reserved_ids,
-        },
-    )
-    .context("cannot start the Community Store client")
 }
 
 /// Injects the current platform's shortcut behavior. The home directory is

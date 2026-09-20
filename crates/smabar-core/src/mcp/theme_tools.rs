@@ -17,13 +17,12 @@ impl SmabarMcp {
     #[tool(
         description = "List all themes: the four compiled-in full themes (default, paper, \
                        terminal, topbar) plus every drop-in theme file, each with \
-                       preview colors and the active one marked. Activate a theme via \
+                       preview colors, layout and appearance, and the active one marked. Activate a theme via \
                        settings_set(\"theme\", name)."
     )]
     pub(super) async fn theme_list(&self) -> Result<Json<ThemeListResult>, McpError> {
-        let active = self.config.current().theme;
         Ok(Json(ThemeListResult {
-            themes: themes::summaries(&self.paths, &active),
+            themes: themes::summaries(&self.paths, &self.config.current()),
         }))
     }
 

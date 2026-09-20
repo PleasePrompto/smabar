@@ -2,6 +2,34 @@ import { t } from "../../i18n/t";
 import { useSmabar } from "../../store/bar";
 import { Choice, ChoiceGrid } from "./controls";
 import { setConfig } from "./persist";
+import { LanguageFlag } from "../LanguageFlag";
+
+export function LanguageSelect({
+  languages,
+}: {
+  languages: readonly string[];
+}) {
+  const language = useSmabar((state) => state.language);
+  return (
+    <label className="settings-language-picker">
+      <span className="sb-sr-only">{t("settings.system.language")}</span>
+      <LanguageFlag code={language} />
+      <select
+        className="sb-select sb-select-native"
+        value={language}
+        onChange={(event) => {
+          setConfig("language", event.target.value);
+        }}
+      >
+        {languages.map((code) => (
+          <option key={code} value={code}>
+            {languageName(code)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 /**
  * The app language as a segmented choice. Persisted through `update_config`;

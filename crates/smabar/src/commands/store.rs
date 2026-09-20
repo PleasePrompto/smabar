@@ -53,9 +53,22 @@ pub async fn store_detail(
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+pub async fn store_theme_preview(
+    state: State<'_, AppState>,
+    name: String,
+    expected_commit: String,
+) -> Result<smabar_core::themes::ThemePreview, String> {
+    state
+        .store()
+        .theme_preview(&name, &expected_commit)
+        .await
+        .map_err(|error| error.to_string())
+}
+
 /// Installing from the panel needs the accepted terms of use (ADR 0017);
 /// the MCP tools are not gated (ADR 0001).
-fn require_terms(state: &AppState) -> Result<(), String> {
+pub(super) fn require_terms(state: &AppState) -> Result<(), String> {
     if smabar_core::legal::is_accepted(state.paths()) {
         return Ok(());
     }

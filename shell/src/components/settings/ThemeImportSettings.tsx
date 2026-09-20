@@ -6,7 +6,7 @@ import { call } from "../../ipc/call";
 import { reportError, visibleError } from "../../ipc/log";
 import { showNotice } from "../../ipc/surface";
 import { useSmabar, type ThemeSummary } from "../../store/bar";
-import { ConfirmRow, SettingRow } from "./controls";
+import { ConfirmRow } from "./controls";
 import { slugifyThemePath } from "./model";
 
 interface ThemeImportSettingsProps {
@@ -18,13 +18,11 @@ export function ThemeImportSettings({
   themes,
   onThemes,
 }: ThemeImportSettingsProps) {
-  const [importPath, setImportPath] = useState("");
   const [importConfirm, setImportConfirm] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const [importPending, setImportPending] = useState(false);
   const importPendingRef = useRef(false);
   const importButton = useRef<HTMLButtonElement>(null);
-  const importField = useRef<HTMLInputElement>(null);
 
   const runImport = useCallback(
     (path: string, overwrite: boolean) => {
@@ -37,8 +35,7 @@ export function ThemeImportSettings({
       call<ThemeSummary[]>("import_theme", { path, overwrite })
         .then((list) => {
           onThemes(list);
-          setImportPath("");
-          requestAnimationFrame(() => importField.current?.focus());
+          requestAnimationFrame(() => importButton.current?.focus());
           void showNotice("settings.themes.imported").catch(reportError);
         })
         .catch((error: unknown) => {
@@ -98,40 +95,28 @@ export function ThemeImportSettings({
   }, [startImport]);
 
   return (
-    <SettingRow
-      label={t("settings.themes.import")}
-      description={t("settings.themes.importPathDescription")}
-      wide
-    >
-      <div className="sb-inline">
-        <input
-          ref={importField}
-          className="sb-input"
-          style={{ flex: 1, minWidth: 0 }}
-          value={importPath}
-          placeholder={t("settings.themes.importPlaceholder")}
-          aria-label={t("settings.themes.importPath")}
-          onChange={(event) => {
-            setImportPath(event.target.value);
-            setImportError(null);
-            setImportConfirm(null);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") startImport(importPath);
-          }}
-        />
-        <button
-          ref={importButton}
-          className="sb-btn sb-btn-ghost"
-          disabled={importPath.trim() === "" || importPending}
-          onClick={() => {
-            startImport(importPath);
-          }}
-        >
-          <FileUp size="1em" aria-hidden="true" />
-          {t("settings.themes.import")}
-        </button>
-      </div>
+    <div className="settings-theme-import">
+      <button
+        ref={importButton}
+        type="button"
+        className="sb-btn"
+        disabled={importPending}
+        onClick={() => {
+          void call<string | null>("choose_settings_file", {
+            purpose: "themeImport",
+          })
+            .then((path) => {
+              if (path !== null) startImport(path);
+            })
+            .catch((error: unknown) => {
+              setImportError(visibleError(error));
+              reportError(error);
+            });
+        }}
+      >
+        <FileUp size="1em" aria-hidden="true" />
+        {t("settings.themes.import")}
+      </button>
       {importError !== null && (
         <div className="sb-crit" role="alert">
           {importError}
@@ -153,6 +138,6 @@ export function ThemeImportSettings({
           }}
         />
       )}
-    </SettingRow>
+    </div>
   );
 }

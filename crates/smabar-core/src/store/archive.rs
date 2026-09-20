@@ -9,7 +9,7 @@
 
 use std::collections::HashSet;
 use std::fs::{self, File};
-use std::io::{self, BufReader, Read};
+use std::io::{self, BufReader, Cursor, Read, Seek};
 use std::path::{Path, PathBuf};
 
 use thiserror::Error;
@@ -108,6 +108,8 @@ pub enum ArchiveError {
         #[source]
         source: io::Error,
     },
+    #[error("ZIP must contain exactly one smabar.json at its root or inside one enclosing folder")]
+    LocalLayout,
     #[error(transparent)]
     Tree(#[from] TreeError),
 }
@@ -137,11 +139,59 @@ pub fn extract_plugin(
         path: zip_path.to_path_buf(),
         source,
     })?;
-    let mut archive =
+    let archive =
         ZipArchive::new(BufReader::new(file)).map_err(|source| ArchiveError::NotAZip {
             path: zip_path.to_path_buf(),
             source,
         })?;
+    extract_archive(archive, &root, &prefix, dest, limits)
+}
+
+/// A local archive contains one plugin, flat or inside one enclosing folder.
+pub fn extract_local_plugin(
+    bytes: &[u8],
+    dest: &Path,
+    limits: &ArchiveLimits,
+) -> Result<Extracted, ArchiveError> {
+    let mut archive =
+        ZipArchive::new(Cursor::new(bytes)).map_err(|source| ArchiveError::NotAZip {
+            path: PathBuf::from("selected ZIP"),
+            source,
+        })?;
+    if archive.len() > limits.max_files + limits.max_directories {
+        return Err(ArchiveError::TooManyFiles(limits.max_files));
+    }
+    let mut roots = Vec::new();
+    for index in 0..archive.len() {
+        let entry = archive
+            .by_index(index)
+            .map_err(|source| ArchiveError::Entry {
+                name: format!("#{index}"),
+                source,
+            })?;
+        let name = entry.name();
+        if name == crate::plugins::MANIFEST_FILE {
+            roots.push(String::new());
+        } else if let Some(prefix) = name.strip_suffix("/smabar.json") {
+            if prefix.contains('/') {
+                return Err(ArchiveError::LocalLayout);
+            }
+            roots.push(format!("{prefix}/"));
+        }
+    }
+    if roots.len() != 1 {
+        return Err(ArchiveError::LocalLayout);
+    }
+    extract_archive(archive, "", &roots[0], dest, limits)
+}
+
+fn extract_archive<R: Read + Seek>(
+    mut archive: ZipArchive<R>,
+    root: &str,
+    prefix: &str,
+    dest: &Path,
+    limits: &ArchiveLimits,
+) -> Result<Extracted, ArchiveError> {
     fs::create_dir_all(dest).map_err(|source| ArchiveError::Io {
         path: dest.to_path_buf(),
         source,
@@ -162,13 +212,22 @@ pub fn extract_plugin(
                 source,
             })?;
         let name = entry.name().to_string();
-        if !name.starts_with(&root) {
-            return Err(ArchiveError::ForeignEntry { name, root });
+        if !name.starts_with(root) {
+            return Err(ArchiveError::ForeignEntry {
+                name,
+                root: root.to_string(),
+            });
+        }
+        if !is_safe_relative(name.trim_end_matches('/')) || entry.enclosed_name().is_none() {
+            return Err(ArchiveError::UnsafePath(name));
+        }
+        if entry.is_symlink() {
+            return Err(ArchiveError::Symlink(name));
         }
         if entry.is_dir() {
             continue;
         }
-        let Some(relative) = name.strip_prefix(&prefix) else {
+        let Some(relative) = name.strip_prefix(prefix) else {
             continue;
         };
         if relative.is_empty() {
@@ -234,7 +293,9 @@ pub fn extract_plugin(
         }
     }
 
-    let manifest = manifest.ok_or(ArchiveError::NoManifest { prefix })?;
+    let manifest = manifest.ok_or(ArchiveError::NoManifest {
+        prefix: prefix.to_string(),
+    })?;
     Ok(Extracted {
         tree_oid: tree.finish(),
         files,

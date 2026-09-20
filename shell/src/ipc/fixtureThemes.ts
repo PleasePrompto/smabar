@@ -5,6 +5,7 @@ import topbarTheme from "../../../themes/topbar.json";
 import { slugifyThemeName } from "../components/settings/model";
 import { useSmabar, type ThemeMeta, type ThemeSummary } from "../store/bar";
 import { readThemeDocument } from "../theme/document";
+import { asBoolean, asChoice, asNumber } from "./fixtureValues";
 
 /**
  * Browser-dev mirror of the core's theme registry (`themes::BUNDLED`): the
@@ -55,6 +56,7 @@ export function listThemes(): ThemeSummary[] {
       name,
       source,
       active: name === active,
+      preview: themePreview(theme, resolved),
       colors: {
         accent: resolved["--sb-accent"] ?? "",
         accent2: resolved["--sb-accent-2"] ?? "",
@@ -84,6 +86,88 @@ export function listThemes(): ThemeSummary[] {
   ];
 }
 
+/** Browser-only mirror of the core's read-only theme activation preview. */
+export function themePreview(
+  theme: FixtureTheme,
+  tokens: Record<string, string>,
+): ThemeSummary["preview"] {
+  const { layout, appearance } = useSmabar.getState();
+  const setting = (path: string, fallback: unknown) =>
+    theme.settings[path] ?? fallback;
+  const choice = <T extends string>(
+    path: string,
+    choices: readonly T[],
+    fallback: T,
+  ) => asChoice(setting(path, fallback), choices, path);
+  return {
+    layout: {
+      ...layout,
+      position: choice("layout.position", ["top", "bottom"], layout.position),
+      variant: choice(
+        "layout.variant",
+        ["split", "rows", "solo"],
+        layout.variant,
+      ),
+      width: choice("layout.width", ["auto", "full"], layout.width),
+      behavior: choice(
+        "layout.behavior",
+        ["reserve", "float", "autohide"],
+        layout.behavior,
+      ),
+      primaryZone: choice(
+        "layout.primaryZone",
+        ["shortcuts", "plugins"],
+        layout.primaryZone,
+      ),
+      margin: asNumber(
+        setting("layout.margin", layout.margin),
+        "layout.margin",
+      ),
+      maxWidth: asNumber(
+        setting("layout.maxWidth", layout.maxWidth),
+        "layout.maxWidth",
+      ),
+      dividerRatio: asNumber(
+        setting("layout.dividerRatio", layout.dividerRatio),
+        "layout.dividerRatio",
+      ),
+      yieldToFullscreen: asBoolean(
+        setting("layout.yieldToFullscreen", layout.yieldToFullscreen),
+        "layout.yieldToFullscreen",
+      ),
+    },
+    appearance: {
+      ...appearance,
+      barChrome: choice(
+        "appearance.barChrome",
+        ["card", "flat"],
+        appearance.barChrome,
+      ),
+      tileChrome: choice(
+        "appearance.tileChrome",
+        ["card", "flat"],
+        appearance.tileChrome,
+      ),
+      shortcutAlign: choice(
+        "appearance.shortcutAlign",
+        ["left", "center", "right"],
+        appearance.shortcutAlign,
+      ),
+      pluginAlign: choice(
+        "appearance.pluginAlign",
+        ["left", "center", "right"],
+        appearance.pluginAlign,
+      ),
+      pluginAccent: choice(
+        "appearance.pluginAccent",
+        ["theme", "plugin"],
+        appearance.pluginAccent,
+      ),
+      tokens,
+    },
+  };
+}
+
 function assertWritable(name: string, overwrite: boolean): void {
   if (name in FIXTURE_THEMES) {
     throw new Error(`"${name}" is a compiled-in theme and read-only`);
@@ -95,8 +179,8 @@ function assertWritable(name: string, overwrite: boolean): void {
 
 /**
  * Mirrors `save_custom_theme`'s document assembly: active theme resolved,
- * slider overrides baked in, no settings snapshot (browser-dev keeps the
- * behavior side simple). The dispatcher activates the result afterwards.
+ * slider overrides and the preview's behavior baked in. The dispatcher
+ * activates the result afterwards.
  */
 export function saveCustomTheme(name: string, overwrite: boolean): void {
   assertWritable(name, overwrite);
@@ -108,7 +192,14 @@ export function saveCustomTheme(name: string, overwrite: boolean): void {
       ...base?.tokens,
       ...store.appearance.tokens,
     },
-    settings: {},
+    settings: Object.fromEntries<unknown>([
+      ...Object.entries({ ...store.layout })
+        .filter(([key]) => key !== "monitor")
+        .map(([key, value]): [string, unknown] => [`layout.${key}`, value]),
+      ...Object.entries({ ...store.appearance })
+        .filter(([key]) => key !== "tokens")
+        .map(([key, value]): [string, unknown] => [`appearance.${key}`, value]),
+    ]),
   });
 }
 

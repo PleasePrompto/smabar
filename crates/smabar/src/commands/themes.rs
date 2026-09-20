@@ -67,10 +67,15 @@ fn activated_config(
 }
 
 fn fresh_summaries(state: &AppState) -> Vec<themes::ThemeInfo> {
-    themes::summaries(&state.paths, &state.watcher.current().theme)
+    themes::summaries(&state.paths, &state.watcher.current())
 }
 
-fn emit_theme_if_active(app: &AppHandle, paths: &SmabarPaths, watcher: &ConfigWatcher, name: &str) {
+pub(super) fn emit_theme_if_active(
+    app: &AppHandle,
+    paths: &SmabarPaths,
+    watcher: &ConfigWatcher,
+    name: &str,
+) {
     watcher.with_current(|current| {
         if current.theme == name {
             emit_theme_changed(app, paths, name);
@@ -136,22 +141,27 @@ fn rollback_theme_write_safely(
     }
 }
 
-fn save_theme_file(
+pub(super) fn save_theme_file(
     paths: &SmabarPaths,
     watcher: &ConfigWatcher,
     name: &str,
     overwrite: bool,
-) -> Result<bool, String> {
+) -> Result<(bool, String), String> {
     let mut pending = None;
     let updated = watcher.update(|current| {
-        let staged = match theme_io::stage_current_theme(paths, current, name, overwrite) {
+        let document = theme_io::current_look_document(paths, current);
+        let json = match theme_io::document_to_json(&document) {
+            Ok(json) => json,
+            Err(error) => return (current.clone(), Err(error.to_string())),
+        };
+        let staged = match theme_io::stage_theme_write(paths, name, &document, overwrite) {
             Ok(staged) => staged,
             Err(error) => return (current.clone(), Err(error.to_string())),
         };
         match activated_config(paths, current, name) {
             Ok(updated) => {
                 pending = Some((current.theme == name, staged));
-                (updated, Ok(current.theme == name))
+                (updated, Ok((current.theme == name, json)))
             }
             Err(error) => (current.clone(), Err(rollback_theme_write(staged, error))),
         }
@@ -181,7 +191,7 @@ pub fn save_custom_theme(
     name: String,
     overwrite: bool,
 ) -> Result<Vec<themes::ThemeInfo>, String> {
-    if save_theme_file(&state.paths, &state.watcher, &name, overwrite)? {
+    if save_theme_file(&state.paths, &state.watcher, &name, overwrite)?.0 {
         // Re-save under the already active name: the event bridge compares
         // names only and stays silent, while the activation just cleared the
         // overrides this file baked in — emit the resolved map manually.
@@ -301,6 +311,41 @@ mod tests {
     use tempfile::tempdir;
 
     use super::*;
+
+    #[tokio::test]
+    async fn saved_copy_uses_the_exact_local_snapshot_even_after_later_edits() {
+        let dir = tempdir().expect("temp dir");
+        let paths = SmabarPaths::new(dir.path().join("smabar"));
+        let watcher = ConfigWatcher::spawn(paths.clone()).expect("watcher");
+        let mut config = watcher.current();
+        config
+            .appearance
+            .tokens
+            .insert("--sb-accent".into(), "#123456".into());
+        watcher.apply(config).expect("edit");
+        let (_, document) = save_theme_file(&paths, &watcher, "mine", false).expect("save");
+        assert_eq!(
+            std::fs::read_to_string(paths.themes_dir().join("mine.json")).expect("local copy"),
+            document
+        );
+        let mut later = watcher.current();
+        later
+            .appearance
+            .tokens
+            .insert("--sb-accent".into(), "#abcdef".into());
+        watcher.apply(later).expect("later edit");
+        let output = dir.path().join("shared.json");
+        theme_io::write_copy(&output, &document).expect("retry copy");
+        assert_eq!(
+            std::fs::read_to_string(&output).expect("external copy"),
+            document
+        );
+        assert!(theme_io::write_copy(&output, "{}").is_err());
+        assert_eq!(
+            std::fs::read_to_string(output).expect("preserved copy"),
+            document
+        );
+    }
 
     #[tokio::test]
     async fn failed_active_theme_delete_restores_the_exact_config() {

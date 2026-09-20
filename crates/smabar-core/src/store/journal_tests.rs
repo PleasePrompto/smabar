@@ -25,11 +25,12 @@ fn interrupted(paths: &crate::config::SmabarPaths) -> super::journal::Journal {
     let transaction = super::journal::Journal {
         id: "demo".into(),
         had_previous: true,
-        receipt: receipts::PluginReceipt {
+        receipt: Some(receipts::PluginReceipt {
             version: "1.1.0".into(),
             installed_digest: "new code digest".into(),
             ..old.clone()
-        },
+        }),
+        installed_digest: None,
         previous_receipt: Some(old),
     };
     super::journal::write(paths, &transaction).expect("journal");
@@ -170,7 +171,8 @@ fn recovery_restores_or_completes_an_interrupted_swap() {
         &super::journal::Journal {
             id: "demo".to_string(),
             had_previous: true,
-            receipt: new_receipt.clone(),
+            receipt: Some(new_receipt.clone()),
+            installed_digest: None,
             previous_receipt: Some(old_receipt.clone()),
         },
     )
@@ -195,7 +197,8 @@ fn recovery_restores_or_completes_an_interrupted_swap() {
         &super::journal::Journal {
             id: "demo".to_string(),
             had_previous: true,
-            receipt: new_receipt,
+            receipt: Some(new_receipt),
+            installed_digest: None,
             previous_receipt: Some(old_receipt),
         },
     )

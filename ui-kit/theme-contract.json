@@ -127,7 +127,9 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/settings/ColorSettings.tsx",
+        "shell/src/components/settings/ThemePreview.tsx",
         "shell/src/components/settings/model.ts",
+        "shell/src/ipc/fixtureStore.ts",
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/plugins/branding.ts",
         "shell/src/styles/bar.css",
@@ -136,6 +138,7 @@
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css",
@@ -573,8 +576,33 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-card[data-active]",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-card[data-active] .settings-theme-heading small",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-trigger:focus-visible",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-zone[data-zone=\"shortcuts\"]",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-nav-section > button.sb-active",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav button:focus-visible, .settings-version-chip:focus-visible, .settings-theme-select:focus-visible, .settings-plugin-name:focus-visible",
           "fallbacks": []
         },
         {
@@ -583,8 +611,8 @@
           "fallbacks": []
         },
         {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-block[data-highlight] > .settings-box",
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip[data-update]",
           "fallbacks": []
         },
         {
@@ -604,27 +632,12 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary:focus-visible",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary:hover",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-icon",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-slider input[type=\"range\"]",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": "10%, 40%",
           "fallbacks": []
         },
         {
@@ -772,17 +785,24 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/settings/ColorSettings.tsx",
+        "shell/src/components/settings/ThemePreview.tsx",
         "shell/src/components/settings/model.ts",
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/plugins/branding.ts",
         "shell/src/styles/globals.css",
         "shell/src/styles/kit-components.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/theme/apply.ts"
       ],
       "cssConsumers": [
         {
           "file": "shell/src/styles/kit-components.css",
           "selector": ".sb-mesh",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-zone[data-zone=\"shortcuts\"] .settings-theme-tile:nth-child(2)",
           "fallbacks": []
         }
       ]
@@ -900,7 +920,8 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/bar/BarShell.tsx",
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
@@ -916,6 +937,16 @@
           "fallbacks": [
             "0.25rem"
           ]
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-bar",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature",
+          "fallbacks": []
         }
       ]
     },
@@ -935,7 +966,8 @@
         "shell/src/components/bar/metrics.ts",
         "shell/src/components/settings/defaults.ts",
         "shell/src/components/settings/model.ts",
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
@@ -951,6 +983,11 @@
           "fallbacks": [
             "3.25rem"
           ]
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-bar",
+          "fallbacks": []
         }
       ]
     },
@@ -972,6 +1009,7 @@
         "shell/src/components/settings/defaults.ts",
         "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
@@ -1386,6 +1424,11 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature[data-tile-chrome=\"card\"] .settings-theme-tile",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-btn--ghost:hover",
           "fallbacks": []
@@ -1489,9 +1532,16 @@
       "group": "layout",
       "dependencies": [],
       "consumers": [
-        "shell/src/components/bar/BarShell.tsx"
+        "shell/src/components/bar/BarShell.tsx",
+        "shell/src/styles/settings-themes.css"
       ],
-      "cssConsumers": []
+      "cssConsumers": [
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-bar",
+          "fallbacks": []
+        }
+      ]
     },
     "--sb-bar-pad-y": {
       "scope": "base",
@@ -1511,7 +1561,8 @@
         "shell/src/components/settings/BarTab.tsx",
         "shell/src/components/settings/defaults.ts",
         "shell/src/components/settings/model.ts",
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
@@ -1520,6 +1571,11 @@
           "fallbacks": [
             "0.375rem"
           ]
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-bar",
+          "fallbacks": []
         }
       ]
     },
@@ -1537,9 +1593,16 @@
       "consumers": [
         "shell/src/components/bar/BarShell.tsx",
         "shell/src/components/settings/DesignTab.tsx",
-        "shell/src/components/settings/defaults.ts"
+        "shell/src/components/settings/defaults.ts",
+        "shell/src/styles/settings-themes.css"
       ],
-      "cssConsumers": []
+      "cssConsumers": [
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-bar",
+          "fallbacks": []
+        }
+      ]
     },
     "--sb-blur": {
       "scope": "base",
@@ -2269,6 +2332,20 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-panel .settings-panel-header",
+          "fallbacks": [
+            "1px"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-sidebar-footer",
+          "fallbacks": [
+            "1px"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
           "fallbacks": [
             "1px"
           ]
@@ -4327,6 +4404,7 @@
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css",
@@ -4356,6 +4434,11 @@
         {
           "file": "shell/src/styles/settings-store.css",
           "selector": ".settings-readme code",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-clock",
           "fallbacks": []
         },
         {
@@ -4421,6 +4504,7 @@
         "shell/src/styles/globals.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/overlay.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/ui-kit.css",
         "shell/src/theme/fonts.ts"
       ],
@@ -4463,6 +4547,11 @@
         {
           "file": "shell/src/styles/overlay.css",
           "selector": ".overlay-tooltip",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature",
           "fallbacks": []
         },
         {
@@ -4677,11 +4766,6 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-group-header h2",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-card .settings-block-title",
           "fallbacks": []
         },
@@ -4729,6 +4813,7 @@
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -4895,13 +4980,13 @@
           "fallbacks": []
         },
         {
-          "file": "shell/src/styles/settings-window.css",
-          "selector": ".settings-group-nav .settings-nav-section > button",
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-select",
           "fallbacks": []
         },
         {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro h3",
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-nav-section > button",
           "fallbacks": []
         },
         {
@@ -4948,6 +5033,7 @@
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -5144,8 +5230,28 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-card",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-language-picker .sb-select",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
           "fallbacks": []
         },
         {
@@ -5170,11 +5276,6 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro p",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-panel .sb-choice",
           "fallbacks": []
         },
@@ -5185,12 +5286,12 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
+          "selector": ".settings-plugin-error",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-error",
+          "selector": ".settings-theme-name",
           "fallbacks": []
         },
         {
@@ -5275,6 +5376,7 @@
         "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-window.css",
+        "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
@@ -5306,6 +5408,11 @@
         {
           "file": "shell/src/styles/kit-components.css",
           "selector": ".sb-toast__close",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-group-header h2",
           "fallbacks": []
         },
         {
@@ -5352,6 +5459,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -5398,6 +5506,16 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-facts",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-heading small",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-subnav button",
           "fallbacks": []
@@ -5405,6 +5523,16 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-version",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav h3",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
           "fallbacks": []
         },
         {
@@ -5538,6 +5666,7 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/settings/ColorSettings.tsx",
+        "shell/src/components/settings/ThemePreview.tsx",
         "shell/src/components/settings/model.ts",
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/styles/bar.css",
@@ -5579,12 +5708,18 @@
         "--sb-text"
       ],
       "consumers": [
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
           "selector": ".surface-bar",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature[data-variant=\"split\"] .settings-theme-zone + .settings-theme-zone",
           "fallbacks": []
         }
       ]
@@ -5816,6 +5951,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -6062,13 +6198,43 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-desktop",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-nav-section > button:hover",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button.sb-active, .settings-plugin-nav button.sb-active",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-version",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button:hover",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip[data-update]",
           "fallbacks": []
         },
         {
@@ -6084,6 +6250,11 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-color-summary",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-import-panel",
           "fallbacks": []
         },
         {
@@ -6109,11 +6280,6 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-row .sb-btn-ghost",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": "10%, 40%",
           "fallbacks": []
         },
         {
@@ -6176,6 +6342,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -6522,6 +6689,31 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-store-list > li[data-theme]",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-card",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-desktop",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-window-toolbar",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-subnav",
           "fallbacks": []
@@ -6534,6 +6726,16 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-panel .settings-panel-header",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-sidebar-footer",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
           "fallbacks": []
         },
         {
@@ -6573,6 +6775,11 @@
         },
         {
           "file": "shell/src/styles/settings.css",
+          "selector": ".settings-import-panel",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
           "selector": ".settings-panel .sb-choice-grid",
           "fallbacks": []
         },
@@ -6584,11 +6791,6 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-card .settings-box > .settings-plugin-details",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details[open] > summary",
           "fallbacks": []
         },
         {
@@ -6676,12 +6878,18 @@
       "consumers": [
         "shell/src/components/settings/model.ts",
         "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
           "selector": ".surface-tile",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature[data-tile-chrome=\"card\"] .settings-theme-tile",
           "fallbacks": []
         },
         {
@@ -6706,12 +6914,18 @@
       ],
       "consumers": [
         "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
           "selector": ".surface-tile",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature[data-tile-chrome=\"card\"] .settings-theme-tile",
           "fallbacks": []
         },
         {
@@ -7492,6 +7706,11 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-color-contrast",
           "fallbacks": []
@@ -7824,6 +8043,7 @@
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -7945,8 +8165,33 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-store-list > li[data-theme]",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-card",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-tile",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-nav-section > button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
           "fallbacks": []
         },
         {
@@ -7961,7 +8206,17 @@
         },
         {
           "file": "shell/src/styles/settings.css",
+          "selector": ".settings-import-panel",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
           "selector": ".settings-panel .sb-choice-grid",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-panel .settings-box",
           "fallbacks": []
         },
         {
@@ -8086,6 +8341,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings.css"
       ],
       "cssConsumers": [
@@ -8225,6 +8481,16 @@
           "fallbacks": [
             "0.1875rem"
           ]
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-desktop",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings.css",
@@ -8480,7 +8746,7 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/bar/ShortcutZone.tsx",
-        "shell/src/components/settings/ShortcutsTab.tsx",
+        "shell/src/components/settings/ShortcutPresentation.tsx",
         "shell/src/components/settings/defaults.ts"
       ],
       "cssConsumers": []
@@ -8753,6 +9019,16 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-block-title",
           "fallbacks": []
@@ -8785,16 +9061,6 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-help",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro p",
           "fallbacks": []
         },
         {
@@ -9012,6 +9278,16 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-sidebar-footer",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-workspace",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-block",
           "fallbacks": []
@@ -9023,17 +9299,7 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-block + .settings-columns, .settings-columns + .settings-block, .settings-columns + .settings-columns",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-columns",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-columns > .settings-block + .settings-block",
+          "selector": ".settings-import-panel",
           "fallbacks": []
         },
         {
@@ -9076,6 +9342,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -9377,6 +9644,41 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-store-list [data-theme] .settings-store-row",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-store-list[data-themes]",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-store-theme-preview",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-library",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-trigger",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-select",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info",
           "fallbacks": []
@@ -9384,6 +9686,21 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-panel .settings-panel-header",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav ul",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-sidebar-footer",
           "fallbacks": []
         },
         {
@@ -9408,17 +9725,12 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro + .settings-block",
+          "selector": ".settings-import-panel",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-card .settings-plugin-header",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
           "fallbacks": []
         },
         {
@@ -9429,6 +9741,11 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-row",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-theme-toolbar",
           "fallbacks": []
         },
         {
@@ -9512,6 +9829,7 @@
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -9813,8 +10131,33 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-actions",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-facts",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-footer-identity",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-nav-section > button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button",
           "fallbacks": []
         },
         {
@@ -9830,6 +10173,31 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-version",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-language-picker > .language-flag",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav h3",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-sidebar-footer",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
           "fallbacks": []
         },
         {
@@ -9859,17 +10227,17 @@
         },
         {
           "file": "shell/src/styles/settings.css",
+          "selector": ".settings-import-panel",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
           "selector": ".settings-panel .sb-choice",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-description",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
           "fallbacks": []
         },
         {
@@ -9910,6 +10278,11 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-slider",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-theme-toolbar",
           "fallbacks": []
         },
         {
@@ -10144,11 +10517,6 @@
           "fallbacks": []
         },
         {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro",
-          "fallbacks": []
-        },
-        {
           "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], [data-sb-flyout-width], .sb-split > *, .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tab-panel] ) + *, .sb-root:not([data-target=\"tile\"]) :is( [data-tabs], [data-tab-panel], [data-sb-flyout-width], .sb-split > *, .sb-reveal, .sb-accordion-item__body, .sb-collapsible__body ) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tab-panel] ), .sb-root:not([data-target=\"tile\"]) > :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, .sb-chart-bars, [data-tabs] ) + *, .sb-root:not([data-target=\"tile\"]) > * + :is( .sb-card, .sb-hero, .sb-kpi-grid, .sb-alert, .sb-empty, .sb-table-wrap, [data-tabs] )",
           "fallbacks": []
@@ -10167,13 +10535,13 @@
       "group": "spacing.scale",
       "dependencies": [],
       "consumers": [
-        "shell/src/components/settings/DesignTab.tsx",
         "shell/src/components/settings/ShortcutAdd.tsx",
         "shell/src/styles/bar.css",
         "shell/src/styles/kit-components.css",
         "shell/src/styles/overlay.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -10282,6 +10650,26 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-actions",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-facts > span",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-heading",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-heading small",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-content",
           "fallbacks": []
@@ -10298,12 +10686,32 @@
         },
         {
           "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-panel .settings-panel-header",
           "fallbacks": []
         },
         {
           "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav h3",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-title",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
           "fallbacks": []
         },
         {
@@ -10348,11 +10756,6 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-facts, .settings-plugin-actions, .settings-audio-controls, .settings-audio-volume, .settings-audio-mute",
           "fallbacks": []
         },
@@ -10364,6 +10767,11 @@
         {
           "file": "shell/src/styles/settings.css",
           "selector": ".settings-row-suffix + .settings-row-control",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings.css",
+          "selector": ".settings-theme-name",
           "fallbacks": []
         },
         {
@@ -10990,6 +11398,7 @@
         "shell/src/components/Toast.tsx",
         "shell/src/components/settings/ColorSettings.tsx",
         "shell/src/components/settings/SettingsPanel.tsx",
+        "shell/src/components/settings/ThemePreview.tsx",
         "shell/src/components/settings/model.ts",
         "shell/src/ipc/fixtureThemes.ts",
         "shell/src/styles/bar.css",
@@ -10997,6 +11406,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css",
@@ -11374,6 +11784,26 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-desktop",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-miniature",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-swatches > span",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-window",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-brand-mark",
           "fallbacks": []
@@ -11390,6 +11820,11 @@
         },
         {
           "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button.sb-active, .settings-plugin-nav button.sb-active",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-subnav button:hover",
           "fallbacks": []
         },
@@ -11401,6 +11836,16 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-principle",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip:hover",
           "fallbacks": []
         },
         {
@@ -11435,11 +11880,6 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro h3",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-panel .sb-choice.sb-active",
           "fallbacks": []
         },
@@ -11455,7 +11895,7 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary:hover",
+          "selector": ".settings-plugin-name",
           "fallbacks": []
         },
         {
@@ -11574,6 +12014,7 @@
         "shell/src/styles/globals.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -11615,6 +12056,11 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-facts",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-subnav button",
           "fallbacks": []
@@ -11631,17 +12077,7 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro p",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
           "selector": ".settings-plugin-description",
-          "fallbacks": []
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
           "fallbacks": []
         },
         {
@@ -11809,6 +12245,7 @@
         "shell/src/styles/kit-components.css",
         "shell/src/styles/settings-fonts.css",
         "shell/src/styles/settings-store.css",
+        "shell/src/styles/settings-themes.css",
         "shell/src/styles/settings-window.css",
         "shell/src/styles/settings.css",
         "shell/src/styles/ui-kit.css"
@@ -12195,8 +12632,48 @@
           "fallbacks": []
         },
         {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-card:hover",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-edge",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-facts .settings-pictogram",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-heading small",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-preview-placeholder",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-window-content",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-window-toolbar i",
+          "fallbacks": []
+        },
+        {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-group-nav .settings-nav-section > button",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button",
           "fallbacks": []
         },
         {
@@ -12207,6 +12684,26 @@
         {
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-version",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav button[data-deactivated], .settings-compact-nav option[data-deactivated]",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav h3",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-version-chip:hover",
           "fallbacks": []
         },
         {
@@ -12324,10 +12821,17 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/bar/PluginZone.tsx",
-        "shell/src/components/settings/PluginsTab.tsx",
-        "shell/src/components/settings/defaults.ts"
+        "shell/src/components/settings/PluginPresentation.tsx",
+        "shell/src/components/settings/defaults.ts",
+        "shell/src/styles/settings-themes.css"
       ],
-      "cssConsumers": []
+      "cssConsumers": [
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-zone",
+          "fallbacks": []
+        }
+      ]
     },
     "--sb-tile-hover-lift": {
       "scope": "base",
@@ -12405,12 +12909,18 @@
       "group": "layout",
       "dependencies": [],
       "consumers": [
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
           "file": "shell/src/styles/bar.css",
           "selector": ".plugin-tile",
+          "fallbacks": []
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-tile",
           "fallbacks": []
         }
       ]
@@ -12428,7 +12938,8 @@
       "dependencies": [],
       "consumers": [
         "shell/src/components/bar/metrics.ts",
-        "shell/src/styles/bar.css"
+        "shell/src/styles/bar.css",
+        "shell/src/styles/settings-themes.css"
       ],
       "cssConsumers": [
         {
@@ -12444,6 +12955,11 @@
           "fallbacks": [
             "0.375rem"
           ]
+        },
+        {
+          "file": "shell/src/styles/settings-themes.css",
+          "selector": ".settings-theme-tile",
+          "fallbacks": []
         }
       ]
     },

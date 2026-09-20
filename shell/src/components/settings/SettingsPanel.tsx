@@ -1,176 +1,80 @@
 import {
   Blocks,
-  ChevronRight,
   LayoutPanelTop,
   Link2,
   MonitorCog,
-  Palette,
   ScrollText,
   X,
 } from "lucide-react";
-import {
-  Fragment,
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-} from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
 import { t } from "../../i18n/t";
 import { closeCurrentSurface } from "../../ipc/surface";
 import { reportError } from "../../ipc/log";
 import { useSmabar } from "../../store/bar";
 import { ResizeEdges } from "./ResizeEdges";
-import { groupOf, pageOf, pagesOf, type SettingsPage } from "./settingsPages";
+import {
+  groupOf,
+  pageOf,
+  pagesOf,
+  resolveSettingsPage,
+  SETTINGS_GROUPS,
+} from "./settingsPages";
 import { StorePage } from "./StorePage";
-import { scrollToGroup, useSubsections } from "./useSubsections";
-import { BarTab } from "./BarTab";
-import { DesignTab } from "./DesignTab";
 import { LegalTab } from "./LegalTab";
-import { ShortcutsTab } from "./ShortcutsTab";
-import { SystemTab } from "./SystemTab";
-import { PluginsTab } from "./PluginsTab";
 import { UpdateDot } from "./UpdateBadge";
 import { hasAppUpdate } from "../../ipc/updateSync";
+import { usePluginManagement } from "./usePluginManagement";
+import { SettingsBody } from "./SettingsBody";
+import { SettingsFooter } from "./SettingsFooter";
 
-/**
- * The one group the panel shows while the terms of use are not accepted.
- * Never listed otherwise: once accepted, the texts sit folded under System,
- * and a request for `legal` lands there.
- */
-const LEGAL_GROUP = { id: "legal", Body: LegalTab, Icon: ScrollText } as const;
+const ICONS = {
+  bar: LayoutPanelTop,
+  shortcuts: Link2,
+  plugins: Blocks,
+  system: MonitorCog,
+};
 
-/**
- * The panel's sections, in order. Each one is named after the THING it
- * configures, so its name says what is inside it — every setting about the
- * shortcut tiles lives under Shortcuts, whether it is a size, a spacing or a
- * hover effect.
- */
-const GROUPS = [
-  { id: "bar", Body: BarTab, Icon: LayoutPanelTop },
-  { id: "design", Body: DesignTab, Icon: Palette },
-  { id: "shortcuts", Body: ShortcutsTab, Icon: Link2 },
-  { id: "plugins", Body: PluginsTab, Icon: Blocks },
-  { id: "system", Body: SystemTab, Icon: MonitorCog },
-] as const;
-
-type Group = (typeof GROUPS)[number] | typeof LEGAL_GROUP;
-
-/**
- * The settings panel; renders nothing while closed. The selected group
- * lives in the store, so a context menu can open the panel directly on one
- * ("Plugin settings…"); unknown ids fall back to the bar group.
- */
 export function SettingsPanel({ preview = false }: { preview?: boolean }) {
-  return <PanelBody preview={preview} />;
-}
-
-function PanelBody({ preview }: { preview: boolean }) {
-  const group = useSmabar((state) => state.settingsGroup);
+  const requested = useSmabar((state) => state.settingsGroup);
   const setGroup = useSmabar((state) => state.setSettingsGroup);
-  const detail = useSmabar((state) => state.settingsStoreEntry);
   const updates = useSmabar((state) => state.communityUpdates);
   const appUpdate = useSmabar(hasAppUpdate);
-  const updateCount = (key: string | undefined) => {
-    if (key === "app" || key === "system") return appUpdate ? 1 : 0;
-    if (key === "plugins" || key === "plugin" || key === "plugins/store")
-      return updates.filter((entry) => entry.kind === "plugin").length;
-    if (key === "design" || key === "theme" || key === "design/themes")
-      return updates.filter((entry) => entry.kind === "theme").length;
-    return updates.filter((entry) => `${entry.kind}:${entry.id}` === key)
-      .length;
-  };
-  const badgeLabel = (key: string | undefined) =>
-    updateCount(key) === 0
-      ? ""
-      : key === "app" || key === "system"
-        ? t("settings.update.badge")
-        : t("settings.store.badge").replace(
-            "{count}",
-            String(updateCount(key)),
-          );
-  const badge = (key: string | undefined) =>
-    updateCount(key) > 0 && <UpdateDot label={badgeLabel(key)} />;
-  const navLabel = (label: string, key: string | undefined) =>
-    updateCount(key) > 0 ? `${label} · ${badgeLabel(key)}` : label;
-  // Only the browser preview sizes itself from the config; the native
-  // window is sized by the window manager and the core remembers it, so
-  // the selector yields a stable null there and never re-renders the panel.
+  const deactivated = useSmabar((state) => state.pluginsDeactivated);
   const settingsWindow = useSmabar((state) =>
     preview ? state.settingsWindow : null,
   );
-  // Until the terms are accepted the panel is the legal group alone: no
-  // other section, no store page, whatever group was asked for.
   const gated = useSmabar((state) => state.legalRequired);
-  const shown: readonly Group[] = gated ? [LEGAL_GROUP] : GROUPS;
-  // A page id such as `plugins/store` keeps its group highlighted while the
-  // body shows the page instead of the group's sections.
-  const page = gated ? null : pageOf(group);
-  const requested = groupOf(group) === "legal" ? "system" : groupOf(group);
-  const current: Group = gated
-    ? LEGAL_GROUP
-    : (GROUPS.find((entry) => entry.id === requested) ?? GROUPS[0]);
+  const management = usePluginManagement(!gated);
+  const selected = resolveSettingsPage(requested);
+  const current = groupOf(selected);
+  const page = pageOf(selected);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const bodyRef = useRef<HTMLDivElement>(null);
-  const subsections = useSubsections(bodyRef, current.id, page === null);
-  const scrolledToUpdate = useRef(false);
-  useEffect(() => {
-    if (group !== "system/updates") {
-      scrolledToUpdate.current = false;
-      return;
-    }
-    const entry = subsections.find((entry) => entry.updateKey === "app");
-    if (!scrolledToUpdate.current && entry !== undefined)
-      scrolledToUpdate.current = scrollToGroup(bodyRef.current, entry.index);
-  }, [group, subsections]);
-  // Counted so the page entry can be clicked again from a detail page: the
-  // group id does not change then, and remounting the page is what shows
-  // the list.
-  const [pageOpenings, setPageOpenings] = useState(0);
-  // A section entry clicked while a page is open first leaves the page;
-  // the scroll follows once the group's sections are rendered again.
-  const pendingScroll = useRef<{ group: string; index: number } | null>(null);
-  useEffect(() => {
-    const pending = pendingScroll.current;
-    if (pending === null) return;
-    if (pending.group !== current.id) {
-      pendingScroll.current = null;
-    } else if (page === null && scrollToGroup(bodyRef.current, pending.index)) {
-      pendingScroll.current = null;
-    }
-  }, [page, current.id, subsections]);
-  const hasSubnav = (id: string) =>
-    subsections.length > 0 || pagesOf(id).length > 0;
-  const pageEntry = (entry: SettingsPage) => (
-    <li key={entry.id}>
-      <button
-        type="button"
-        className={
-          page?.id === entry.id
-            ? "settings-subnav-page sb-active"
-            : "settings-subnav-page"
-        }
-        aria-current={page?.id === entry.id ? "page" : undefined}
-        aria-label={navLabel(t(entry.labelKey), entry.id)}
-        onClick={() => {
-          pendingScroll.current = null;
-          setGroup(entry.id);
-          setPageOpenings((count) => count + 1);
-        }}
-      >
-        {t(entry.labelKey)}
-        {badge(entry.id)}
-        <ChevronRight size="1em" aria-hidden="true" />
-      </button>
-    </li>
-  );
   const native = !preview && "__TAURI_INTERNALS__" in window;
-
+  const count = (id: string) => {
+    if (id === "system" || id === "system/about") return appUpdate ? 1 : 0;
+    if (["bar", "bar/themes", "bar/community"].includes(id))
+      return updates.filter((entry) => entry.kind === "theme").length;
+    if (id === "plugins" || id === "plugins/store")
+      return updates.filter((entry) => entry.kind === "plugin").length;
+    return updates.filter(
+      (entry) => id === `plugins/detail/${entry.id}` && entry.kind === "plugin",
+    ).length;
+  };
+  const badge = (id: string) =>
+    count(id) > 0 && (
+      <UpdateDot
+        label={
+          id.startsWith("system")
+            ? t("settings.update.badge")
+            : t("settings.store.badge").replace("{count}", String(count(id)))
+        }
+      />
+    );
   useEffect(() => {
     closeRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.defaultPrevented) return;
       event.preventDefault();
       void closeCurrentSurface().catch(reportError);
     };
@@ -179,15 +83,6 @@ function PanelBody({ preview }: { preview: boolean }) {
       window.removeEventListener("keydown", onKey);
     };
   }, []);
-
-  const close = () => {
-    void closeCurrentSurface().catch(reportError);
-  };
-  const beginDrag = () => {
-    if (!native) return;
-    void getCurrentWindow().startDragging().catch(reportError);
-  };
-  const { Body } = current;
   const previewStyle: CSSProperties | undefined =
     settingsWindow === null
       ? undefined
@@ -198,7 +93,6 @@ function PanelBody({ preview }: { preview: boolean }) {
           height: Math.min(settingsWindow.height, window.innerHeight - 8),
           transform: "translate(-50%, -50%)",
         };
-
   return (
     <div
       className={`sb-root sb-flush settings-panel ${preview ? "fixed" : "absolute inset-0"}`}
@@ -217,14 +111,13 @@ function PanelBody({ preview }: { preview: boolean }) {
         <div
           className="sb-header settings-panel-header touch-none select-none cursor-grab active:cursor-grabbing"
           onMouseDown={(event) => {
-            const target = event.target;
             if (
+              native &&
               event.button === 0 &&
-              target instanceof Element &&
-              target.closest("button") === null
-            ) {
-              beginDrag();
-            }
+              event.target instanceof Element &&
+              event.target.closest("button") === null
+            )
+              void getCurrentWindow().startDragging().catch(reportError);
           }}
         >
           <div className="settings-title">
@@ -233,122 +126,193 @@ function PanelBody({ preview }: { preview: boolean }) {
               {t("settings.title")}
             </h1>
           </div>
-          <div className="sb-header-actions">
-            <button
-              ref={closeRef}
-              className="sb-btn sb-btn-ghost sb-btn-icon"
-              aria-label={t("settings.close")}
-              onClick={() => {
-                close();
-              }}
-            >
-              <X size="1em" />
-            </button>
-          </div>
+          <button
+            ref={closeRef}
+            type="button"
+            className="sb-btn sb-btn-ghost sb-btn-icon"
+            aria-label={t("settings.close")}
+            onClick={() => {
+              void closeCurrentSurface().catch(reportError);
+            }}
+          >
+            <X size="1em" />
+          </button>
         </div>
-
         <div className="settings-workspace">
-          {/* A plain nav, not a tablist: a tablist may only own tabs, and the
-              sub-entries below the open section are not tabs — they scroll
-              within the one panel. The tab roles were a half-promise anyway
-              (no arrow-key navigation, no roving tabindex), so aria-current
-              says more truthfully what these buttons do. */}
-          <nav className="settings-group-nav" aria-label={t("settings.groups")}>
-            {shown.map(({ id, Icon }) => (
-              <div key={id} className="settings-nav-section">
-                <button
-                  id={`settings-tab-${id}`}
-                  type="button"
-                  aria-label={navLabel(t(`settings.group.${id}`), id)}
-                  aria-current={current.id === id ? "page" : undefined}
-                  aria-controls="settings-content"
-                  aria-expanded={
-                    current.id === id && hasSubnav(id) ? true : undefined
-                  }
-                  className={current.id === id ? "sb-active" : undefined}
-                  onClick={() => {
-                    pendingScroll.current = null;
-                    setGroup(id);
-                  }}
-                >
-                  <Icon
-                    className="settings-nav-icon"
-                    size="1em"
-                    aria-hidden="true"
-                  />
-                  <span className="settings-nav-label">
-                    {t(`settings.group.${id}`)}
-                  </span>
-                  {badge(id)}
-                </button>
-                {current.id === id && hasSubnav(id) && (
-                  <ul
-                    className="settings-subnav"
-                    aria-label={t("settings.subsections")}
+          <div className="settings-sidebar">
+            <nav
+              className="settings-group-nav"
+              aria-label={t("settings.groups")}
+            >
+              {gated ? (
+                <div className="settings-nav-section">
+                  <button
+                    type="button"
+                    className="sb-active"
+                    aria-label={t("settings.group.legal")}
+                    aria-current="page"
                   >
-                    {subsections.map((entry) => (
-                      <Fragment key={entry.index}>
-                        <li>
-                          <button
-                            type="button"
-                            aria-label={navLabel(entry.label, entry.updateKey)}
-                            onClick={() => {
-                              if (page === null) {
-                                pendingScroll.current = null;
-                                scrollToGroup(bodyRef.current, entry.index);
-                                return;
-                              }
-                              setGroup(current.id);
-                              pendingScroll.current = {
-                                group: current.id,
-                                index: entry.index,
-                              };
-                            }}
-                          >
-                            {entry.label}
-                            {badge(entry.updateKey)}
-                          </button>
-                        </li>
-                        {pagesOf(id)
-                          .filter(
-                            (candidate) => candidate.after === entry.index,
-                          )
-                          .map(pageEntry)}
-                      </Fragment>
+                    <ScrollText size="1em" />
+                    {t("settings.group.legal")}
+                  </button>
+                </div>
+              ) : (
+                SETTINGS_GROUPS.map((id) => {
+                  const Icon = ICONS[id];
+                  const entries = pagesOf(id);
+                  return (
+                    <div key={id} className="settings-nav-section">
+                      <button
+                        id={`settings-tab-${id}`}
+                        type="button"
+                        aria-label={t(`settings.group.${id}`)}
+                        aria-controls="settings-content"
+                        aria-current={current === id ? "page" : undefined}
+                        className={current === id ? "sb-active" : undefined}
+                        onClick={() => {
+                          setGroup(entries[0]?.id ?? id);
+                        }}
+                      >
+                        <Icon
+                          className="settings-nav-icon"
+                          size="1em"
+                          aria-hidden="true"
+                        />
+                        <span className="settings-nav-label">
+                          {t(`settings.group.${id}`)}
+                        </span>
+                        {badge(id)}
+                      </button>
+                      {current === id && entries.length > 1 && (
+                        <ul
+                          className="settings-subnav"
+                          aria-label={t("settings.subsections")}
+                        >
+                          {entries.map((entry) => (
+                            <li key={entry.id}>
+                              <button
+                                type="button"
+                                className={
+                                  selected === entry.id
+                                    ? "sb-active"
+                                    : undefined
+                                }
+                                aria-current={
+                                  selected === entry.id ? "page" : undefined
+                                }
+                                onClick={() => {
+                                  setGroup(entry.id);
+                                }}
+                              >
+                                {t(entry.labelKey)}
+                                {badge(entry.id)}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {id === "plugins" && current === id && (
+                        <div className="settings-plugin-nav">
+                          <h3>{t("settings.plugins.installed")}</h3>
+                          <ul>
+                            {management.installed?.map((plugin) => {
+                              const target = `plugins/detail/${plugin.id}`;
+                              const off = deactivated.includes(plugin.id);
+                              return (
+                                <li key={plugin.id}>
+                                  <button
+                                    type="button"
+                                    className={
+                                      selected === target
+                                        ? "sb-active"
+                                        : undefined
+                                    }
+                                    data-deactivated={off || undefined}
+                                    aria-description={
+                                      off
+                                        ? t(
+                                            "settings.plugins.status.deactivated",
+                                          )
+                                        : undefined
+                                    }
+                                    aria-current={
+                                      selected === target ? "page" : undefined
+                                    }
+                                    onClick={() => {
+                                      setGroup(target);
+                                    }}
+                                  >
+                                    <span>{t(plugin.name ?? plugin.id)}</span>
+                                    {badge(target)}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </nav>
+            {!gated && <SettingsFooter />}
+          </div>
+          {!gated && (
+            <label className="settings-compact-nav">
+              <span className="sb-sr-only">{t("settings.groups")}</span>
+              <select
+                className="sb-select sb-select-native"
+                value={selected}
+                onChange={(event) => {
+                  setGroup(event.target.value);
+                }}
+              >
+                {SETTINGS_GROUPS.map((id) => (
+                  <optgroup key={id} label={t(`settings.group.${id}`)}>
+                    {pagesOf(id).map((entry) => (
+                      <option key={entry.id} value={entry.id}>
+                        {t(entry.labelKey)}
+                      </option>
                     ))}
-                    {pagesOf(id)
-                      .filter(
-                        (candidate) =>
-                          candidate.after === undefined ||
-                          candidate.after >= subsections.length,
-                      )
-                      .map(pageEntry)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </nav>
+                    {id === "plugins" &&
+                      management.installed?.map((plugin) => (
+                        <option
+                          key={plugin.id}
+                          value={`plugins/detail/${plugin.id}`}
+                          data-deactivated={
+                            deactivated.includes(plugin.id) || undefined
+                          }
+                        >
+                          {t(plugin.name ?? plugin.id)}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+          )}
           <div
-            key={group}
-            ref={bodyRef}
+            key={gated ? "legal" : selected}
             id="settings-content"
             className="surface-scroll sb-scroll settings-group-content"
             role="region"
-            aria-labelledby={`settings-tab-${current.id}`}
+            aria-label={
+              gated
+                ? t("settings.group.legal")
+                : t(page?.labelKey ?? "settings.plugins.pluginSettings")
+            }
             tabIndex={0}
           >
-            {page === null ? (
-              <Body />
+            {gated ? (
+              <LegalTab />
+            ) : page?.kind === undefined ? (
+              <SettingsBody page={selected} management={management} />
             ) : (
               <StorePage
-                key={`${String(pageOpenings)}:${detail?.id ?? ""}`}
                 kind={page.kind}
-                initialEntryId={
-                  detail?.kind === page.kind ? detail.id : undefined
-                }
                 onBack={() => {
-                  pendingScroll.current = null;
-                  setGroup(current.id);
+                  setGroup(page.kind === "theme" ? "bar/themes" : "plugins");
                 }}
               />
             )}

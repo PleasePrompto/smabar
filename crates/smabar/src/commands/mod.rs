@@ -6,8 +6,10 @@
 // `pub use` re-exports cannot carry).
 pub mod bar_geometry;
 pub mod config;
+pub mod files;
 pub mod legal;
 mod plugin_events;
+pub mod plugin_import;
 pub mod runtime;
 pub mod shortcuts;
 pub mod store;

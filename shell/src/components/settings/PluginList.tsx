@@ -97,9 +97,18 @@ function Row(props: RowProps) {
         style={{ fontSize: "1.5rem", flexShrink: 0 }}
         fallback={<Blocks size="0.75em" />}
       />
-      <span className="settings-ellipsis" style={{ flex: 1, minWidth: 0 }}>
+      <button
+        type="button"
+        className="settings-plugin-name settings-ellipsis"
+        style={{ flex: 1, minWidth: 0 }}
+        onClick={() => {
+          useSmabar
+            .getState()
+            .setSettingsGroup(`plugins/detail/${row.pluginId}`);
+        }}
+      >
         {t(row.name)}
-      </span>
+      </button>
       <OriginBadge provenance={row.provenance} />
       <StoreUpdateLink kind="plugin" id={row.pluginId} compact />
       <State row={row} off={off} />

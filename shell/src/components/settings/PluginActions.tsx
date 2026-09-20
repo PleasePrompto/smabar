@@ -120,8 +120,11 @@ export function PluginActions({
           }}
           onConfirm={() => {
             void management.remove(pluginId).then((removed) => {
-              if (removed)
-                document.getElementById("plugin-settings-title")?.focus();
+              if (!removed) return;
+              useSmabar.getState().setSettingsGroup("plugins");
+              requestAnimationFrame(() => {
+                document.getElementById("settings-content")?.focus();
+              });
             });
           }}
         />

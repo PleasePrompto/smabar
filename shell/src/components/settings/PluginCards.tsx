@@ -1,4 +1,4 @@
-import { Blocks, ChevronRight } from "lucide-react";
+import { Blocks } from "lucide-react";
 
 import { t } from "../../i18n/t";
 import { useSmabar, type InstalledPlugin } from "../../store/bar";
@@ -8,33 +8,11 @@ import { SettingRow } from "./controls";
 import { PluginSettings } from "./PluginSettings";
 import { OriginBadge } from "./StoreBadge";
 import { StoreUpdateLink } from "./UpdateBadge";
-import { useAudioSettings, type AudioSettings } from "./useAudioSettings";
+import { type AudioSettings } from "./useAudioSettings";
 import type { PluginManagement } from "./usePluginManagement";
 import { PluginActions } from "./PluginActions";
 
-export function PluginCards({ management }: { management: PluginManagement }) {
-  const audio = useAudioSettings();
-  return (
-    <>
-      <div className="settings-intro">
-        <h3 id="plugin-settings-title" tabIndex={-1}>
-          {t("settings.plugins.pluginSettings")}
-        </h3>
-        <p>{t("settings.plugins.pluginSettingsDescription")}</p>
-      </div>
-      {management.installed?.map((plugin) => (
-        <TileCard
-          key={plugin.id}
-          plugin={plugin}
-          management={management}
-          audio={audio}
-        />
-      ))}
-    </>
-  );
-}
-
-function TileCard({
+export function PluginCard({
   plugin,
   management,
   audio,
@@ -137,11 +115,7 @@ function TileCard({
             management={management}
           />
         </div>
-        <details className="settings-plugin-details">
-          <summary>
-            <ChevronRight size="1em" aria-hidden="true" />
-            {t("settings.plugins.configure")}
-          </summary>
+        <div className="settings-plugin-details">
           <PluginSettings pluginId={plugin.id} schema={plugin.settingsSchema} />
           <SettingRow
             label={t("settings.audio.plugin")}
@@ -164,7 +138,7 @@ function TileCard({
               <p className="settings-help">{t("settings.audio.masterMuted")}</p>
             )}
           </SettingRow>
-        </details>
+        </div>
       </div>
     </section>
   );

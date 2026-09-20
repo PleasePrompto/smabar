@@ -27,7 +27,7 @@ use std::sync::LazyLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::config::SmabarPaths;
+use crate::config::{AppearanceConfig, LayoutConfig, SmabarConfig, SmabarPaths};
 
 /// Flat mapping of CSS custom-property names to their values.
 pub type ThemeMap = BTreeMap<String, String>;
@@ -280,9 +280,31 @@ pub struct ThemeFonts {
     pub mono: ThemeFont,
 }
 
+/// Read-only result of activating a theme over the current configuration.
+#[derive(Debug, Clone, PartialEq, Serialize, schemars::JsonSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ThemePreview {
+    pub layout: LayoutConfig,
+    /// Resolved theme tokens, without the current look's per-token overrides.
+    pub appearance: AppearanceConfig,
+}
+
+/// Shares the activation rules with installed and remote theme previews.
+pub fn preview(current: &SmabarConfig, tokens: ThemeMap, block: &ThemeSettings) -> ThemePreview {
+    let (mut candidate, warnings) = settings::apply_settings(current.clone(), block);
+    for warning in warnings {
+        tracing::warn!(warning, "ignored invalid theme setting in preview");
+    }
+    candidate.appearance.tokens = tokens;
+    ThemePreview {
+        layout: candidate.layout,
+        appearance: candidate.appearance,
+    }
+}
+
 /// One known theme with the colors its resolved token map produces. Shared
 /// by the MCP `theme_list` tool and the Tauri `list_themes` command.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, schemars::JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ThemeInfo {
     pub name: String,
@@ -292,6 +314,7 @@ pub struct ThemeInfo {
     pub active: bool,
     pub colors: ThemeColors,
     pub fonts: ThemeFonts,
+    pub preview: ThemePreview,
     /// Self-describing metadata of a drop-in file, when it carries any.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meta: Option<ThemeMeta>,
@@ -299,7 +322,7 @@ pub struct ThemeInfo {
 
 /// Summarizes every known theme for pickers: names, sources, active flag,
 /// and the preview colors each resolves to.
-pub fn summaries(paths: &SmabarPaths, active_theme: &str) -> Vec<ThemeInfo> {
+pub fn summaries(paths: &SmabarPaths, current: &SmabarConfig) -> Vec<ThemeInfo> {
     available_themes(paths)
         .into_iter()
         .map(|name| {
@@ -310,7 +333,7 @@ pub fn summaries(paths: &SmabarPaths, active_theme: &str) -> Vec<ThemeInfo> {
             } else {
                 "dropin"
             };
-            let active = name == active_theme;
+            let active = name == current.theme;
             let meta = dropin_meta(paths, &name);
             ThemeInfo {
                 meta,
@@ -330,6 +353,7 @@ pub fn summaries(paths: &SmabarPaths, active_theme: &str) -> Vec<ThemeInfo> {
                         source: token("--sb-font-mono-source"),
                     },
                 },
+                preview: preview(current, resolved.clone(), &settings_block(paths, &name)),
                 name,
                 source: source.to_string(),
                 active,

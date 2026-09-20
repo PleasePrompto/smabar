@@ -30,6 +30,10 @@ function summary(
     active: name === "default",
     colors: COLORS,
     fonts: FONTS,
+    preview: {
+      layout: useSmabar.getInitialState().layout,
+      appearance: useSmabar.getInitialState().appearance,
+    },
     ...extra,
   };
 }
@@ -79,6 +83,7 @@ export function createThemeManagerTestHarness(): ThemeManagerTestHarness {
   store.setTheme("default");
   store.setNotice(null);
   store.setThemeImportPath(null);
+  store.setSettingsGroup("bar");
 
   return {
     container,

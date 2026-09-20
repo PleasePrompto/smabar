@@ -9,7 +9,8 @@
   margin-bottom: var(--sb-space-m);
 }
 .settings-group-header h2 {
-  font-size: var(--sb-fs-l);
+  font-size: var(--sb-fs-xl);
+  font-weight: var(--sb-weight-semibold, 600);
 }
 /* === One block of related settings ===========================
    The BOX is the grouping signal, so it goes around a GROUP and never around
@@ -36,27 +37,7 @@
   font-size: var(--sb-fs-xs);
   font-weight: var(--sb-weight-semibold, 600);
   letter-spacing: var(--sb-tracking-wide, 0.04em);
-  text-transform: uppercase;
-}
-/* A short explanation ahead of a run of blocks; not a block itself, so the
-   sub-navigation does not list it. */
-.settings-intro {
-  margin-top: var(--sb-space-xl);
-  padding-left: var(--sb-space-2xs);
-}
-.settings-intro h3 {
-  margin: 0;
-  color: var(--sb-text);
-  font-size: var(--sb-fs-m);
-  font-weight: var(--sb-weight-semibold, 600);
-}
-.settings-intro p {
-  margin: var(--sb-space-2xs) 0 0;
-  color: var(--sb-text-dim);
-  font-size: var(--sb-fs-s);
-}
-.settings-intro + .settings-block {
-  margin-top: var(--sb-space-m);
+  text-transform: none;
 }
 /* A collapsible block: the title is the toggle, the chevron turns when open. */
 summary.settings-block-title {
@@ -83,35 +64,6 @@ summary.settings-block-title > svg {
 }
 details[open] > summary.settings-block-title > svg {
   transform: rotate(90deg);
-}
-/* The sub-navigation's answer when its target was already in view: the box
-   lights up in the accent and fades, so the click is seen to land. */
-.settings-block[data-highlight] > .settings-box {
-  animation-name: settings-highlight;
-  animation-duration: 1.4s;
-  animation-timing-function: ease-in-out;
-  animation-fill-mode: both;
-}
-/* Fades in, holds, fades out: long enough to be seen after a scroll. */
-@keyframes settings-highlight {
-  0% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-  10%,
-  40% {
-    box-shadow: 0 0 0 2px var(--sb-accent);
-    border-color: var(--sb-accent);
-    background: color-mix(in srgb, var(--sb-accent) 10%, var(--sb-inner-bg));
-  }
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .settings-block[data-highlight] > .settings-box {
-    animation: none;
-    box-shadow: 0 0 0 2px var(--sb-accent);
-  }
 }
 .settings-box {
   border: var(--sb-border-width, 1px) solid var(--sb-inner-border);
@@ -266,37 +218,6 @@ details[open] > summary.settings-block-title > svg {
 }
 
 /* === Two short groups side by side =========================== */
-.settings-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--sb-space-l);
-}
-/* Side by side, the two boxes end on the same line: the block becomes a
-   column and its box takes whatever height the taller neighbour sets. */
-.settings-columns > .settings-block {
-  display: flex;
-  flex-direction: column;
-}
-.settings-columns > .settings-block > .settings-box {
-  flex: 1;
-}
-.settings-block + .settings-columns,
-.settings-columns + .settings-block,
-.settings-columns + .settings-columns {
-  margin-top: var(--sb-space-l);
-}
-.settings-columns > .settings-block + .settings-block {
-  margin-top: 0;
-}
-@container settings (max-width: 52rem) {
-  .settings-columns {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .settings-columns > .settings-block + .settings-block {
-    margin-top: var(--sb-space-l);
-  }
-}
-
 /* === Choices as a segmented control ========================== */
 /* Two classes each, so they beat the un-layered ui-kit.css tiles whatever the
    import order. The pictogram shrinks to an inline glyph in front of the
@@ -596,7 +517,7 @@ details[open] > summary.settings-block-title > svg {
   color: var(--sb-text-muted);
   font-size: var(--sb-fs-xs);
   letter-spacing: var(--sb-tracking-wide, 0.04em);
-  text-transform: uppercase;
+  text-transform: none;
 }
 .settings-color-hex > .sb-input {
   width: 100%;
@@ -920,34 +841,7 @@ details[open] > summary.settings-block-title > svg {
   padding: 0;
   border-top: 1px solid var(--sb-inner-border);
 }
-.settings-plugin-details > summary {
-  display: flex;
-  align-items: center;
-  gap: var(--sb-space-xs);
-  padding: var(--sb-space-s) var(--sb-space-m);
-  color: var(--sb-text-dim);
-  font-size: var(--sb-fs-s);
-  font-weight: var(--sb-weight-semibold, 600);
-  list-style: none;
-  cursor: pointer;
-}
-.settings-plugin-details > summary::-webkit-details-marker {
-  display: none;
-}
-.settings-plugin-details > summary:hover {
-  background: color-mix(in srgb, var(--sb-accent) 5%, transparent);
-  color: var(--sb-text);
-}
-.settings-plugin-details > summary:focus-visible {
-  outline: 2px solid var(--sb-accent);
-  outline-offset: -3px;
-}
-.settings-plugin-details[open] > summary {
-  border-bottom: 1px solid var(--sb-inner-border);
-}
-.settings-plugin-details[open] > summary > svg {
-  transform: rotate(90deg);
-}
+
 .settings-plugin-error {
   display: flex;
   align-items: center;
@@ -966,4 +860,55 @@ details[open] > summary.settings-block-title > svg {
 }
 .settings-audio-volume > .sb-input {
   width: 5rem;
+}
+
+/* Settings stay a calm, readable single column at every desktop width. */
+.settings-panel .settings-box {
+  border-radius: var(--sb-radius-s);
+}
+.settings-plugin-name {
+  text-align: left;
+  color: var(--sb-text);
+}
+.settings-plugin-name:hover {
+  text-decoration: underline;
+}
+.settings-theme-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--sb-space-s);
+  padding: var(--sb-space-m);
+}
+.settings-theme-name {
+  flex: 1 1 12rem;
+  display: grid;
+  gap: var(--sb-space-xs);
+  font-size: var(--sb-fs-s);
+}
+.settings-theme-import {
+  min-width: 0;
+}
+.settings-file-path {
+  overflow-wrap: anywhere;
+}
+.settings-import-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sb-space-s);
+  padding: var(--sb-space-m);
+  margin-bottom: var(--sb-space-l);
+  border: 1px solid var(--sb-inner-border);
+  border-radius: var(--sb-radius-s);
+  background: var(--sb-inner-bg);
+}
+.settings-import-panel > div:first-child {
+  flex: 1 1 15rem;
+}
+.settings-import-panel > [data-confirm-row],
+.settings-import-panel > p,
+.settings-import-panel > .settings-store-progress {
+  flex-basis: 100%;
 }

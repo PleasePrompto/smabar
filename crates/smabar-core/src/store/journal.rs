@@ -23,7 +23,9 @@ use super::receipts::{self, PluginReceipt};
 pub(super) struct Journal {
     pub id: String,
     pub had_previous: bool,
-    pub receipt: PluginReceipt,
+    pub receipt: Option<PluginReceipt>,
+    #[serde(default)]
+    pub installed_digest: Option<String>,
     #[serde(default)]
     pub previous_receipt: Option<PluginReceipt>,
 }
@@ -127,7 +129,16 @@ fn replay(paths: &SmabarPaths, journal: &Journal) -> Result<(), StoreError> {
             action: "read the plugin during store recovery",
             path: dir.clone(),
             source,
-        })? == journal.receipt.installed_digest;
+        })? == journal
+            .installed_digest
+            .as_deref()
+            .or_else(|| {
+                journal
+                    .receipt
+                    .as_ref()
+                    .map(|receipt| receipt.installed_digest.as_str())
+            })
+            .unwrap_or_default();
     let mut receipts = receipts::load_checked(paths).map_err(|source| StoreError::Io {
         action: "read receipts during store recovery",
         path: paths.store_receipts_file(),
@@ -135,9 +146,14 @@ fn replay(paths: &SmabarPaths, journal: &Journal) -> Result<(), StoreError> {
     })?;
     if in_place_is_new {
         tracing::info!(plugin = %journal.id, "completing an interrupted store install");
-        receipts
-            .plugins
-            .insert(journal.id.clone(), journal.receipt.clone());
+        match &journal.receipt {
+            Some(receipt) => {
+                receipts.plugins.insert(journal.id.clone(), receipt.clone());
+            }
+            None => {
+                receipts.plugins.remove(&journal.id);
+            }
+        }
     } else {
         if !dir.is_dir() && journal.had_previous {
             if !backup.is_dir() {

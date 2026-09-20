@@ -6,7 +6,7 @@
 //! under the plugin's lifecycle lock, journaled so a crash between its two
 //! renames is repaired at the next start ([`super::journal::recover`]).
 
-mod rollback;
+pub(super) mod rollback;
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -173,7 +173,8 @@ pub(super) async fn install_plugin(
     let transaction = Journal {
         id: id.to_string(),
         had_previous,
-        receipt: receipt.clone(),
+        receipt: Some(receipt.clone()),
+        installed_digest: None,
         previous_receipt: previous.clone(),
     };
     journal::write(&inner.paths, &transaction)?;

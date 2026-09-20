@@ -143,8 +143,7 @@ export function SettingsSection({
 
 /**
  * A titled box of related settings — the box IS the grouping signal, so it
- * goes around a GROUP and never around a single setting. Its title is also
- * what the sub-navigation lists and scrolls to (see useSubsections).
+ * goes around a GROUP and never around a single setting. Its title labels the controls within the current settings page.
  */
 /**
  * `collapsible` renders the block closed with its title as the toggle — for

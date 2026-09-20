@@ -4,7 +4,10 @@
 //! Store requests never follow redirects (the store issues none); downloads
 //! from GitHub may hop to its content hosts and nowhere else.
 
+use smabar_core::config::{ConfigWatcher, SmabarPaths};
+use smabar_core::plugins::PluginSupervisor;
 use std::path::Path;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -284,6 +287,32 @@ impl UnlessSize for FetchError {
             FetchError::Other(text)
         }
     }
+}
+
+/// The Community Store client over the app's HTTP edge. The endpoint and
+/// the key are the app edge's decisions (environment overrides live here).
+pub fn build_store(
+    paths: &SmabarPaths,
+    watcher: &Arc<ConfigWatcher>,
+    supervisor: &PluginSupervisor,
+    reserved_ids: std::collections::BTreeSet<String>,
+) -> anyhow::Result<smabar_core::store::StoreService> {
+    let endpoint = store_endpoint().map_err(anyhow::Error::msg)?;
+    let key = store_public_key().map_err(anyhow::Error::msg)?;
+    let fetcher = Arc::new(ReqwestFetcher::new(&endpoint)?);
+    smabar_core::store::StoreService::new(
+        paths.clone(),
+        Arc::clone(watcher),
+        supervisor.clone(),
+        fetcher,
+        smabar_core::store::StoreOptions {
+            endpoint,
+            key,
+            app_version: env!("CARGO_PKG_VERSION").to_string(),
+            reserved_ids,
+        },
+    )
+    .context("cannot start the Community Store client")
 }
 
 #[cfg(test)]

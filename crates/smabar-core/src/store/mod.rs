@@ -12,6 +12,10 @@ pub mod compat;
 mod error;
 pub mod fetch;
 mod install;
+mod local;
+#[cfg(test)]
+mod local_tests;
+pub use local::LocalPluginPreview;
 pub(crate) mod journal;
 mod readme;
 pub mod receipts;
@@ -106,6 +110,8 @@ pub(crate) struct StoreState {
     pub(crate) pending: Option<InstallProgress>,
     /// Verified detail files, keyed by their listed SHA-256.
     pub(crate) details: BTreeMap<String, Detail>,
+    /// Verified theme files, shared by previews and installation, keyed by SHA-256.
+    pub(crate) theme_files: BTreeMap<String, Vec<u8>>,
 }
 
 pub(crate) struct Inner {
@@ -183,6 +189,7 @@ impl StoreService {
             last_error: None,
             pending: None,
             details: BTreeMap::new(),
+            theme_files: BTreeMap::new(),
         };
         let (events, _) = broadcast::channel(EVENT_CHANNEL_CAPACITY);
         Ok(Self {
@@ -258,6 +265,15 @@ impl StoreService {
         expected_version: &str,
     ) -> Result<ThemeInstallOutcome, StoreError> {
         themes::install_theme(&self.inner, name, expected_version).await
+    }
+
+    /// Preview the exact catalog commit without installing or activating it.
+    pub async fn theme_preview(
+        &self,
+        name: &str,
+        expected_commit: &str,
+    ) -> Result<crate::themes::ThemePreview, StoreError> {
+        themes::preview(&self.inner, name, expected_commit).await
     }
 
     /// Tells subscribers that something was removed through the plugin or

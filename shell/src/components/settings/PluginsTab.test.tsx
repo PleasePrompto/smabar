@@ -2,15 +2,13 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-
 import { fixtureCall } from "../../ipc/fixture";
 import { useSmabar, type InstalledPlugin } from "../../store/bar";
 import { registerTile, unregisterPluginTiles } from "../registry";
 import { typeInput } from "./ThemeManager.testHarness";
 import { AudioGroup } from "./AudioGroup";
-import { PluginsTab } from "./PluginsTab";
+import { PluginsTab } from "./PluginsTab.testHarness";
 import type { AudioConfig } from "./useAudioSettings";
-
 const { callMock, listenMock } = vi.hoisted(() => ({
   callMock:
     vi.fn<
@@ -20,7 +18,6 @@ const { callMock, listenMock } = vi.hoisted(() => ({
 }));
 vi.mock("../../ipc/call", () => ({ call: callMock }));
 vi.mock("@tauri-apps/api/event", () => ({ listen: listenMock }));
-
 let container: HTMLDivElement;
 let root: Root;
 let plugins: InstalledPlugin[];
@@ -28,7 +25,6 @@ let audio: AudioConfig;
 let fail: string | null;
 const events = new Map<string, (event: { payload: AudioConfig }) => void>();
 const stopped = vi.fn();
-
 function plugin(
   id: string,
   extra: Partial<InstalledPlugin> = {},
@@ -48,7 +44,6 @@ function plugin(
     ...extra,
   };
 }
-
 function syncRegistry() {
   for (const entry of plugins) {
     unregisterPluginTiles(entry.id);
@@ -67,7 +62,6 @@ function syncRegistry() {
   }
   useSmabar.getState().bumpRegistryVersion();
 }
-
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("reportError", vi.fn());
@@ -156,7 +150,6 @@ beforeEach(() => {
   document.body.append(container);
   root = createRoot(container);
 });
-
 afterEach(() => {
   act(() => {
     root.unmount();
@@ -167,14 +160,12 @@ afterEach(() => {
   Reflect.deleteProperty(window, "__TAURI_INTERNALS__");
   vi.unstubAllGlobals();
 });
-
 async function settle(action: () => void = () => undefined) {
   await act(async () => {
     action();
     for (let turn = 0; turn < 12; turn++) await Promise.resolve();
   });
 }
-
 function card(id: string): HTMLElement {
   const match = [
     ...container.querySelectorAll<HTMLElement>(".settings-plugin-card"),
@@ -182,7 +173,6 @@ function card(id: string): HTMLElement {
   if (!match) throw new Error(`Missing card ${id}`);
   return match;
 }
-
 function button(host: HTMLElement, label: string): HTMLButtonElement {
   const match = [...host.querySelectorAll("button")]
     .filter((entry) => !entry.hidden)
@@ -194,7 +184,6 @@ function button(host: HTMLElement, label: string): HTMLButtonElement {
   if (!match) throw new Error(`Missing button ${label}`);
   return match;
 }
-
 function input(host: HTMLElement, label: string): HTMLInputElement {
   const match = host.querySelector<HTMLInputElement>(
     `input[aria-label="${label}"]`,
@@ -202,8 +191,7 @@ function input(host: HTMLElement, label: string): HTMLInputElement {
   if (!match) throw new Error(`Missing input ${label}`);
   return match;
 }
-
-test("every installed plugin has a folded card with facts and actions, including failed and schema-free plugins", async () => {
+test("every installed plugin has a detail card with facts and actions, including failed and schema-free plugins", async () => {
   await settle(() => {
     root.render(<PluginsTab />);
   });
@@ -225,7 +213,7 @@ test("every installed plugin has a folded card with facts and actions, including
   for (const node of container.querySelectorAll<HTMLDetailsElement>(
     ".settings-plugin-details",
   ))
-    expect(node.open).toBe(false);
+    expect(node.tagName).toBe("DIV");
   expect(button(card("Clock"), "Deactivate")).toBeDefined();
   expect(button(card("Off"), "Hide plugin")).toBeDefined();
   expect(input(card("Media"), "Volume").value).toBe("100");
@@ -236,15 +224,13 @@ test("every installed plugin has a folded card with facts and actions, including
     callMock.mock.calls.filter(([command]) => command === "get_audio_settings"),
   ).toHaveLength(1);
 });
-
 test("visibility and activation stay in sync between cards and sort list without losing card state", async () => {
   await settle(() => {
     root.render(<PluginsTab />);
   });
   const clock = card("Clock");
-  const details = clock.querySelector("details");
+  const details = clock.querySelector(".settings-plugin-details");
   if (!details) throw new Error("Missing details");
-  details.open = true;
   await settle(() => {
     button(clock, "Hide plugin").click();
   });
@@ -258,7 +244,7 @@ test("visibility and activation stay in sync between cards and sort list without
   });
   expect(useSmabar.getState().pluginsDeactivated).toContain("Clock");
   expect(card("Clock")).toBe(clock);
-  expect(details.open).toBe(true);
+  expect(details.isConnected).toBe(true);
   const list = container.querySelector<HTMLElement>(".sb-list");
   if (!list) throw new Error("Missing list");
   await settle(() => {
@@ -274,7 +260,6 @@ test("visibility and activation stay in sync between cards and sort list without
     value: false,
   });
 });
-
 test("plugins with multiple tiles have individual visibility and shared audio, activation and deletion", async () => {
   plugins.push(
     plugin("Multi", {
@@ -302,7 +287,6 @@ test("plugins with multiple tiles have individual visibility and shared audio, a
     ),
   ).toBe(true);
 });
-
 test("deletion needs confirmation, Escape restores focus, failures preserve data and retry removes both views", async () => {
   await settle(() => {
     root.render(<PluginsTab />);
@@ -344,9 +328,11 @@ test("deletion needs confirmation, Escape restores focus, failures preserve data
   expect(container.querySelector(".sb-list")?.textContent).not.toContain(
     "Clock",
   );
-  expect(document.activeElement?.id).toBe("plugin-settings-title");
+  expect(useSmabar.getState().settingsGroup).toBe("plugins");
+  await vi.waitFor(() => {
+    expect(document.activeElement?.id).toBe("settings-content");
+  });
 });
-
 test("audio saves to the plugin path, preserves siblings and displays failed writes", async () => {
   await settle(() => {
     root.render(<PluginsTab />);
@@ -372,7 +358,6 @@ test("audio saves to the plugin path, preserves siblings and displays failed wri
   });
   expect(audio.plugins.Clock?.muted).toBe(true);
 });
-
 test("one audio subscription updates all cards and unsubscribes on unmount", async () => {
   Object.defineProperty(window, "__TAURI_INTERNALS__", {
     value: {},
@@ -399,9 +384,8 @@ test("one audio subscription updates all cards and unsubscribes on unmount", asy
   await settle(() => {
     root.render(null);
   });
-  expect(stopped).toHaveBeenCalledTimes(2);
+  expect(stopped).toHaveBeenCalledTimes(3);
 });
-
 test("load failures have a retry and system audio contains only global controls", async () => {
   fail = "list_plugins";
   await settle(() => {
@@ -428,7 +412,6 @@ test("load failures have a retry and system audio contains only global controls"
   });
   expect(audio.notificationSounds).toBe(false);
 });
-
 test("a pending action blocks duplicate writes from both views", async () => {
   await settle(() => {
     root.render(<PluginsTab />);
@@ -462,7 +445,6 @@ test("a pending action blocks duplicate writes from both views", async () => {
   expect(useSmabar.getState().pluginsHidden).toEqual(["plugin:Clock:main"]);
   expect(card("Clock").querySelector("fieldset")?.disabled).toBe(false);
 });
-
 test("a plugin waiting for the Python runtime says so, and the runtime row joins the tab until the runtime is ready", async () => {
   plugins.push(
     plugin("Waiting", {
@@ -480,7 +462,6 @@ test("a plugin waiting for the Python runtime says so, and the runtime row joins
   await settle(() => {
     root.render(<PluginsTab />);
   });
-
   const waiting = card("Waiting").textContent;
   expect(waiting).toContain("Starting");
   expect(waiting).toContain("Waiting for the Python runtime");
@@ -488,7 +469,6 @@ test("a plugin waiting for the Python runtime says so, and the runtime row joins
   expect(waiting).not.toContain("private");
   expect(container.textContent).toContain("No connection");
   expect(button(container, "Try again")).toBeDefined();
-
   await settle(() => {
     useSmabar.getState().setRuntimeStatus({ state: "ready" });
   });

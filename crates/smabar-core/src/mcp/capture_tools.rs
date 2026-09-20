@@ -64,8 +64,7 @@ impl SmabarMcp {
         description = "Open or close a bar surface so it can be screenshotted: open_flyout \
                        (needs tileId), close_flyout, open_overlay (secondary row; requires \
                        the solo layout), close_overlay, \
-                       open_settings (optionally with `group`: bar, design, shortcuts, plugins, \
-                       system, system/updates, legal, plugins/store, design/themes), close_settings. A successful open also prepares the \
+                       open_settings (optionally with `group`; see the parameter schema for pages), close_settings. A successful open also prepares the \
                        immediately following screenshot of that surface, so a brief render gap \
                        while a Plugin restarts does not lose it."
     )]

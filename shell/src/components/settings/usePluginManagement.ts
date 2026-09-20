@@ -9,7 +9,7 @@ import { toggleDisabled } from "./model";
 import { setConfigsSequentially } from "./persist";
 
 /** One installed snapshot and mutation path for the sort list and cards. */
-export function usePluginManagement() {
+export function usePluginManagement(enabled = true) {
   const registryVersion = useSmabar((state) => state.registryVersion);
   const deactivated = useSmabar((state) => state.pluginsDeactivated);
   const statuses = useSmabar((state) => state.pluginStatus);
@@ -38,17 +38,18 @@ export function usePluginManagement() {
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     mounted.current = true;
     const unlisten = cleanupListeners([onStoreChanged(() => void refresh())]);
     return () => {
       mounted.current = false;
       unlisten();
     };
-  }, [refresh]);
+  }, [refresh, enabled]);
 
   useEffect(() => {
-    void refresh();
-  }, [refresh, registryVersion, deactivated, statuses]);
+    if (enabled) void refresh();
+  }, [enabled, refresh, registryVersion, deactivated, statuses]);
 
   const perform = async (
     pluginId: string,

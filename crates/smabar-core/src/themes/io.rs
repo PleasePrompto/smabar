@@ -25,7 +25,7 @@ use super::{
 
 mod export;
 mod write;
-pub use export::export_to_dir;
+pub use export::{export_document_json, export_to_dir, write_copy};
 pub use write::{PendingThemeWrite, delete_theme, stage_theme_write, write_theme};
 
 /// Import refuses files above this size — a theme document is a few KiB.
@@ -210,7 +210,7 @@ pub fn parse_document_strict(raw: &str) -> Result<ThemeDocument, Vec<String>> {
 /// Serializes a document in the canonical on-disk shape: sorted flat tokens
 /// plus the reserved blocks (only when non-empty), pretty-printed with a
 /// trailing newline.
-fn document_to_json(document: &ThemeDocument) -> Result<String, ThemeIoError> {
+pub fn document_to_json(document: &ThemeDocument) -> Result<String, ThemeIoError> {
     let mut file: serde_json::Map<String, Value> = document
         .tokens
         .iter()

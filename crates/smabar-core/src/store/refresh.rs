@@ -196,6 +196,7 @@ async fn fetch_catalog(inner: &Inner, etag: Option<&str>) -> Result<(), StoreErr
         state.listing = Some(listing);
         state.body_sha256 = Some(sha256);
         state.details.clear();
+        state.theme_files.clear();
     }
     mark_fresh(inner, body.etag, Some(fetched_at));
     Ok(())

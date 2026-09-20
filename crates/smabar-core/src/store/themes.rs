@@ -17,6 +17,8 @@ use super::receipts::{self, ThemeReceipt};
 use super::refresh::theme_file;
 use super::{ChangeReason, Inner, StoreError, notify};
 
+const MAX_CACHED_FILES: usize = 32;
+
 /// What a theme install produced.
 #[derive(Debug, Clone, Serialize, schemars::JsonSchema)]
 #[serde(rename_all = "camelCase")]
@@ -65,20 +67,7 @@ pub(super) async fn install_theme(
         });
     }
     guard(inner, &entry, blocked)?;
-    let url = Url::parse(&entry.source.file_url).map_err(|error| StoreError::Contract {
-        id: name.to_string(),
-        detail: format!("fileUrl is not a URL: {error}"),
-    })?;
-    let bytes = match inner.fetcher.get(&url, None, MAX_THEME_BYTES).await? {
-        FetchOutcome::Body(body) => body.bytes,
-        FetchOutcome::NotModified => Vec::new(),
-    };
-    if catalog::sha256_hex(&bytes) != entry.source.sha256 {
-        return Err(StoreError::DigestMismatch {
-            what: "the theme file",
-            id: name.to_string(),
-        });
-    }
+    let bytes = verified_file(inner, &entry).await?;
     let _receipts = inner.receipts_lock.lock().await;
     let mut receipts = receipts::load_checked(&inner.paths).map_err(|source| StoreError::Io {
         action: "read receipts before importing the theme; repair installed.json before retrying",
@@ -155,17 +144,6 @@ fn guard(inner: &Inner, entry: &ThemeEntry, blocked: Option<String>) -> Result<(
             reason,
         });
     }
-    let expected = expected_file_url(
-        &entry.common.repo.name_with_owner,
-        &entry.source.commit,
-        &entry.common.path,
-    );
-    if entry.source.file_url != expected || !is_full_commit(&entry.source.commit) {
-        return Err(StoreError::Contract {
-            id: name.clone(),
-            detail: format!("fileUrl {} is not {expected}", entry.source.file_url),
-        });
-    }
     let file = theme_file(&inner.paths, name);
     if file.exists() {
         let receipts = receipts::load(&inner.paths);
@@ -188,4 +166,102 @@ fn guard(inner: &Inner, entry: &ThemeEntry, blocked: Option<String>) -> Result<(
         }
     }
     Ok(())
+}
+
+/// The same commit/URL/hash checks protect installation and read-only previews.
+async fn verified_file(inner: &Inner, entry: &ThemeEntry) -> Result<Vec<u8>, StoreError> {
+    let name = &entry.common.id;
+    let expected = expected_file_url(
+        &entry.common.repo.name_with_owner,
+        &entry.source.commit,
+        &entry.common.path,
+    );
+    if entry.source.file_url != expected || !is_full_commit(&entry.source.commit) {
+        return Err(StoreError::Contract {
+            id: name.clone(),
+            detail: format!("fileUrl {} is not {expected}", entry.source.file_url),
+        });
+    }
+
+    if let Some(bytes) = lock_unpoisoned(&inner.state)
+        .theme_files
+        .get(&entry.source.sha256)
+        .cloned()
+    {
+        return Ok(bytes);
+    }
+    let url = Url::parse(&entry.source.file_url).map_err(|error| StoreError::Contract {
+        id: name.to_string(),
+        detail: format!("fileUrl is not a URL: {error}"),
+    })?;
+    let bytes = match inner.fetcher.get(&url, None, MAX_THEME_BYTES).await? {
+        FetchOutcome::Body(body) => body.bytes,
+        FetchOutcome::NotModified => Vec::new(),
+    };
+    if catalog::sha256_hex(&bytes) != entry.source.sha256 {
+        return Err(StoreError::DigestMismatch {
+            what: "the theme file",
+            id: name.to_string(),
+        });
+    }
+
+    let mut state = lock_unpoisoned(&inner.state);
+    // ponytail: at most 16 MiB; clear on capacity, use LRU if catalog browsing needs it.
+    if state.theme_files.len() >= MAX_CACHED_FILES {
+        state.theme_files.clear();
+    }
+    state
+        .theme_files
+        .insert(entry.source.sha256.clone(), bytes.clone());
+    Ok(bytes)
+}
+
+pub(super) async fn preview(
+    inner: &Inner,
+    name: &str,
+    expected_commit: &str,
+) -> Result<crate::themes::ThemePreview, StoreError> {
+    let entry = {
+        let state = lock_unpoisoned(&inner.state);
+        let listing = state.listing.as_ref().ok_or(StoreError::NoCatalog)?;
+        let entry = listing
+            .theme(name)
+            .ok_or_else(|| StoreError::Unknown { id: name.into() })?;
+        if let Some(reason) = listing.block_reason(ItemKind::Theme, name, &entry.common.version) {
+            return Err(StoreError::Blocked {
+                id: name.into(),
+                version: entry.common.version.clone(),
+                reason: reason.into(),
+            });
+        }
+        entry.clone()
+    };
+    if entry.source.commit != expected_commit {
+        return Err(StoreError::VersionChanged {
+            id: name.into(),
+            expected: expected_commit.into(),
+            actual: entry.source.commit,
+        });
+    }
+    let bytes = verified_file(inner, &entry).await?;
+    let raw = std::str::from_utf8(&bytes).map_err(|error| StoreError::Contract {
+        id: name.into(),
+        detail: format!("theme is not UTF-8: {error}"),
+    })?;
+    let document = crate::themes::io::parse_document_strict(raw)
+        .map_err(crate::themes::io::ThemeIoError::InvalidDocument)?;
+    if document.tokens.is_empty() && document.settings.is_empty() {
+        return Err(StoreError::Contract {
+            id: name.into(),
+            detail: "not a theme document".into(),
+        });
+    }
+    let mut tokens = crate::themes::bundled_default().clone();
+    tokens.extend(document.tokens);
+    crate::fonts::canonicalize_theme_fonts(&mut tokens);
+    Ok(crate::themes::preview(
+        &inner.config.current(),
+        tokens,
+        &document.settings,
+    ))
 }

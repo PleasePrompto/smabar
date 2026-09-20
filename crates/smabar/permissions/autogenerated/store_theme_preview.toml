@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-store-theme-preview"
+description = "Enables the store_theme_preview command without any pre-configured scope."
+commands.allow = ["store_theme_preview"]
+
+[[permission]]
+identifier = "deny-store-theme-preview"
+description = "Denies the store_theme_preview command without any pre-configured scope."
+commands.deny = ["store_theme_preview"]

@@ -2,198 +2,206 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-
-import kitCss from "../../styles/ui-kit.css?raw";
 import { useSmabar } from "../../store/bar";
+import { setLocale } from "../../i18n/t";
+import { fixtureCall } from "../../ipc/fixture";
+import kitCss from "../../styles/ui-kit.css?raw";
 import { SettingsPanel } from "./SettingsPanel";
 import { SystemTab } from "./SystemTab";
-
-const { callMock } = vi.hoisted(() => ({ callMock: vi.fn() }));
-vi.mock("../../ipc/call", () => ({ call: callMock }));
-const { closeSurfaceMock } = vi.hoisted(() => ({
+import { pageDefaults } from "./pageDefaults";
+import { resolveSettingsPage } from "./settingsPages";
+const { callMock, closeSurfaceMock } = vi.hoisted(() => ({
+  callMock: vi.fn(),
   closeSurfaceMock: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("../../ipc/surface", () => ({
-  closeCurrentSurface: closeSurfaceMock,
-}));
-
+vi.mock("../../ipc/call", () => ({ call: callMock }));
+vi.mock("../../ipc/surface", () => ({ closeCurrentSurface: closeSurfaceMock }));
 let container: HTMLDivElement;
 let root: Root;
-let opener: HTMLButtonElement;
-
 beforeEach(() => {
-  callMock.mockReturnValue(new Promise(() => undefined));
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+  setLocale({});
   useSmabar.setState(useSmabar.getInitialState(), true);
+  callMock.mockImplementation(
+    (command: string, args?: Record<string, unknown>) =>
+      Promise.resolve(fixtureCall(command, args)),
+  );
   container = document.createElement("div");
-  opener = document.createElement("button");
-  document.body.append(opener, container);
-  opener.focus();
+  document.body.append(container);
   root = createRoot(container);
 });
-
 afterEach(() => {
   act(() => {
     root.unmount();
   });
-  opener.remove();
   container.remove();
   callMock.mockReset();
   closeSurfaceMock.mockClear();
+  Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: false });
+});
+async function render() {
+  await act(async () => {
+    root.render(<SettingsPanel />);
+    await Promise.resolve();
+  });
+}
+function click(selector: string) {
+  const button = container.querySelector<HTMLButtonElement>(selector);
+  if (button === null) throw new Error(selector);
+  act(() => {
+    button.click();
+  });
+}
+function titles() {
+  return [...container.querySelectorAll(".settings-block-title")].map(
+    (node) => node.textContent,
+  );
+}
+
+test("four stable groups separate global design from content management", async () => {
+  await render();
+  expect(
+    [...container.querySelectorAll(".settings-nav-section > button")].map(
+      (button) => button.getAttribute("aria-label"),
+    ),
+  ).toEqual(["Bar & Design", "Shortcuts", "Plugins", "System"]);
+  expect(titles()).toEqual(["Placement", "Arrangement", "Size"]);
+  expect(
+    container.querySelector('.settings-subnav [aria-current="page"]')
+      ?.textContent,
+  ).toBe("Layout");
+  click("#settings-tab-shortcuts");
+  expect(titles()).toEqual(["Pinned", "Add"]);
+  expect(container.textContent).not.toContain("Magnification");
+});
+test.each([
+  ["bar", "bar/layout"],
+  ["design", "bar/themes"],
+  ["design/themes", "bar/community"],
+  ["system/updates", "system/about"],
+  ["legal", "system/legal"],
+  ["unknown", "bar/layout"],
+])("legacy entry %s resolves to %s", (from, to) => {
+  expect(resolveSettingsPage(from)).toBe(to);
+});
+test("plugins have a labeled indented list and deactivated entries remain clickable", async () => {
+  useSmabar.setState({
+    settingsGroup: "plugins",
+    pluginsDeactivated: ["clock"],
+    pluginSchemas: { clock: { name: "Clock", settingsSchema: {} } },
+  });
+  await render();
+  expect(container.querySelector(".settings-plugin-nav h3")?.textContent).toBe(
+    "Installed",
+  );
+  const off = container.querySelector<HTMLButtonElement>(
+    ".settings-plugin-nav [data-deactivated]",
+  );
+  expect(off).not.toBeNull();
+  expect(off?.disabled).toBe(false);
+  expect(off?.textContent).toBe("Clock");
+  await act(async () => {
+    off?.click();
+    await Promise.resolve();
+  });
+  expect(container.querySelectorAll(".settings-plugin-card")).toHaveLength(1);
+  expect(container.querySelector(".settings-plugin-details")).not.toBeNull();
+  expect(container.querySelector("details.settings-plugin-details")).toBeNull();
 });
 
-function blockTitles(): string[] {
-  return [...document.querySelectorAll(".settings-block-title")].map(
-    (heading) => heading.textContent,
-  );
-}
-
-function navButton(label: string): HTMLButtonElement {
-  const button = document.querySelector<HTMLButtonElement>(
-    `.settings-nav-section > button[aria-label="${label}"]`,
-  );
-  if (button === null) throw new Error(`${label} navigation button is missing`);
-  return button;
-}
-
-function subnavLabels(): string[] {
-  return [...document.querySelectorAll(".settings-subnav button")].map(
-    (button) => button.textContent,
-  );
-}
-
-function subnavButton(label: string): HTMLButtonElement {
-  const match = [
-    ...document.querySelectorAll<HTMLButtonElement>(".settings-subnav button"),
-  ].find((button) => button.textContent === label);
-  if (match === undefined)
-    throw new Error(`no sub-navigation entry "${label}"`);
-  return match;
-}
-
-function pageEntry(label: string): HTMLButtonElement {
-  const match = [
-    ...document.querySelectorAll<HTMLButtonElement>(".settings-subnav-page"),
-  ].find((button) => button.textContent === label);
-  if (match === undefined) throw new Error(`no page entry "${label}"`);
-  return match;
-}
-
-function navLabels(): (string | null)[] {
-  return [...document.querySelectorAll(".settings-nav-section > button")].map(
-    (button) => button.getAttribute("aria-label"),
-  );
-}
-
-test("five groups, Design on its own, the store pages listed under Plugins and Design", () => {
-  useSmabar.setState({ settingsGroup: "bar" });
-  act(() => {
-    root.render(<SettingsPanel />);
+test("the sidebar footer changes language and links its update chip to app updates", async () => {
+  await render();
+  const footer = container.querySelector(".settings-sidebar-footer");
+  expect(
+    footer?.querySelector('[role="img"]')?.getAttribute("aria-label"),
+  ).toBe("smabar — the smart taskbar");
+  const select = footer?.querySelector("select");
+  expect(select).not.toBeNull();
+  await act(async () => {
+    if (select === null || select === undefined)
+      throw new Error("language picker missing");
+    select.value = "de";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+    await Promise.resolve();
   });
-
-  expect(navLabels()).toEqual([
-    "Bar",
-    "Design",
-    "Shortcuts",
-    "Plugins",
-    "System",
-  ]);
-  expect(blockTitles()).toEqual([
-    "Placement",
-    "Arrangement",
-    "Window behavior",
-    "Size",
-    "Notifications",
-  ]);
-  expect(document.querySelector(".settings-subnav-page")).toBeNull();
-
-  act(() => {
-    navButton("Design").click();
+  expect(callMock).toHaveBeenCalledWith("update_config", {
+    path: "language",
+    value: "de",
   });
-  expect(blockTitles()).toEqual([
-    "Theme",
-    "Your themes",
-    "Colors",
-    "Typography",
-    "Surfaces",
-  ]);
-  expect(pageEntry("Theme Store").getAttribute("aria-current")).toBeNull();
-
   act(() => {
-    navButton("Plugins").click();
-  });
-  expect(blockTitles()).toEqual(["Installed", "Appearance", "Hover"]);
-
-  // The page replaces the group's sections; the group stays highlighted.
-  act(() => {
-    pageEntry("Plugin Store").click();
-  });
-  expect(useSmabar.getState().settingsGroup).toBe("plugins/store");
-  expect(document.querySelector(".settings-store-page")).not.toBeNull();
-  expect(blockTitles()).toEqual([]);
-  expect(navButton("Plugins").getAttribute("aria-current")).toBe("page");
-  // The group's sections stay listed beside the page entry.
-  expect(subnavLabels()).toEqual([
-    "Installed",
-    "Plugin Store",
-    "Appearance",
-    "Hover",
-  ]);
-  expect(pageEntry("Plugin Store").getAttribute("aria-current")).toBe("page");
-
-  const back = document.querySelector<HTMLButtonElement>(
-    '.settings-store-page [aria-label="Back to the list"]',
-  );
-  if (back === null) throw new Error("the store page has no way back");
-  act(() => {
-    back.click();
-  });
-  expect(useSmabar.getState().settingsGroup).toBe("plugins");
-  expect(blockTitles()).toEqual(["Installed", "Appearance", "Hover"]);
-
-  // A section entry clicked on the page leads back to that section.
-  act(() => {
-    pageEntry("Plugin Store").click();
-  });
-  const scrolled = vi.fn();
-  Element.prototype.scrollIntoView = scrolled;
-  act(() => {
-    subnavButton("Hover").click();
-  });
-  expect(useSmabar.getState().settingsGroup).toBe("plugins");
-  expect(scrolled).toHaveBeenCalledTimes(1);
-  const target = document.querySelectorAll(".settings-block")[2];
-  expect(scrolled.mock.instances[0]).toBe(target);
-  // Lit up, so the click is seen to land even when nothing had to scroll.
-  expect(target?.hasAttribute("data-highlight")).toBe(true);
-
-  const previousContent =
-    container.querySelector<HTMLElement>("#settings-content");
-  if (previousContent === null) throw new Error("no settings content");
-  previousContent.scrollTop = 400;
-  act(() => {
-    navButton("System").click();
+    useSmabar.setState({
+      updateChannel: "app",
+      updateOffer: {
+        version: "2.0.0",
+        notes: null,
+        date: null,
+        installer: "system",
+      },
+    });
   });
   expect(
-    container.querySelector<HTMLElement>("#settings-content")?.scrollTop,
-  ).toBe(0);
-  // Rendering and application updates wait for get_system_settings; the
-  // mock never answers here, so the channel remains unknown.
-  expect(blockTitles()).toEqual([
-    "About smabar",
-    "General",
-    "Agent access",
-    "Python runtime",
-    "smabar audio",
-    "Legal",
-  ]);
-  expect(document.querySelector(".settings-info-logo")).not.toBeNull();
-  expect(document.querySelector(".settings-info-version")?.textContent).toBe(
-    "Version dev",
+    footer?.querySelector(".settings-version-chip[data-update]"),
+  ).not.toBeNull();
+  await act(async () => {
+    footer?.querySelector<HTMLButtonElement>(".settings-version-chip")?.click();
+    await Promise.resolve();
+  });
+  expect(useSmabar.getState().settingsGroup).toBe("system/about");
+  expect(
+    container.querySelector('[aria-label="About & Updates"]'),
+  ).not.toBeNull();
+});
+test("legal gate blocks every normal page and acceptance restores navigation", async () => {
+  useSmabar.setState({ settingsGroup: "plugins/store", legalRequired: true });
+  await render();
+  expect(
+    container.querySelectorAll(".settings-nav-section > button"),
+  ).toHaveLength(1);
+  expect(
+    container.querySelector(".settings-nav-section > button")?.textContent,
+  ).toBe("Legal");
+  expect(container.querySelector(".settings-store-page")).toBeNull();
+  await act(async () => {
+    useSmabar.setState({ legalRequired: false, settingsGroup: "legal" });
+    await Promise.resolve();
+  });
+  expect(
+    container
+      .querySelector("#settings-tab-system")
+      ?.getAttribute("aria-current"),
+  ).toBe("page");
+  expect(
+    container.querySelector('.settings-subnav [aria-current="page"]')
+      ?.textContent,
+  ).toBe("Legal");
+});
+test("settings is a named dialog and Escape and close use its native surface", async () => {
+  await render();
+  expect(
+    container.querySelector('[role="dialog"]')?.getAttribute("aria-labelledby"),
+  ).toBe("settings-title");
+  click('[aria-label="Close settings"]');
+  expect(closeSurfaceMock).toHaveBeenCalledOnce();
+  act(() => {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  });
+  expect(closeSurfaceMock).toHaveBeenCalledTimes(2);
+});
+test("appearance and behavior resets preserve pins, plugin status and other pages", () => {
+  const appearance = pageDefaults("appearance").map(({ path }) => path);
+  expect(appearance).toContain("appearance.tileChrome");
+  expect(appearance).toContain("shortcuts.labels");
+  expect(appearance).not.toContain("shortcuts.pinned");
+  expect(appearance).not.toContain("pluginsDeactivated");
+  expect(pageDefaults("layout").map(({ path }) => path)).not.toContain(
+    "layout.behavior",
+  );
+  expect(pageDefaults("behavior").map(({ path }) => path)).toContain(
+    "effects.hoverPeek.delayMs",
   );
 });
-
 test.each(["app", "store"])(
-  "application update controls follow the %s channel",
+  "updates respect the %s distribution channel",
   async (updateChannel) => {
     callMock.mockImplementation((command: string) =>
       command === "get_system_settings"
@@ -203,98 +211,15 @@ test.each(["app", "store"])(
             mcp: { enabled: true, port: 7627 },
             rendering: null,
           })
-        : new Promise(() => undefined),
+        : Promise.resolve(fixtureCall(command)),
     );
     await act(async () => {
-      root.render(<SystemTab />);
+      root.render(<SystemTab page="about" />);
       await Promise.resolve();
     });
-    expect(blockTitles().includes("Updates")).toBe(updateChannel === "app");
+    expect(titles().includes("Updates")).toBe(updateChannel === "app");
   },
 );
-
-test("a page id opened from outside lands on its page with its group highlighted", () => {
-  useSmabar.setState({ settingsGroup: "design/themes" });
-  act(() => {
-    root.render(<SettingsPanel />);
-  });
-  expect(navButton("Design").getAttribute("aria-current")).toBe("page");
-  expect(
-    document.querySelector(".settings-store-page")?.getAttribute("aria-label"),
-  ).toBe("Theme Store");
-});
-
-test("unaccepted terms leave only the Legal group, whatever page was requested", () => {
-  useSmabar.setState({ legalRequired: true, settingsGroup: "plugins/store" });
-  act(() => {
-    root.render(<SettingsPanel />);
-  });
-
-  expect(navLabels()).toEqual(["Legal"]);
-  expect(navButton("Legal").getAttribute("aria-current")).toBe("page");
-  expect(document.querySelector('section[aria-label="Legal"]')).not.toBeNull();
-  expect(document.querySelector(".settings-store-page")).toBeNull();
-  // The legal texts are still on their way; the mock never answers here.
-  expect(document.querySelector(".settings-help")?.textContent).toBe(
-    "Loading the legal texts…",
-  );
-  expect(callMock).toHaveBeenCalledWith("legal_status");
-
-  // Accepting (the core says so through legal-changed) brings the rest back
-  // and retires the Legal group from the navigation.
-  act(() => {
-    useSmabar.getState().setLegalRequired(false);
-  });
-  expect(navLabels()).toEqual([
-    "Bar",
-    "Design",
-    "Shortcuts",
-    "Plugins",
-    "System",
-  ]);
-  expect(document.querySelector(".settings-store-page")).not.toBeNull();
-});
-
-test("after acceptance a request for the legal group lands on System's folded block", () => {
-  useSmabar.setState({ legalRequired: false, settingsGroup: "legal" });
-  act(() => {
-    root.render(<SettingsPanel />);
-  });
-
-  expect(navButton("System").getAttribute("aria-current")).toBe("page");
-  const block = document.querySelector<HTMLDetailsElement>(
-    'details[aria-label="Legal"]',
-  );
-  expect(block).not.toBeNull();
-  expect(block?.open).toBe(false);
-  expect(callMock).toHaveBeenCalledWith("legal_status");
-});
-
-test("settings behaves as a named dialog and closes its native surface", () => {
-  useSmabar.setState({ settingsGroup: "unknown" });
-  act(() => {
-    root.render(<SettingsPanel />);
-  });
-
-  const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
-  expect(dialog?.getAttribute("aria-labelledby")).toBe("settings-title");
-  expect(
-    document.querySelector('[aria-label="Bar"]')?.getAttribute("aria-current"),
-  ).toBe("page");
-  expect(document.activeElement?.getAttribute("aria-label")).toBe(
-    "Close settings",
-  );
-
-  const close = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Close settings"]',
-  );
-  if (close === null) throw new Error("close button is missing");
-  act(() => {
-    close.click();
-  });
-  expect(closeSurfaceMock).toHaveBeenCalledOnce();
-});
-
 test("Linux rendering offers automatic, native, and software modes", async () => {
   callMock.mockImplementation((command: string) => {
     if (command === "get_system_settings") {
@@ -324,7 +249,7 @@ test("Linux rendering offers automatic, native, and software modes", async () =>
   });
 
   act(() => {
-    root.render(<SystemTab />);
+    root.render(<SystemTab page="advanced" />);
   });
   await act(() => Promise.resolve());
 
@@ -359,61 +284,6 @@ test("Linux rendering offers automatic, native, and software modes", async () =>
     path: "rendering",
     value: "software",
   });
-});
-
-test("returning from the store waits for a plugin card before scrolling and opening it", async () => {
-  const installed = [
-    {
-      id: "clock",
-      name: "Clock",
-      description: null,
-      settingsSchema: null,
-      tiles: [],
-      status: "running",
-      origin: "base",
-      version: "1.0.0",
-      update: null,
-      modified: false,
-      blocked: null,
-    },
-  ];
-  let finish: ((plugins: typeof installed) => void) | undefined;
-  let delayed = false;
-  callMock.mockImplementation((command: string) =>
-    command === "list_plugins"
-      ? delayed
-        ? new Promise((resolve) => {
-            finish = resolve;
-          })
-        : Promise.resolve(installed)
-      : new Promise(() => undefined),
-  );
-  useSmabar.setState({ settingsGroup: "plugins" });
-  await act(async () => {
-    root.render(<SettingsPanel />);
-    await Promise.resolve();
-  });
-  expect(subnavLabels()).toContain("Clock");
-  act(() => {
-    pageEntry("Plugin Store").click();
-  });
-  delayed = true;
-  const scroll = vi.fn();
-  Element.prototype.scrollIntoView = scroll;
-  await act(async () => {
-    subnavButton("Clock").click();
-    await Promise.resolve();
-  });
-  expect(scroll).not.toHaveBeenCalled();
-  await act(async () => {
-    finish?.(installed);
-    await Promise.resolve();
-  });
-  expect(scroll).toHaveBeenCalledOnce();
-  expect(
-    document.querySelector<HTMLDetailsElement>(".settings-plugin-card details")
-      ?.open,
-  ).toBe(true);
 });
 
 test("native resize grips stay at the edges without kit content spacing", () => {

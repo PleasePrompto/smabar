@@ -189,8 +189,7 @@ pub fn update_config(state: State<'_, AppState>, path: String, value: Value) -> 
 /// for the settings panel's theme picker.
 #[tauri::command]
 pub fn list_themes(state: State<'_, AppState>) -> Vec<themes::ThemeInfo> {
-    let active = state.watcher.current().theme;
-    themes::summaries(&state.paths, &active)
+    themes::summaries(&state.paths, &state.watcher.current())
 }
 
 /// What the System settings need and `get_ui_state` does not carry: the

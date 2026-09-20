@@ -354,7 +354,13 @@ fn summaries_expose_source_active_and_preview_colors() {
     let (_dir, paths) = temp_paths();
     write_theme(&paths, "neon", r##"{"--sb-accent":"#00ff88"}"##);
 
-    let infos = summaries(&paths, "paper");
+    let infos = summaries(
+        &paths,
+        &crate::config::SmabarConfig {
+            theme: "paper".into(),
+            ..Default::default()
+        },
+    );
     let paper = infos
         .iter()
         .find(|info| info.name == "paper")
@@ -363,6 +369,14 @@ fn summaries_expose_source_active_and_preview_colors() {
     assert!(paper.active);
     assert_eq!(paper.colors.accent, "#2f5fa8");
     assert_eq!(paper.colors.surface, "#f4f2ed");
+    assert_eq!(
+        paper.preview.layout.position,
+        crate::config::BarPosition::Top
+    );
+    assert_eq!(
+        paper.preview.appearance.tokens["--sb-bar-radius"],
+        "0.625rem"
+    );
     assert_eq!(
         paper.fonts.sans.family,
         "system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans', Ubuntu, Cantarell, sans-serif"
@@ -385,6 +399,40 @@ fn summaries_expose_source_active_and_preview_colors() {
             .map(String::as_str)
             .expect("text token")
     );
+}
+
+#[test]
+fn preview_inherits_omitted_settings_without_changing_the_current_look() {
+    use crate::config::{BarPosition, BarVariant, LayoutBehavior, SmabarConfig};
+    let (_dir, paths) = temp_paths();
+    let mut current = SmabarConfig::default();
+    current.layout.position = BarPosition::Top;
+    current.layout.margin = 24;
+    current
+        .appearance
+        .tokens
+        .insert("--sb-accent".into(), "#abcdef".into());
+    write_theme(
+        &paths,
+        "custom",
+        r##"{
+        "--sb-accent": "#123456",
+        "settings": {"layout.behavior":"autohide", "layout.variant":"rows"}
+    }"##,
+    );
+    let original = current.clone();
+    let themes = summaries(&paths, &current);
+    let preview = &themes
+        .iter()
+        .find(|theme| theme.name == "custom")
+        .expect("custom")
+        .preview;
+    assert_eq!(preview.layout.position, BarPosition::Top);
+    assert_eq!(preview.layout.margin, 24);
+    assert_eq!(preview.layout.behavior, LayoutBehavior::Autohide);
+    assert_eq!(preview.layout.variant, BarVariant::Rows);
+    assert_eq!(preview.appearance.tokens["--sb-accent"], "#123456");
+    assert_eq!(current, original);
 }
 
 #[test]

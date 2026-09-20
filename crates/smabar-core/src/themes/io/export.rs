@@ -9,7 +9,7 @@ use crate::util::lock_unpoisoned;
 use super::super::{BUNDLED, ThemeDocument, ThemeSettings, bundled_default, is_valid_theme_name};
 use super::{THEME_WRITE_LOCK, ThemeIoError, document_to_json, parse_document_strict};
 
-fn export_document_unlocked(
+pub(super) fn export_document_unlocked(
     paths: &SmabarPaths,
     name: &str,
 ) -> Result<ThemeDocument, ThemeIoError> {
@@ -86,4 +86,31 @@ pub fn export_to_dir(
         source,
     })?;
     Ok(target)
+}
+
+/// Materializes a stored theme once for a native save dialog.
+pub fn export_document_json(paths: &SmabarPaths, name: &str) -> Result<String, ThemeIoError> {
+    let _guard = lock_unpoisoned(&THEME_WRITE_LOCK);
+    document_to_json(&export_document_unlocked(paths, name)?)
+}
+
+/// Writes an already captured look to a chosen external file without recomputing it.
+pub fn write_copy(target: &Path, document: &str) -> Result<(), ThemeIoError> {
+    if document.len() as u64 > super::IMPORT_MAX_BYTES {
+        return Err(ThemeIoError::InvalidDocument(vec![
+            "theme exceeds the size limit".into(),
+        ]));
+    }
+    let parsed = parse_document_strict(document).map_err(ThemeIoError::InvalidDocument)?;
+    if parsed.tokens.is_empty() && parsed.settings.is_empty() {
+        return Err(ThemeIoError::InvalidDocument(vec![
+            "not a theme document".into(),
+        ]));
+    }
+    let _guard = lock_unpoisoned(&THEME_WRITE_LOCK);
+    crate::util::write_atomically(target, document.as_bytes()).map_err(|source| ThemeIoError::Io {
+        action: "save theme copy; choose a writable location and retry",
+        path: target.to_path_buf(),
+        source,
+    })
 }

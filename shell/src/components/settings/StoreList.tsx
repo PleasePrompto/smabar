@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { t } from "../../i18n/t";
 import type { StoreEntry, StoreOverview } from "../../ipc/store";
 import { ConfirmRow } from "./controls";
+import { StoreThemePreview } from "./StoreThemePreview";
 import { StoreStateBadge } from "./StoreBadge";
 import { StoreAvatar, StoreIcon } from "./StoreMedia";
 import {
@@ -96,46 +97,66 @@ function Row({
   const focusBack = (name: StoreAction) => {
     (buttons.current.get(name) ?? details.current)?.focus();
   };
+  const controls = (
+    <div className="settings-store-side">
+      {entry.kind === "plugin" && <Stars entry={entry} language={language} />}
+      <button
+        ref={details}
+        type="button"
+        className="sb-btn"
+        data-store-details=""
+        onClick={() => {
+          onDetails(entry);
+        }}
+      >
+        {t("settings.store.details")}
+      </button>
+      <ActionButtons
+        entry={entry}
+        offered={offered}
+        disabled={locked}
+        onAsk={(next) => {
+          action.ask(entry, next);
+        }}
+        buttonRef={(name, node) => {
+          if (node === null) buttons.current.delete(name);
+          else buttons.current.set(name, node);
+        }}
+      />
+    </div>
+  );
   return (
-    <li data-store-entry={`${entry.kind}:${entry.id}`}>
+    <li
+      data-store-entry={`${entry.kind}:${entry.id}`}
+      data-theme={entry.kind === "theme" || undefined}
+    >
       <div className="settings-store-row">
         <div className="settings-store-identity">
-          <StoreIcon entry={entry} />
+          {entry.kind === "plugin" && <StoreIcon entry={entry} />}
           <div className="settings-store-main">
             <div className="settings-store-heading">
               <span className="settings-store-name">{entry.name}</span>
               <StoreStateBadge entry={entry} />
+              {entry.kind === "theme" && (
+                <Stars entry={entry} language={language} />
+              )}
             </div>
             <Meta entry={entry} language={language} />
             <p className="settings-store-description">{entry.description}</p>
           </div>
         </div>
-        <div className="settings-store-side">
-          <Stars entry={entry} language={language} />
-          <button
-            ref={details}
-            type="button"
-            className="sb-btn"
-            data-store-details=""
-            onClick={() => {
+        {entry.kind === "theme" ? (
+          <StoreThemePreview
+            entry={entry}
+            onDetails={() => {
               onDetails(entry);
             }}
           >
-            {t("settings.store.details")}
-          </button>
-          <ActionButtons
-            entry={entry}
-            offered={offered}
-            disabled={locked}
-            onAsk={(next) => {
-              action.ask(entry, next);
-            }}
-            buttonRef={(name, node) => {
-              if (node === null) buttons.current.delete(name);
-              else buttons.current.set(name, node);
-            }}
-          />
-        </div>
+            {controls}
+          </StoreThemePreview>
+        ) : (
+          controls
+        )}
       </div>
       {(confirming !== null || pending !== null) && (
         <div className="settings-store-row-extra">
@@ -184,7 +205,10 @@ export function StoreList({
   action: StoreActionState;
 }) {
   return (
-    <ul className="settings-store-list">
+    <ul
+      className="settings-store-list"
+      data-themes={entries[0]?.kind === "theme" || undefined}
+    >
       {entries.map((entry) => (
         <Row
           key={entry.id}

@@ -2205,17 +2205,9 @@
       "meaning": "Optional component-level override for control min height.",
       "group": "component.control",
       "consumers": [
-        "shell/src/styles/settings-window.css",
         "shell/src/styles/ui-kit.css"
       ],
       "cssConsumers": [
-        {
-          "file": "shell/src/styles/settings-window.css",
-          "selector": ".settings-group-nav .settings-nav-section > button",
-          "fallbacks": [
-            "2.25em"
-          ]
-        },
         {
           "file": "shell/src/styles/ui-kit.css",
           "selector": ".sb-btn",
@@ -6790,7 +6782,7 @@
       "scope": "component",
       "themeable": true,
       "type": "dimension",
-      "default": "11rem",
+      "default": "13rem",
       "allowed": {
         "syntax": "<length> or dimension expression"
       },
@@ -6804,7 +6796,7 @@
           "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-workspace",
           "fallbacks": [
-            "11rem"
+            "13rem"
           ]
         }
       ],
@@ -9039,7 +9031,21 @@
         },
         {
           "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-group-nav .settings-subnav button.sb-active, .settings-plugin-nav button.sb-active",
+          "fallbacks": [
+            "600"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
           "selector": ".settings-info-principle",
+          "fallbacks": [
+            "600"
+          ]
+        },
+        {
+          "file": "shell/src/styles/settings-window.css",
+          "selector": ".settings-plugin-nav h3",
           "fallbacks": [
             "600"
           ]
@@ -9060,14 +9066,7 @@
         },
         {
           "file": "shell/src/styles/settings.css",
-          "selector": ".settings-intro h3",
-          "fallbacks": [
-            "600"
-          ]
-        },
-        {
-          "file": "shell/src/styles/settings.css",
-          "selector": ".settings-plugin-details > summary",
+          "selector": ".settings-group-header h2",
           "fallbacks": [
             "600"
           ]

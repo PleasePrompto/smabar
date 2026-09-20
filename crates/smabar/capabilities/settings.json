@@ -41,6 +41,7 @@
     "allow-store-overview",
     "allow-store-refresh",
     "allow-store-detail",
+    "allow-store-theme-preview",
     "allow-store-install-plugin",
     "allow-store-install-theme",
     "allow-legal-status",
@@ -53,6 +54,12 @@
     "allow-show-notice",
     "allow-open-url",
     "allow-bar-reply",
-    "allow-get-audio-settings"
+    "allow-get-audio-settings",
+    "allow-choose-settings-file",
+    "allow-save-theme-copy",
+    "allow-theme-file-document",
+    "allow-write-theme-copy",
+    "allow-inspect-plugin-zip",
+    "allow-install-plugin-zip"
   ]
 }

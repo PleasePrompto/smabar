@@ -8,7 +8,7 @@ use super::{Inner, StoreError, write_receipt};
 
 /// Puts the previous version back (or removes a fresh install that failed).
 /// An interrupted reverse swap uses the same recovery journal as the install.
-pub(super) async fn run(
+pub(crate) async fn run(
     inner: &Inner,
     transaction: &Journal,
     backup: &Path,

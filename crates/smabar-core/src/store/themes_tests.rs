@@ -61,12 +61,33 @@ async fn a_theme_is_written_through_the_import_path_with_a_receipt() {
     let (_dir, paths, service, fetcher, signer) = setup().await;
     serve_theme(&fetcher, &signer, "nord-test", "1.0.0", THEME, |_| {});
 
+    service.refresh().await;
+    let before = service.inner.config.current();
+    let preview = service
+        .theme_preview("nord-test", super::testing::TEST_COMMIT)
+        .await
+        .expect("preview");
+    assert_eq!(preview.appearance.tokens["--sb-accent"], "#88c0d0");
+    assert_eq!(preview.layout, before.layout);
+    assert_eq!(service.inner.config.current(), before);
+    assert!(!paths.themes_dir().join("nord-test.json").exists());
+    assert!(!paths.store_receipts_file().exists());
+
     let outcome = service
         .install_theme("nord-test", "1.0.0")
         .await
         .expect("install");
     assert_eq!(outcome.name, "nord-test");
     assert!(!outcome.active);
+    assert_eq!(
+        fetcher
+            .requests()
+            .iter()
+            .filter(|(url, _)| url.ends_with("themes/nord-test.json"))
+            .count(),
+        1,
+        "install reuses the verified preview download"
+    );
     let file = paths.themes_dir().join("nord-test.json");
     assert!(file.is_file());
     let receipt = receipts::load(&paths).themes["nord-test"].clone();
@@ -112,6 +133,46 @@ async fn a_theme_is_written_through_the_import_path_with_a_receipt() {
     // Deleting through the theme path drops the receipt.
     crate::themes::io::delete_theme(&paths, "nord-test").expect("delete");
     assert!(receipts::load(&paths).themes.is_empty());
+    service.inner.supervisor.shutdown_all().await;
+}
+
+#[tokio::test]
+async fn theme_previews_refuse_changed_commits_bad_hashes_sources_and_settings() {
+    let (_dir, paths, service, fetcher, signer) = setup().await;
+    serve_theme(&fetcher, &signer, "nord-test", "1.0.0", THEME, |_| {});
+    service.refresh().await;
+    assert!(matches!(
+        service.theme_preview("nord-test", "old-commit").await,
+        Err(StoreError::VersionChanged { .. })
+    ));
+    for (body, field, value) in [
+        (THEME, "sha256", "0".repeat(64)),
+        (THEME, "fileUrl", "https://example.com/theme.json".into()),
+        (
+            r#"{"settings":{"layout.position":"sideways"}}"#,
+            "ref",
+            "main".into(),
+        ),
+    ] {
+        serve_theme(&fetcher, &signer, "nord-test", "1.0.0", body, |listing| {
+            listing["items"][0]["source"][field] = serde_json::json!(value);
+        });
+        service.refresh().await;
+        assert!(
+            service
+                .theme_preview("nord-test", super::testing::TEST_COMMIT)
+                .await
+                .is_err(),
+            "{field}"
+        );
+        assert!(!paths.themes_dir().join("nord-test.json").exists());
+    }
+    assert!(
+        !fetcher
+            .requests()
+            .iter()
+            .any(|(url, _)| url.starts_with("https://example.com"))
+    );
     service.inner.supervisor.shutdown_all().await;
 }
 

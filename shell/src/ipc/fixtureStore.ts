@@ -1,6 +1,10 @@
 import { registerTile } from "../components/registry";
 import { useSmabar, type InstalledPlugin } from "../store/bar";
-import { installFixtureTheme } from "./fixtureThemes";
+import {
+  DEFAULT_THEME,
+  installFixtureTheme,
+  themePreview,
+} from "./fixtureThemes";
 import type {
   StoreDetailInfo,
   StoreEntry,
@@ -9,13 +13,7 @@ import type {
   StoreRelease,
 } from "./store";
 
-/**
- * Browser-dev stand-in for the core's Community Store: a six-entry catalog
- * that covers every listing state the settings panel renders, with install
- * and uninstall mutating it in memory so `list_plugins` and the bar reflect
- * what the panel did. No network, no progress events — a fixture install
- * is instant.
- */
+/** Mutable browser-only catalog. No network or plugin processes. */
 
 const APP_VERSION = "0.2.0";
 const HOST_OS = "linux";
@@ -363,6 +361,14 @@ export function fixtureStoreDetail(
 ): StoreDetailInfo {
   const { entry, readme, readmeHtml, releases } = listing(kind, id);
   return { entry, readme, readmeHtml, releases };
+}
+
+export function fixtureStoreThemePreview(name: string, expectedCommit: string) {
+  const found = listing("theme", name);
+  if (found.entry.commit !== expectedCommit)
+    throw new Error("listing changed; refresh the store");
+  const tokens = { ...DEFAULT_THEME.tokens, "--sb-accent": found.accent };
+  return themePreview({ tokens, settings: {} }, tokens);
 }
 
 /** Mirrors the core's refusals, so the panel's error path is real here too. */

@@ -10,7 +10,6 @@ import {
   DROPIN,
   flush,
   FRESH_LIST,
-  typeInput,
   type ThemeManagerTestHarness,
 } from "./ThemeManager.testHarness";
 
@@ -37,14 +36,17 @@ async function render(themes: ThemeSummary[]): Promise<void> {
 
 test("importing a colliding file asks before overwriting", async () => {
   callMock.mockImplementation((command: string) =>
-    Promise.resolve(command === "import_theme" ? FRESH_LIST : null),
+    Promise.resolve(
+      command === "import_theme"
+        ? FRESH_LIST
+        : command === "choose_settings_file"
+          ? "/downloads/Mine.json"
+          : null,
+    ),
   );
   await render([BUNDLED, DROPIN]);
   await flush(() => {
-    typeInput(harness.input("Theme file"), "/downloads/Mine.json");
-  });
-  await flush(() => {
-    harness.button("Import").click();
+    harness.button("Import theme…").click();
   });
   expect(callMock).not.toHaveBeenCalledWith("import_theme", expect.anything());
   await flush(() => {
@@ -59,7 +61,13 @@ test("importing a colliding file asks before overwriting", async () => {
 
 test("a theme file dropped onto the settings runs the import flow", async () => {
   callMock.mockImplementation((command: string) =>
-    Promise.resolve(command === "import_theme" ? FRESH_LIST : null),
+    Promise.resolve(
+      command === "import_theme"
+        ? FRESH_LIST
+        : command === "choose_settings_file"
+          ? "/downloads/Mine.json"
+          : null,
+    ),
   );
   await render([BUNDLED]);
   await flush(() => {
@@ -77,14 +85,13 @@ test("an invalid theme file shows the core's error inline", async () => {
   callMock.mockImplementation((command: string) =>
     command === "import_theme"
       ? Promise.reject(new Error("invalid theme document: not a JSON object"))
-      : Promise.resolve(null),
+      : Promise.resolve(
+          command === "choose_settings_file" ? "/downloads/Mine.json" : null,
+        ),
   );
   await render([BUNDLED]);
   await flush(() => {
-    typeInput(harness.input("Theme file"), "/downloads/broken.json");
-  });
-  await flush(() => {
-    harness.button("Import").click();
+    harness.button("Import theme…").click();
   });
   const alert = harness.container.querySelector('[role="alert"]');
   expect(alert?.textContent).toContain("invalid theme document");
@@ -99,14 +106,13 @@ test("a confirmed import failure stays visible, logged, and returns focus", asyn
   callMock.mockImplementation((command: string) =>
     command === "import_theme"
       ? Promise.reject(new Error("cannot import theme"))
-      : Promise.resolve(null),
+      : Promise.resolve(
+          command === "choose_settings_file" ? "/downloads/Mine.json" : null,
+        ),
   );
   await render([BUNDLED, DROPIN]);
   await flush(() => {
-    typeInput(harness.input("Theme file"), "/downloads/Mine.json");
-  });
-  await flush(() => {
-    harness.button("Import").click();
+    harness.button("Import theme…").click();
   });
   await flush(() => {
     harness.confirmAction().click();
@@ -115,18 +121,14 @@ test("a confirmed import failure stays visible, logged, and returns focus", asyn
     vi.runOnlyPendingTimers();
   });
   expect(harness.container.textContent).toContain("cannot import theme");
-  expect(document.activeElement).toBe(harness.button("Import"));
+  expect(document.activeElement).toBe(harness.button("Import theme…"));
   expect(
     callMock.mock.calls.filter(([command]) => command === "ui_log"),
   ).toHaveLength(1);
 });
 
-test("the import placeholder is translated", async () => {
-  setLocale({
-    "settings.themes.importPlaceholder": "~/Downloads/mein-design.json",
-  });
+test("the file picker action is translated", async () => {
+  setLocale({ "settings.themes.import": "Theme importieren …" });
   await render([BUNDLED]);
-  expect(harness.input("Theme file").placeholder).toBe(
-    "~/Downloads/mein-design.json",
-  );
+  expect(harness.button("Theme importieren …")).toBeDefined();
 });

@@ -535,6 +535,8 @@
   max-width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 .settings-readme th,
 .settings-readme td {

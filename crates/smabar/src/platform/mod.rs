@@ -191,16 +191,30 @@ pub fn settings_position_supported() -> bool {
     }
 }
 
-pub fn report_native_bar_pointer(window: &WebviewWindow) -> anyhow::Result<bool> {
-    #[cfg(target_os = "linux")]
-    {
-        linux::input_shape::report_pointer(window)
-    }
-    #[cfg(not(target_os = "linux"))]
-    {
-        let _ = window;
-        Ok(false)
-    }
+/// Only the native input target may supply hover coordinates. Query on the
+/// owner thread: GTK/AppKit objects must not be accessed by the async watchdog.
+pub async fn bar_pointer_sample(window: &WebviewWindow) -> anyhow::Result<Option<[f64; 2]>> {
+    let (send, receive) = tokio::sync::oneshot::channel();
+    let bar = window.clone();
+    window
+        .run_on_main_thread(move || {
+            #[cfg(target_os = "linux")]
+            let sample = linux::input_shape::pointer_sample(&bar);
+            #[cfg(windows)]
+            let sample = windows::input_shape::pointer_sample(&bar);
+            #[cfg(target_os = "macos")]
+            let sample = macos::window::pointer_sample(&bar);
+            #[cfg(not(any(target_os = "linux", windows, target_os = "macos")))]
+            let sample = {
+                let _ = bar;
+                Ok(None)
+            };
+            let _ = send.send(sample);
+        })
+        .context("failed to schedule native bar pointer sampling")?;
+    receive
+        .await
+        .context("native bar pointer callback was dropped")?
 }
 
 pub fn needs_bar_pointer_watchdog() -> bool {

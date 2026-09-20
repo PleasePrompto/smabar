@@ -1,9 +1,7 @@
 use smabar_core::platform::surfaces::ScreenRect;
-use tauri::{PhysicalPosition, PhysicalSize};
 
 use super::super::focus::{dismisses_on_focus_loss, focus_loss_is_stale};
 use super::{ActiveFlyout, FlyoutMode, OverlayFlyoutRequest, peek_to_promote};
-use crate::surfaces::pointer::local_pointer_sample;
 
 #[test]
 fn focus_loss_only_dismisses_interactive_overlays() {
@@ -48,20 +46,6 @@ fn clicking_an_existing_peek_promotes_the_same_surface() {
     );
     assert_eq!(
         peek_to_promote(Some(&active), "weather", FlyoutMode::Pinned),
-        None
-    );
-}
-
-#[test]
-fn focus_loss_reports_only_pointer_positions_inside_the_bar_window() {
-    let origin = PhysicalPosition::new(400, 800);
-    let size = PhysicalSize::new(800, 100);
-    assert_eq!(
-        local_pointer_sample(PhysicalPosition::new(500.0, 850.0), origin, size, 2.0),
-        Some([50.0, 25.0])
-    );
-    assert_eq!(
-        local_pointer_sample(PhysicalPosition::new(100.0, 100.0), origin, size, 2.0),
         None
     );
 }

@@ -196,3 +196,44 @@ test("a stale DOM hover cannot open a peek while the native pointer is outside",
   });
   expect(useSmabar.getState().flyoutMode).toBeNull();
 });
+
+test("covering a tile cancels its pending hover and uncovering starts a fresh delay", () => {
+  const trigger = container.querySelector("[data-trigger]");
+  if (trigger === null) throw new Error("flyout trigger missing");
+  vi.spyOn(trigger, "getBoundingClientRect").mockReturnValue(
+    DOMRect.fromRect({ x: 20, y: 80, width: 40, height: 20 }),
+  );
+
+  act(() => {
+    pushNativePointerSample(30, 90);
+    vi.advanceTimersByTime(200);
+    pushNativePointerSample(Number.NaN, Number.NaN);
+    vi.advanceTimersByTime(1_000);
+  });
+  expect(useSmabar.getState().openFlyout).toBeNull();
+
+  act(() => {
+    pushNativePointerSample(30, 90);
+    vi.advanceTimersByTime(399);
+  });
+  expect(useSmabar.getState().openFlyout).toBeNull();
+  act(() => {
+    vi.advanceTimersByTime(1);
+  });
+  expect(useSmabar.getState().flyoutMode).toBe("peek");
+});
+
+test("a covered bar does not dismiss a pinned flyout", () => {
+  act(() => {
+    useSmabar
+      .getState()
+      .toggleFlyout(
+        "weather",
+        DOMRect.fromRect({ x: 20, y: 80, width: 40, height: 20 }),
+      );
+    pushNativePointerSample(Number.NaN, Number.NaN);
+    vi.advanceTimersByTime(1_000);
+  });
+  expect(useSmabar.getState().openFlyout).toBe("weather");
+  expect(useSmabar.getState().flyoutMode).toBe("pinned");
+});

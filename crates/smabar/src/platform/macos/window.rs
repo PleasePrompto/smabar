@@ -46,17 +46,10 @@ impl HoverTracking {
         let state = self.ivars();
         let result = match state.role {
             SurfaceRole::Bar => {
-                // Tauri's webview fills the content view. AppKit reports
-                // logical points from the bottom; the shell uses top-left CSS pixels.
-                let sample =
-                    inside
-                        .then(|| event.window(self.mtm()))
-                        .flatten()
-                        .and_then(|window| {
-                            let view = window.contentView()?;
-                            let point = event.locationInWindow();
-                            Some([point.x, view.bounds().size.height - point.y])
-                        });
+                let sample = inside
+                    .then(|| event.window(self.mtm()))
+                    .flatten()
+                    .and_then(|window| native_pointer_sample(&window));
                 state
                     .app
                     .emit_to(SurfaceRole::Bar.label(), "bar-pointer-sample", sample)
@@ -72,6 +65,26 @@ impl HoverTracking {
             tracing::warn!(%error, surface = state.role.label(), "cannot report macOS hover; restart smabar");
         }
     }
+}
+
+/// Call on the AppKit thread, like the native tracking callbacks above.
+pub fn pointer_sample(window: &WebviewWindow) -> anyhow::Result<Option<[f64; 2]>> {
+    // SAFETY: Tauri owns this live NSWindow; the caller runs on the GUI thread.
+    let native = unsafe { &*window.ns_window()?.cast::<NSWindow>() };
+    Ok(native_pointer_sample(native))
+}
+
+fn native_pointer_sample(window: &NSWindow) -> Option<[f64; 2]> {
+    let point = NSEvent::mouseLocation();
+    if NSWindow::windowNumberAtPoint_belowWindowWithWindowNumber(point, 0, window.mtm())
+        != window.windowNumber()
+    {
+        return None;
+    }
+    let view = window.contentView()?;
+    let point = window.convertPointFromScreen(point);
+    // AppKit uses logical points from the bottom; the shell uses top-left CSS pixels.
+    Some([point.x, view.bounds().size.height - point.y])
 }
 
 pub fn install_hover(window: &WebviewWindow, role: SurfaceRole) -> anyhow::Result<()> {

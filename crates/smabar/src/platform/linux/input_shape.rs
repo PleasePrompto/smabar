@@ -6,43 +6,29 @@ use std::sync::Once;
 use anyhow::Context;
 use gtk::cairo;
 use gtk::prelude::{DeviceExt, SeatExt, WidgetExt};
-use smabar_core::platform::{Rect, SessionKind, WindowBackend};
-use tauri::{Emitter, WebviewWindow};
+use smabar_core::platform::{Rect, SessionKind};
+use tauri::WebviewWindow;
 
-/// Wayland has no global cursor coordinates. Only a pointer focused on this
-/// native surface can supply a valid local sample after another window closes.
-pub fn report_pointer(window: &WebviewWindow) -> anyhow::Result<bool> {
-    if !matches!(
-        super::window::backend(),
-        WindowBackend::WaylandLayerShell | WindowBackend::WaylandFallback
-    ) {
-        return Ok(false);
+/// Call on the GTK thread. GDK returns no owned window when another app
+/// covers the pointer; the toplevel check also rejects our own other surfaces.
+pub fn pointer_sample(window: &WebviewWindow) -> anyhow::Result<Option<[f64; 2]>> {
+    let native = window.gtk_window()?;
+    let Some(surface) = native.window() else {
+        return Ok(None);
+    };
+    let pointer = native
+        .display()
+        .default_seat()
+        .and_then(|seat| seat.pointer());
+    let Some(pointer) = pointer else {
+        return Ok(None);
+    };
+    let (focused, _, _) = pointer.window_at_position_double();
+    if focused.is_none_or(|focused| focused.toplevel() != surface) {
+        return Ok(None);
     }
-    let bar = window.clone();
-    window
-        .run_on_main_thread(move || {
-            let sample = bar.gtk_window().map(|native| {
-                let surface = native.window()?;
-                let pointer = native.display().default_seat()?.pointer()?;
-                let (focused, _, _) = pointer.window_at_position_double();
-                if focused?.toplevel() != surface {
-                    return None;
-                }
-                let (_, x, y, _) = surface.device_position_double(&pointer);
-                Some([x, y])
-            });
-            match sample {
-                Ok(sample) => {
-                    tracing::debug!(?sample, "resampled Wayland bar pointer");
-                    if let Err(error) = bar.emit("bar-pointer-sample", sample) {
-                        tracing::error!(%error, "failed to report the Wayland bar pointer");
-                    }
-                }
-                Err(error) => tracing::error!(%error, "failed to resample the Wayland bar pointer"),
-            }
-        })
-        .context("failed to schedule Wayland bar pointer sampling")?;
-    Ok(true)
+    let (_, x, y, _) = surface.device_position_double(&pointer);
+    Ok(Some([x, y]))
 }
 
 /// Applies `rects` as the window's input shape. An empty list yields an
